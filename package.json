@@ -1,0 +1,12 @@
+{
+  "name": "cycleflow-pro",
+  "version": "2.0.0",
+  "description": "מעקב מחזור, טהרת המשפחה וחלון פוריות - אפליקציית PWA פרטית",
+  "private": true,
+  "scripts": {
+    "test": "node tests/logic.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}
