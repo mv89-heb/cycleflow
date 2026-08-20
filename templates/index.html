@@ -4,34 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0f172a">
+    <meta name="referrer" content="no-referrer">
+    <meta name="robots" content="noindex,nofollow,noarchive">
     <link rel="manifest" href="/static/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="MyCycle">
-    <title>CycleFlow Monster Pro V61</title>
-    
-    <!-- Fonts & Icons -->
+    <title>CycleFlow Pro</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- External Libs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/css/main.css?v={{ asset_version('css/main.css') }}">
 </head>
 <body>
     <div id="toast" role="status" aria-live="polite"><i class="fas fa-check-circle"></i> <span id="toast_msg">הודעה</span></div>
 
-    <!-- Security Screens -->
-    <div id="lock_screen" class="hidden">
-        <i class="fas fa-lock lock-icon"></i>
+    <div id="lock_screen" class="hidden" aria-modal="true" role="dialog">
+        <i class="fas fa-lock lock-icon" aria-hidden="true"></i>
         <h2>MyCycle Secure</h2>
-        <input type="password" id="pin_input" maxlength="4" inputmode="numeric" placeholder="••••" data-action="pinInput">
+        <input type="password" id="pin_input" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="••••" data-action="pinInput" aria-label="קוד PIN">
         <button data-action="forgotPin" class="btn-outline">שכחתי קוד</button>
     </div>
 
-    <!-- Fake Calculator App for Privacy -->
     <div id="fake_app" class="hidden">
         <div class="calc-display" id="calc_display">0</div>
         <div class="calc-grid">
@@ -54,8 +49,6 @@
     </header>
 
     <main id="main_content" class="blur-target">
-        
-        <!-- Dashboard View -->
         <section id="view_dashboard" class="app-view">
             <div class="card glass status-hero" id="status_card">
                 <div id="status_badge" class="status-badge">טוען נתונים...</div>
@@ -63,175 +56,59 @@
                 <div class="sub-text">ימים למחזור הנוכחי</div>
                 <div id="clean_days_container" class="clean-days-wrapper hidden"></div>
             </div>
-
             <div class="action-grid">
-                <button class="card glass text-center interactive-card" data-action="switchTab" data-tab="calendar">
-                    <i class="fas fa-calendar-alt text-primary"></i>
-                    <div class="font-bold">דיווח וסת</div>
-                </button>
-                <button class="card glass text-center interactive-card" data-action="doHefsekDirect">
-                    <i class="fas fa-sun text-warning"></i>
-                    <div class="font-bold">הפסק טהרה</div>
-                </button>
+                <button class="card glass text-center interactive-card" data-action="switchTab" data-tab="calendar"><i class="fas fa-calendar-alt text-primary"></i><div class="font-bold">דיווח וסת</div></button>
+                <button class="card glass text-center interactive-card" data-action="doHefsekDirect"><i class="fas fa-sun text-warning"></i><div class="font-bold">הפסק טהרה</div></button>
             </div>
-
-            <div class="card glass">
-                <h3><i class="fas fa-history"></i> צפי עתידי</h3>
-                <div id="future_list" class="flex-col gap-10"></div>
-            </div>
+            <div class="card glass"><h3><i class="fas fa-history"></i> צפי עתידי</h3><div id="future_list" class="flex-col gap-10"></div></div>
         </section>
 
-        <!-- Calendar View -->
         <section id="view_calendar" class="app-view hidden">
             <div class="card glass">
-                <div class="cal-nav">
-                    <button data-action="navMonth" data-dir="-1"><i class="fas fa-chevron-right"></i></button>
-                    <div class="text-center">
-                        <div id="cal_month_title" class="cal-title"></div>
-                        <div id="cal_year_subtitle" class="cal-subtitle"></div>
-                    </div>
-                    <button data-action="navMonth" data-dir="1"><i class="fas fa-chevron-left"></i></button>
-                </div>
-                <div class="cal-grid mb-10">
-                    <div class="day-name">א</div><div class="day-name">ב</div><div class="day-name">ג</div><div class="day-name">ד</div>
-                    <div class="day-name">ה</div><div class="day-name">ו</div><div class="day-name">ש</div>
-                </div>
+                <div class="cal-nav"><button data-action="navMonth" data-dir="-1"><i class="fas fa-chevron-right"></i></button><div class="text-center"><div id="cal_month_title" class="cal-title"></div><div id="cal_year_subtitle" class="cal-subtitle"></div></div><button data-action="navMonth" data-dir="1"><i class="fas fa-chevron-left"></i></button></div>
+                <div class="cal-grid mb-10"><div class="day-name">א</div><div class="day-name">ב</div><div class="day-name">ג</div><div class="day-name">ד</div><div class="day-name">ה</div><div class="day-name">ו</div><div class="day-name">ש</div></div>
                 <div id="cal_grid" class="cal-grid"></div>
             </div>
-
             <div class="card glass">
                 <h3><i class="fas fa-tint text-danger"></i> דיווח וסת מהיר</h3>
                 <input type="date" id="report_date">
                 <div class="flex gap-10 mb-10">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="chk_sunset_report"> אחרי שקיעה 🌙
-                    </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="chk_spotting_report"> כתם בלבד
-                    </label>
+                    <label class="checkbox-label"><input type="checkbox" id="chk_sunset_report"> אחרי שקיעה 🌙</label>
+                    <label class="checkbox-label"><input type="checkbox" id="chk_spotting_report"> כתם בלבד</label>
                 </div>
                 <button class="btn btn-danger" data-action="reportPeriod">שמירת וסת</button>
             </div>
         </section>
 
-        <!-- History View -->
         <section id="view_history" class="app-view hidden">
             <div class="card glass">
                 <h3><i class="fas fa-chart-line"></i> סטטיסטיקה</h3>
-                <div class="chart-container">
-                    <canvas id="cycleChart"></canvas>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <div class="text-muted text-sm">ממוצע</div>
-                        <div id="stat_avg" class="stat-val text-primary">--</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="text-muted text-sm">קצר</div>
-                        <div id="stat_min" class="stat-val">--</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="text-muted text-sm">ארוך</div>
-                        <div id="stat_max" class="stat-val">--</div>
-                    </div>
-                </div>
+                <div class="chart-container"><canvas id="cycleChart"></canvas></div>
+                <div class="stats-grid"><div class="stat-box"><div class="text-muted text-sm">ממוצע</div><div id="stat_avg" class="stat-val text-primary">--</div></div><div class="stat-box"><div class="text-muted text-sm">קצר</div><div id="stat_min" class="stat-val">--</div></div><div class="stat-box"><div class="text-muted text-sm">ארוך</div><div id="stat_max" class="stat-val">--</div></div></div>
             </div>
-
-            <div class="card glass">
-                <h3><i class="fas fa-list"></i> היסטוריה</h3>
-                <div id="history_list" class="flex-col gap-10"></div>
-                <button class="btn btn-outline mt-15" data-action="generateRabbiText">
-                    <i class="fas fa-share-alt"></i> שאלת רב / ייצוא
-                </button>
-            </div>
+            <div class="card glass"><h3><i class="fas fa-list"></i> היסטוריה</h3><div id="history_list" class="flex-col gap-10"></div><button class="btn btn-outline mt-15" data-action="generateRabbiText"><i class="fas fa-share-alt"></i> שאלת רב / ייצוא</button></div>
         </section>
 
-        <!-- Settings View -->
         <section id="view_settings" class="app-view hidden">
-            <div class="card glass">
-                <h3>הגדרות הלכתיות</h3>
-                <label>מנהג</label>
-                <select id="set_minhag" data-action="saveSettings">
-                    <option value="ashkenaz">אשכנז (5 ימי המתנה)</option>
-                    <option value="sepharad">ספרד (4 ימי המתנה)</option>
-                    <option value="chabad">חב"ד</option>
-                </select>
-                
-                <label>הגדרת פרישה (וסת קבוע)</label>
-                <select id="set_cycle_len" data-action="saveSettings">
-                    <option value="28">ממוצע אוטומטי (ברירת מחדל)</option>
-                    <option value="30">30 יום קבוע</option>
-                </select>
-            </div>
-
-            <div class="card glass">
-                <h3>ניהול נתונים</h3>
-                <button class="btn btn-outline mb-10" data-action="exportBackup"><i class="fas fa-lock"></i> גיבוי מוצפן</button>
-                <button class="btn btn-outline mb-10" data-action="triggerImport"><i class="fas fa-file-upload"></i> שחזור מגיבוי</button>
-                <input type="file" id="import_file" class="hidden" data-action="importBackup" accept=".enc">
-                <hr class="divider">
-                <button class="btn btn-outline btn-danger-outline" data-action="resetAll"><i class="fas fa-trash"></i> מחיקת נתונים</button>
-            </div>
-            
-            <div class="card glass">
-                 <h3>אבטחה</h3>
-                 <input type="password" id="set_new_pin" placeholder="הגדר קוד PIN חדש (4 ספרות)" maxlength="4" inputmode="numeric">
-                 <button class="btn btn-primary" data-action="setNewPin">הפעלת נעילה</button>
-            </div>
+            <div class="card glass"><h3>הגדרות הלכתיות</h3><label>מנהג</label><select id="set_minhag" data-action="saveSettings"><option value="ashkenaz">אשכנז (5 ימי המתנה)</option><option value="sepharad">ספרד (4 ימי המתנה)</option><option value="chabad">חב"ד</option></select><label>הגדרת פרישה (וסת קבוע)</label><select id="set_cycle_len" data-action="saveSettings"><option value="28">ממוצע אוטומטי (ברירת מחדל)</option><option value="30">30 יום קבוע</option></select></div>
+            <div class="card glass"><h3>ניהול נתונים</h3><button class="btn btn-outline mb-10" data-action="exportBackup"><i class="fas fa-lock"></i> גיבוי מוצפן</button><button class="btn btn-outline mb-10" data-action="triggerImport"><i class="fas fa-file-upload"></i> שחזור מגיבוי</button><input type="file" id="import_file" class="hidden" data-action="importBackup" accept=".enc"><hr class="divider"><button class="btn btn-outline btn-danger-outline" data-action="resetAll"><i class="fas fa-trash"></i> מחיקת נתונים</button></div>
+            <div class="card glass"><h3>אבטחה</h3><input type="password" id="set_new_pin" placeholder="הגדר קוד PIN חדש (4 ספרות)" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password"><button class="btn btn-primary" data-action="setNewPin">הפעלת נעילה</button></div>
+            <div class="card glass"><h3>פרטיות</h3><p class="text-muted" style="line-height:1.6">המידע העסקי נשמר בדפדפן בלבד. גיבוי מוצפן נשמר אצלך בלבד. הפוריות היא הערכה סטטיסטית ואינה תחליף לייעוץ רפואי או הלכתי.</p></div>
         </section>
     </main>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav blur-target" id="bottom_nav">
-        <button class="nav-item active" data-action="switchTab" data-tab="dashboard">
-            <i class="fas fa-home"></i><span>ראשי</span>
-        </button>
-        <button class="nav-item" data-action="switchTab" data-tab="calendar">
-            <i class="fas fa-calendar-day"></i><span>לוח</span>
-        </button>
-        <button class="nav-item" data-action="switchTab" data-tab="history">
-            <i class="fas fa-chart-pie"></i><span>היסטוריה</span>
-        </button>
-        <button class="nav-item" data-action="switchTab" data-tab="settings">
-            <i class="fas fa-cog"></i><span>הגדרות</span>
-        </button>
-    </nav>
+    <nav class="bottom-nav blur-target" id="bottom_nav"><button class="nav-item active" data-action="switchTab" data-tab="dashboard"><i class="fas fa-home"></i><span>ראשי</span></button><button class="nav-item" data-action="switchTab" data-tab="calendar"><i class="fas fa-calendar-day"></i><span>לוח</span></button><button class="nav-item" data-action="switchTab" data-tab="history"><i class="fas fa-chart-pie"></i><span>היסטוריה</span></button><button class="nav-item" data-action="switchTab" data-tab="settings"><i class="fas fa-cog"></i><span>הגדרות</span></button></nav>
 
-    <!-- Modals -->
     <div id="day_panel_overlay" data-action="closePanel"></div>
     <div id="day_panel">
-        <div class="flex-between mb-20">
-            <h2 id="panel_date" class="m-0 text-lg"></h2>
-            <button data-action="closePanel" class="close-btn">&times;</button>
-        </div>
-        
+        <div class="flex-between mb-20"><h2 id="panel_date" class="m-0 text-lg"></h2><button data-action="closePanel" class="close-btn" aria-label="סגירה">&times;</button></div>
         <div id="panel_status_banner" class="status-banner"></div>
-        
-        <div class="action-grid mb-20">
-            <button id="btn_hefsek_panel" class="btn btn-primary" data-action="doHefsekPanel">בצעי הפסק</button>
-            <button id="btn_undo_panel" class="btn btn-outline hidden" data-action="undoHefsekPanel">ביטול הפסק</button>
-        </div>
-
-        <div class="card glass p-15">
-            <h4 class="mt-0">בדיקות הלכתיות</h4>
-            <div class="flex-between mb-10">
-                <span>בדיקת שחרית</span>
-                <input type="checkbox" id="chk_morning" data-action="saveDaily" class="lg-checkbox">
-            </div>
-            <div class="flex-between mb-10">
-                <span>מוך דחוק</span>
-                <input type="checkbox" id="chk_moch" data-action="saveDaily" class="lg-checkbox">
-            </div>
-            <div class="flex-between">
-                <span>בדיקת שקיעה</span>
-                <input type="checkbox" id="chk_sunset" data-action="saveDaily" class="lg-checkbox">
-            </div>
-        </div>
-
+        <div class="action-grid mb-20"><button id="btn_hefsek_panel" class="btn btn-primary" data-action="doHefsekPanel">בצעי הפסק</button><button id="btn_undo_panel" class="btn btn-outline hidden" data-action="undoHefsekPanel">ביטול הפסק</button></div>
+        <div class="card glass p-15"><h4 class="mt-0">בדיקות הלכתיות</h4><div class="flex-between mb-10"><span>בדיקת שחרית</span><input type="checkbox" id="chk_morning" data-action="saveDaily" class="lg-checkbox"></div><div class="flex-between mb-10"><span>מוך דחוק</span><input type="checkbox" id="chk_moch" data-action="saveDaily" class="lg-checkbox"></div><div class="flex-between"><span>בדיקת שקיעה</span><input type="checkbox" id="chk_sunset" data-action="saveDaily" class="lg-checkbox"></div></div>
         <textarea id="daily_note" placeholder="הערות יומיות..." rows="3" data-action="saveDaily"></textarea>
     </div>
 
-    <!-- Application Script -->
+    <script src="/static/js/hardening.js?v={{ asset_version('js/hardening.js') }}"></script>
     <script type="module" src="/static/js/app.js?v={{ asset_version('js/app.js') }}"></script>
 </body>
 </html>
