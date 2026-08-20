@@ -1,0 +1,1 @@
+CI runs the core logic suite and chronological data-integrity regression suite.
