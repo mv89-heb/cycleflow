@@ -1,0 +1,1 @@
+Chronological data integrity regression coverage is included in data-integrity.test.js.
