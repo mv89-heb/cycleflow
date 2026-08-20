@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, hardening-2026-08]
+  pull_request:
+    branches: [main]
+
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --ignore-scripts
+      - run: npm test
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - name: Flask smoke test
+        env:
+          SECRET_KEY: ci-only-secret
+          FLASK_DEBUG: 'false'
+        run: |
+          python - <<'PY'
+          from app import app
+          client = app.test_client()
+          health = client.get('/health')
+          assert health.status_code == 200
+          assert health.get_json() == {'status': 'ok'}
+          page = client.get('/')
+          assert page.status_code == 200
+          assert 'CycleFlow' in page.text
+          assert page.headers['X-Frame-Options'] == 'DENY'
+          assert 'Content-Security-Policy' in page.headers
+          PY
