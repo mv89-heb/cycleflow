@@ -91,7 +91,7 @@
 
         <section id="view_settings" class="app-view hidden">
             <div class="card glass"><h3>הגדרות הלכתיות</h3><label>מנהג</label><select id="set_minhag" data-action="saveSettings"><option value="ashkenaz">אשכנז (5 ימי המתנה)</option><option value="sepharad">ספרד (4 ימי המתנה)</option><option value="chabad">חב"ד</option></select><label>הגדרת פרישה (וסת קבוע)</label><select id="set_cycle_len" data-action="saveSettings"><option value="28">ממוצע אוטומטי (ברירת מחדל)</option><option value="30">30 יום קבוע</option></select></div>
-            <div class="card glass"><h3>ניהול נתונים</h3><button class="btn btn-outline mb-10" data-action="exportBackup"><i class="fas fa-lock"></i> גיבוי מוצפן</button><button class="btn btn-outline mb-10" data-action="triggerImport"><i class="fas fa-file-upload"></i> שחזור מגיבוי</button><input type="file" id="import_file" class="hidden" data-action="importBackup" accept=".enc"><hr class="divider"><button class="btn btn-outline btn-danger-outline" data-action="resetAll"><i class="fas fa-trash"></i> מחיקת נתונים</button></div>
+            <div class="card glass"><h3>ניהול נתונים</h3><button class="btn btn-outline mb-10" data-action="exportBackup"><i class="fas fa-lock"></i> גיבוי מוצפן</button><button class="btn btn-outline mb-10" data-action="triggerImport"><i class="fas fa-file-upload"></i> שחזור מגיבוי</button><input type="file" id="import_file" class="hidden" data-action="importBackup" accept=".enc,.cfbk,application/json"><hr class="divider"><button class="btn btn-outline btn-danger-outline" data-action="resetAll"><i class="fas fa-trash"></i> מחיקת נתונים</button></div>
             <div class="card glass"><h3>אבטחה</h3><input type="password" id="set_new_pin" placeholder="הגדר קוד PIN חדש (4 ספרות)" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password"><button class="btn btn-primary" data-action="setNewPin">הפעלת נעילה</button></div>
             <div class="card glass"><h3>פרטיות</h3><p class="text-muted" style="line-height:1.6">המידע העסקי נשמר בדפדפן בלבד. גיבוי מוצפן נשמר אצלך בלבד. הפוריות היא הערכה סטטיסטית ואינה תחליף לייעוץ רפואי או הלכתי.</p></div>
         </section>
@@ -110,5 +110,6 @@
 
     <script src="/static/js/hardening.js?v={{ asset_version('js/hardening.js') }}"></script>
     <script type="module" src="/static/js/app.js?v={{ asset_version('js/app.js') }}"></script>
+    <script src="/static/js/backup-integrity.js?v={{ asset_version('js/backup-integrity.js') }}"></script>
 </body>
 </html>
