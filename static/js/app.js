@@ -16,7 +16,9 @@ const Utils = {
         r.setDate(r.getDate() + n); 
         return r; 
     },
-    prettyDate: (d) => d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' })
+    prettyDate: (d) => d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' }),
+    chronologicalPeriods: (periods) => [...periods].sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || ''))),
+    chronologicalVesets: (periods) => [...periods].filter(p => p.type === 'veset').sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || '')))
 };
 
 const SecurityService = {
@@ -35,7 +37,6 @@ const SecurityService = {
 };
 
 const CryptoService = {
-    // גוזר מפתח AES-256 מתוך סיסמת המשתמשת באמצעות PBKDF2 (100,000 איטרציות + salt ייחודי)
     async deriveKey(passphrase, salt) {
         const enc = new TextEncoder();
         const baseKey = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
@@ -53,7 +54,6 @@ const CryptoService = {
         const key = await this.deriveKey(passphrase, salt);
         const enc = new TextEncoder();
         const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(plainObj)));
-        // מבנה הקובץ: [salt(16)][iv(12)][ciphertext] -> Base64
         const combined = new Uint8Array(salt.length + iv.length + cipherBuf.byteLength);
         combined.set(salt, 0);
         combined.set(iv, salt.length);
@@ -62,6 +62,7 @@ const CryptoService = {
     },
     async decrypt(base64Str, passphrase) {
         const combined = Uint8Array.from(atob(base64Str), c => c.charCodeAt(0));
+        if (combined.length < 29) throw new Error('קובץ גיבוי לא תקין');
         const salt = combined.slice(0, 16);
         const iv = combined.slice(16, 28);
         const cipherBuf = combined.slice(28);
@@ -113,7 +114,7 @@ const HalachaLogic = {
     getStatus(date) {
         const state = State.get();
         const dStr = Utils.fmt(date);
-        const periods = [...state.periods].sort((a,b) => a.date.localeCompare(b.date));
+        const periods = Utils.chronologicalPeriods(state.periods);
         const lastP = periods[periods.length-1];
         
         let res = { type: 'regular', text: 'טהורה', color: 'var(--st-naki)', bg: 'rgba(16, 185, 129, 0.1)', canHefsek: false };
@@ -130,7 +131,7 @@ const HalachaLogic = {
         
         while(temp <= date) { 
             if (state.hefseks[Utils.fmt(temp)]) hefsekDate = new Date(temp.getTime()); 
-            temp.setDate(temp.getDate() + 1); 
+            temp.setDate(temp.getDate() + 1);
         }
         
         if (hefsekDate) {
@@ -138,13 +139,11 @@ const HalachaLogic = {
             if (cleanDay === 0) return { type: 'hefsek', text: 'יום הפסק', color: 'var(--st-hefsek)', bg: 'rgba(245, 158, 11, 0.1)', canHefsek: false };
             if (cleanDay >= 1 && cleanDay <= 7) return { type: 'naki', text: `נקיים: יום ${cleanDay}`, color: 'var(--st-naki)', bg: 'rgba(16, 185, 129, 0.1)', cleanCount: cleanDay, canHefsek: false };
             if (cleanDay === 8) return { type: 'tevila', text: 'ליל טבילה', color: '#000', bg: 'var(--st-tevila)', canHefsek: false };
-            // מעבר ליום 8 - טהורה; ממשיכים לבדיקת עונה בינונית למטה
         } else {
             if (daysDiff < minWait) return { type: 'nidda', text: `נידה (יום ${daysDiff+1})`, color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: false }; 
             return { type: 'nidda', text: `נידה - ממתינה להפסק`, color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: true };
         }
         
-        // עונה בינונית (יום 30/31 מתחילת הוסת) - יום פרישה, מוצג במצב טהרה בלבד
         const beinonit30 = Utils.addDays(pDate, 29);
         const beinonit31 = Utils.addDays(pDate, 30);
         
@@ -156,10 +155,9 @@ const HalachaLogic = {
 };
 
 const FertilityLogic = {
-    // אורך מחזור ממוצע מתוך היסטוריית וסתות בפועל (נופל חזרה להגדרה הקבועה או 28 יום)
     getAvgCycleLength() {
         const state = State.get();
-        const periods = [...state.periods].filter(p => p.type === 'veset').sort((a,b) => a.date.localeCompare(b.date));
+        const periods = Utils.chronologicalVesets(state.periods);
         if (periods.length < 2) {
             const fixed = parseInt(state.settings.cycle, 10);
             return (fixed && fixed > 0) ? fixed : 28;
@@ -173,12 +171,9 @@ const FertilityLogic = {
         return Math.round(sum / count);
     },
 
-    // שיטת לוח שנה: ביוץ משוער = 14 יום לפני הוסת הבאה הצפויה
-    // חלון פוריות משוער = 5 ימים לפני הביוץ ועד יום אחריו (הישרדות זרע + חיוניות הביצית)
-    // הערכה סטטיסטית בלבד - אינה אמצעי מניעה/כניסה להריון רפואי מדויק
     getEstimate() {
         const state = State.get();
-        const periods = [...state.periods].filter(p => p.type === 'veset').sort((a,b) => a.date.localeCompare(b.date));
+        const periods = Utils.chronologicalVesets(state.periods);
         const lastP = periods[periods.length - 1];
         if (!lastP) return null;
 
@@ -204,7 +199,6 @@ const FertilityLogic = {
 };
 
 const Calculator = {
-    // מחשבון פשוט ופונקציונלי - קריטי לאמינות ההסוואה (UI/UX fix)
     current: '0', prev: null, op: null, resetNext: false,
     reset() { this.current = '0'; this.prev = null; this.op = null; this.resetNext = false; this.render(); },
     render() { const el = document.getElementById('calc_display'); if (el) el.innerText = this.current; },
@@ -237,7 +231,6 @@ const Calculator = {
             if (!this.current.includes('.')) this.current += '.';
             this.render(); return;
         }
-        // ספרה
         if (this.resetNext || this.current === '0') { this.current = key; this.resetNext = false; }
         else { this.current += key; }
         this.render();
@@ -323,7 +316,6 @@ const UI = {
             });
         }
 
-        // שמירה חיה של הערות יומיות תוך כדי הקלדה (Data-loss fix)
         const dailyNote = document.getElementById('daily_note');
         if (dailyNote) {
             let noteTimer = null;
@@ -384,8 +376,9 @@ const UI = {
             cdContainer.classList.add('hidden');
         }
 
-        if (state.periods.length > 0) {
-            const last = state.periods[state.periods.length-1];
+        const vesets = Utils.chronologicalVesets(state.periods);
+        const last = vesets[vesets.length - 1];
+        if (last) {
             const diff = Utils.diffDays(today, Utils.newDate(last.date)) + 1;
             document.getElementById('main_counter').innerText = diff;
             
@@ -473,10 +466,10 @@ const UI = {
     renderHistory() {
         const list = document.getElementById('history_list');
         list.innerHTML = '';
-        const periods = [...State.get().periods].reverse();
+        const periods = Utils.chronologicalPeriods(State.get().periods).reverse();
         
         periods.forEach(p => { 
-            const pid = p.id || p.date; // תמיכה לאחור ברשומות ישנות ללא id
+            const pid = p.id || p.date;
             list.innerHTML += `
                 <div class="flex-between" style="padding:16px 0; border-bottom: 1px solid var(--border-light)">
                     <div>
@@ -490,13 +483,13 @@ const UI = {
                 </div>`; 
         });
         
-        if (periods.length >= 2) {
+        const vesets = Utils.chronologicalVesets(State.get().periods);
+        if (vesets.length >= 2) {
             let sum = 0, min = 999, max = 0, count = 0;
             const chartData = [];
             
-            for(let i=0; i<periods.length-1; i++) {
-                if (periods[i].type !== 'veset') continue;
-                const diff = Utils.diffDays(Utils.newDate(periods[i].date), Utils.newDate(periods[i+1].date));
+            for(let i=0; i<vesets.length-1; i++) {
+                const diff = Utils.diffDays(Utils.newDate(vesets[i+1].date), Utils.newDate(vesets[i].date));
                 if (diff > 0 && diff < 100) { 
                     sum += diff; 
                     if(diff < min) min = diff; 
@@ -512,7 +505,7 @@ const UI = {
                 document.getElementById('stat_max').innerText = max;
                 
                 if (typeof Chart !== 'undefined') {
-                    this.renderChart(chartData.reverse());
+                    this.renderChart(chartData);
                 } else {
                     document.querySelector('.chart-container').innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-muted)">הגרף לא זמין</div>';
                 }
@@ -575,7 +568,7 @@ const UI = {
         
         if (st.type === 'hefsek') { 
             btnH.classList.add('hidden'); 
-            btnU.classList.remove('hidden'); 
+            btnU.classList.remove('hidden');
         }
         
         btnH.disabled = (!st.canHefsek && st.type !== 'hefsek'); 
@@ -616,7 +609,7 @@ const UI = {
         switchTab(btn) { this.switchTab(btn.dataset.tab, btn.classList.contains('nav-item') ? btn : null); },
         navMonth(btn) { this.navDate.setMonth(this.navDate.getMonth() + parseInt(btn.dataset.dir)); this.renderCalendar(); },
         closePanel() {
-            this.actions.saveDaily.call(this); // שמירה אוטומטית לפני סגירה - מונע אובדן הערות (Data-loss fix)
+            this.actions.saveDaily.call(this);
             document.getElementById('day_panel').classList.remove('open');
             document.getElementById('day_panel_overlay').style.display = 'none';
             this.renderCalendar();
@@ -632,18 +625,11 @@ const UI = {
             const d = document.getElementById('report_date').value; 
             if (!d) return;
 
-            // ולידציה כרונולוגית - מונעת סתירות ברצף הנתונים (High fix)
             const todayStr = Utils.fmt(new Date());
             if (d > todayStr) { this.toast('לא ניתן לדווח תאריך עתידי', true); return; }
 
             const state = State.get();
             if (state.periods.some(p => p.date === d)) { this.toast('כבר קיים דיווח לתאריך זה', true); return; }
-
-            const lastP = [...state.periods].sort((a,b) => a.date.localeCompare(b.date)).pop();
-            if (lastP && d < lastP.date) {
-                this.toast('התאריך קודם לוסת האחרונה שנרשמה - בדקי את התאריך', true);
-                return;
-            }
 
             State.update(state => { 
                 state.periods.push({ 
@@ -689,7 +675,7 @@ const UI = {
             if (!this.selectedDate) return; 
             const noteEl = document.getElementById('daily_note');
             const mEl = document.getElementById('chk_morning');
-            if (!noteEl || !mEl) return; // הפאנל לא במצב פתוח - אין מה לשמור
+            if (!noteEl || !mEl) return;
             const d = Utils.fmt(this.selectedDate); 
             State.update(s => { 
                 if (!s.daily[d]) s.daily[d] = {}; 
@@ -724,14 +710,13 @@ const UI = {
         resetAll() { if(confirm('למחוק הכל? פעולה זו אינה הפיכה.')) { StorageService.clear(); location.reload(); } },
         generateRabbiText() { 
             let txt = "שלום הרב, להלן הנתונים:\n"; 
-            State.get().periods.slice(-3).forEach(p => { txt += `וסת: ${p.date} (${p.isSunset ? 'שקיעה' : 'יום'})\n`; }); 
-            navigator.clipboard.writeText(txt).then(() => this.toast('הועתק ללוח')); 
+            Utils.chronologicalVesets(State.get().periods).slice(-3).forEach(p => { txt += `וסת: ${p.date} (${p.isSunset ? 'שקיעה' : 'יום'})\n`; }); 
+            navigator.clipboard.writeText(txt).then(() => this.toast('הועתק ללוח'));
         }
     }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // מנגנון הגנה גלובלי - שגיאה בודדת לא תשאיר מסך ריק (Runtime resilience)
     window.addEventListener('error', (e) => {
         console.error('Global error:', e.error || e.message);
     });
@@ -746,7 +731,6 @@ document.addEventListener('DOMContentLoaded', () => {
             '<div style="background:#ef4444;color:#fff;padding:16px;text-align:center;font-family:sans-serif">אירעה שגיאה בטעינת האפליקציה. נסי לרענן את הדף.</div>');
     }
 
-    // רישום Service Worker לתמיכה במצב לא-מקוון (PWA)
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/static/sw.js').catch(() => {});
     }
