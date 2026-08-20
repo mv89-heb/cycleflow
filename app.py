@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, render_template, send_from_directory, make_response
+from flask import Flask, render_template, send_from_directory, make_response, jsonify
 
 logging.basicConfig(
     level=logging.INFO,
@@ -59,6 +59,11 @@ def inject_asset_version():
     return {'asset_version': asset_version}
 
 
+@app.route('/health')
+def health():
+    return jsonify(status='ok'), 200
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -75,10 +80,6 @@ def service_worker():
 
 @app.errorhandler(404)
 def page_not_found(e):
-    # SPA fallback is intentionally retained for client-side navigation, but
-    # assets must return a real 404 instead of HTML.
-    if str(getattr(e, 'description', '')).startswith('The requested URL'):
-        return render_template('index.html'), 404
     return render_template('index.html'), 404
 
 
