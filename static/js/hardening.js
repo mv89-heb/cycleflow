@@ -5,6 +5,7 @@
     const STORAGE_KEY = 'cycleflow_v61_python_pro';
     const MAX_PIN_ATTEMPTS = 5;
     const LOCKOUT_MS = 30_000;
+    const PBKDF2_MIN_ITERATIONS = 600_000;
 
     function isValidDateString(value) {
         return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -57,6 +58,25 @@
         }
         return originalSetItem.call(this, key, value);
     };
+
+    // The legacy app.js requests 100,000 PBKDF2 iterations for backup encryption.
+    // Raise that request at the Web Crypto boundary so existing backups remain
+    // decryptable while newly-created backups receive the stronger work factor.
+    try {
+        const subtle = window.crypto && window.crypto.subtle;
+        if (subtle && typeof subtle.deriveKey === 'function') {
+            const originalDeriveKey = subtle.deriveKey.bind(subtle);
+            subtle.deriveKey = (algorithm, baseKey, derivedKeyType, extractable, keyUsages) => {
+                if (algorithm && algorithm.name === 'PBKDF2') {
+                    algorithm = { ...algorithm, iterations: Math.max(Number(algorithm.iterations) || 0, PBKDF2_MIN_ITERATIONS) };
+                }
+                return originalDeriveKey(algorithm, baseKey, derivedKeyType, extractable, keyUsages);
+            };
+        }
+    } catch (_) {
+        // Older browsers may expose Web Crypto methods as non-writable.
+        // The application continues to work with its built-in crypto path.
+    }
 
     let pinAttempts = 0;
     let lockedUntil = 0;
