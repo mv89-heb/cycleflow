@@ -46,6 +46,17 @@
         if (!Number.isFinite(Number(value.settings.cycle)) || Number(value.settings.cycle) < 1 || Number(value.settings.cycle) > 120) return false;
         if (value.settings.pinHash !== null && (typeof value.settings.pinHash !== 'string' || !/^[a-f0-9]{64}$/i.test(value.settings.pinHash))) return false;
         if (!['dark', 'light'].includes(value.settings.theme)) return false;
+        const cityIds = ["beit-shemesh","jerusalem","bnei-brak","tel-aviv","haifa","ashdod","ashkelon","netanya","petah-tikva","modiin","other"];
+        if (value.settings.cityId !== undefined && value.settings.cityId !== null && !cityIds.includes(value.settings.cityId)) return false;
+        if (value.hefsekMeta !== undefined) {
+            if (!isPlainObject(value.hefsekMeta)) return false;
+            for (const [date, meta] of Object.entries(value.hefsekMeta)) {
+                if (!isValidDateString(date) || !isPlainObject(meta)) return false;
+                if (meta.eventTime !== undefined && meta.eventTime !== null && (typeof meta.eventTime !== 'string' || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(meta.eventTime))) return false;
+                if (meta.cityId !== undefined && meta.cityId !== null && !cityIds.includes(meta.cityId)) return false;
+                if (meta.sunsetRelation !== undefined && !['before', 'after', 'unknown'].includes(meta.sunsetRelation)) return false;
+            }
+        }
 
         const seenDates = new Set();
         for (const period of value.periods) {
@@ -54,6 +65,9 @@
             if (!['veset', 'spotting'].includes(period.type)) return false;
             if (typeof period.isSunset !== 'boolean') return false;
             if (period.id !== undefined && typeof period.id !== 'string') return false;
+            if (period.eventTime !== undefined && period.eventTime !== null && (typeof period.eventTime !== 'string' || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(period.eventTime))) return false;
+            if (period.cityId !== undefined && period.cityId !== null && !cityIds.includes(period.cityId)) return false;
+            if (period.sunsetRelation !== undefined && !['before', 'after', 'unknown'].includes(period.sunsetRelation)) return false;
             if (seenDates.has(period.date)) return false;
             seenDates.add(period.date);
         }
