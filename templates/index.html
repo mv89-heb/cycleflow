@@ -61,6 +61,11 @@
                 <p id="status_provenance_assumptions"></p>
                 <ul id="status_provenance_events"></ul>
             </details>
+            <details id="calculation_history_details" class="text-muted small-note" style="margin:-8px 0 14px">
+                <summary>היסטוריית חישובים שנשמרה במכשיר</summary>
+                <p>כל רשומה היא צילום מצב היסטורי שנשמר כרשומה ואינו נערך מחדש על ידי האפליקציה והמקורות ששימשו אותה באותו זמן. ההיסטוריה נשמרת מקומית ונכללת בגיבוי המוצפן; היא אינה משחזרת חישובים מלפני הפעלת התכונה.</p>
+                <ol id="calculation_history_list"></ol>
+            </details>
 <div class="text-muted" style="font-size:0.78rem; text-align:center; margin:-8px 0 16px; line-height:1.5">מעקב אישי בלבד – הנתונים אינם פסיקה הלכתית או ייעוץ רפואי. זמני האירועים ושעת השקיעה המשוערת מסייעים לשיוך תאריך, אך אומדן השקיעה אינו זמן הלכתי מוסמך וכל מועד דורש אימות לפי המנהג והנסיבות.</div>
             <div class="action-grid">
                 <button class="card glass text-center interactive-card" data-action="switchTab" data-tab="calendar"><i class="fas fa-calendar-alt text-primary"></i><div class="font-bold">דיווח וסת</div></button>
@@ -177,6 +182,7 @@
     <script src="/static/js/hardening.js?v={{ asset_version('js/hardening.js') }}"></script>
     <script src="/static/js/calendar-services.js?v={{ asset_version('js/calendar-services.js') }}"></script>
     <script src="/static/js/local-tools.js?v={{ asset_version('js/local-tools.js') }}"></script>
+    <script src="/static/js/calculation-history.js?v={{ asset_version('js/calculation-history.js') }}"></script>
     <script type="module" src="/static/js/app.js?v={{ asset_version('js/app.js') }}"></script>
     <script src="/static/js/backup-integrity.js?v={{ asset_version('js/backup-integrity.js') }}"></script>
 </body>

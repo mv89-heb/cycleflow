@@ -119,6 +119,28 @@
         if (state.tevilot !== undefined && (state.tevilot === null || typeof state.tevilot !== 'object' || Array.isArray(state.tevilot) || Object.entries(state.tevilot).some(([date, enabled]) => !isValidDateString(date) || enabled !== true))) throw new Error('נתוני טבילה לא תקינים');
         if (state.daily !== undefined && (typeof state.daily !== 'object' || Array.isArray(state.daily))) throw new Error('נתוני דיווח יומי לא תקינים');
         if (state.settings !== undefined && (typeof state.settings !== 'object' || Array.isArray(state.settings))) throw new Error('הגדרות לא תקינות');
+        if (state.calculationSnapshots !== undefined) {
+            if (!Array.isArray(state.calculationSnapshots) || state.calculationSnapshots.length > 1000) throw new Error('היסטוריית חישובים אינה תקינה');
+            const snapshotIds = new Set();
+            for (const snapshot of state.calculationSnapshots) {
+                if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot) ||
+                    snapshot.schemaVersion !== 1 ||
+                    typeof snapshot.snapshotId !== 'string' ||
+                    !/^cf-calc-v1:\d{4}-\d{2}-\d{2}:[a-f0-9]{16}$/.test(snapshot.snapshotId) ||
+                    !isValidDateString(snapshot.evaluatedDate) ||
+                    typeof snapshot.capturedAt !== 'string' || Number.isNaN(Date.parse(snapshot.capturedAt)) ||
+                    typeof snapshot.inputFingerprint !== 'string' || !/^[a-f0-9]{16}$/.test(snapshot.inputFingerprint) ||
+                    !snapshot.snapshotId.endsWith(snapshot.inputFingerprint) ||
+                    !snapshot.result || typeof snapshot.result !== 'object' ||
+                    typeof snapshot.result.type !== 'string' || typeof snapshot.result.text !== 'string' ||
+                    typeof snapshot.result.canHefsek !== 'boolean' ||
+                    !snapshot.provenance || typeof snapshot.provenance !== 'object' ||
+                    snapshot.provenance.isPersonalPsak !== false || snapshotIds.has(snapshot.snapshotId)) {
+                    throw new Error('רשומת היסטוריית חישוב אינה תקינה');
+                }
+                snapshotIds.add(snapshot.snapshotId);
+            }
+        }
         if (state.settings && state.settings.cityId !== undefined && state.settings.cityId !== null && !cityIds.includes(state.settings.cityId)) throw new Error('יישוב לא תקין');
         if (state.settings && state.settings.minimumWaitMode !== undefined &&
             !['five_from_onset', 'four_from_last_relations'].includes(state.settings.minimumWaitMode)) throw new Error('שיטת מינימום המתנה לא תקינה');
@@ -225,6 +247,30 @@
         } catch (error) { toast(error.message || 'שגיאה ביצירת הגיבוי', true); }
     }
 
+    function mergeExistingCalculationHistory(imported) {
+        let current = null;
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) current = validateState(JSON.parse(raw));
+        } catch (_) {
+            // A malformed or recovery-blocked current state must never block a valid restore.
+        }
+        const existingSnapshots = current && Array.isArray(current.calculationSnapshots)
+            ? current.calculationSnapshots
+            : [];
+        if (!existingSnapshots.length) return imported;
+
+        const merged = new Map();
+        [...(Array.isArray(imported.calculationSnapshots) ? imported.calculationSnapshots : []),
+            ...existingSnapshots].forEach(snapshot => merged.set(snapshot.snapshotId, snapshot));
+        if (merged.size > 1000) {
+            throw new Error('השחזור מכיל יותר מדי צילומי חישוב יחד עם ההיסטוריה המקומית. יש לייצא גיבוי עדכני לפני השחזור.');
+        }
+        imported.calculationSnapshots = [...merged.values()]
+            .sort((a, b) => a.capturedAt.localeCompare(b.capturedAt));
+        return validateState(imported);
+    }
+
     async function importBackup(fileInput) {
         const file = fileInput.files && fileInput.files[0];
         if (!file) return;
@@ -233,7 +279,7 @@
             const passphrase = prompt('הזיני את הסיסמה ששימשה ליצירת הגיבוי:');
             if (!passphrase) return;
             const raw = await file.text();
-            const imported = validateState(await decrypt(raw, passphrase));
+            const imported = mergeExistingCalculationHistory(validateState(await decrypt(raw, passphrase)));
             // Transactional import: keep the recovery copy until the new state is verified.
             const serialized = JSON.stringify(imported);
             if (typeof window.__cycleflowRestoreValidatedState !== 'function') {
@@ -243,7 +289,11 @@
             toast('שחזור הושלם בהצלחה');
             setTimeout(() => location.reload(), 500);
         } catch (error) {
-            toast(error.message === 'קובץ גיבוי לא תקין' ? error.message : 'סיסמה שגויה או קובץ פגום', true);
+            const message = error && typeof error.message === 'string' &&
+                error.message.startsWith('השחזור מכיל יותר מדי צילומי חישוב')
+                ? error.message
+                : (error.message === 'קובץ גיבוי לא תקין' ? error.message : 'סיסמה שגויה או קובץ פגום');
+            toast(message, true);
         } finally { fileInput.value = ''; }
     }
 

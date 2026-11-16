@@ -1,11 +1,12 @@
 /* CycleFlow Service Worker - versioned offline-first cache */
-const CACHE_NAME = 'cycleflow-v4-local-tools';
+const CACHE_NAME = 'cycleflow-v5-calculation-history';
 const CORE_ASSETS = [
     '/',
     '/static/css/main.css',
     '/static/js/hardening.js',
     '/static/js/calendar-services.js',
     '/static/js/local-tools.js',
+    '/static/js/calculation-history.js',
     '/static/css/local-icons.css',
     '/static/js/app.js',
     '/static/js/backup-integrity.js',

@@ -183,9 +183,30 @@ class StateManager {
         return true;
     }
     get() { return this.state; }
+    captureCurrentCalculation() {
+        const history = window.CycleFlowCalculationHistory;
+        if (!history || typeof HalachaLogic === 'undefined') return false;
+        try {
+            const evaluatedDate = todayCivilDate();
+            const status = HalachaLogic.getStatus(Utils.newDate(evaluatedDate));
+            const snapshot = history.createSnapshot(this.state, evaluatedDate, status);
+            const snapshots = Array.isArray(this.state.calculationSnapshots) ? this.state.calculationSnapshots : [];
+            if (snapshot && snapshots.some(item => item && item.snapshotId === snapshot.snapshotId)) return false;
+            if (snapshots.length >= history.MAX_SNAPSHOTS) {
+                window.dispatchEvent(new CustomEvent('cycleflow:calculation-history-full'));
+                return false;
+            }
+            return history.append(this.state, snapshot);
+        } catch (error) {
+            window.dispatchEvent(new CustomEvent('cycleflow:calculation-history-error'));
+            console.warn('CycleFlow could not capture a calculation snapshot.', error);
+            return false;
+        }
+    }
     update(updater) {
         const previous = JSON.parse(JSON.stringify(this.state));
         updater(this.state);
+        this.captureCurrentCalculation();
         if (!this.notify()) {
             this.state = previous;
             this.listeners.forEach(listener => listener(this.state));
@@ -1005,6 +1026,12 @@ const UI = {
             // Let action handlers finish before displaying the failure toast.
             setTimeout(() => this.toast('השמירה נכשלה. אין לרענן לפני בדיקת שטח האחסון.', true), 0);
         });
+        window.addEventListener('cycleflow:calculation-history-full', () => {
+            this.toast('היסטוריית החישובים מלאה. הרשומות הקיימות נשמרו; יש לייצא גיבוי לפני המשך צבירה.', true);
+        });
+        window.addEventListener('cycleflow:calculation-history-error', () => {
+            this.toast('לא ניתן היה לשמור צילום מצב של החישוב. הנתונים השוטפים לא שונו.', true);
+        });
         this.applyTheme(State.get().settings.theme || 'dark');
         document.getElementById('report_date').value = todayCivilDate();
         State.subscribe(() => this.renderCurrentView());
@@ -1200,7 +1227,7 @@ const UI = {
     },
 
     renderDashboard() {
-        const today = new Date();
+        const today = Utils.newDate(todayCivilDate());
         const st = HalachaLogic.getStatus(today);
         const state = State.get();
         const card = document.getElementById('status_card');
@@ -1310,6 +1337,28 @@ const UI = {
                         events.appendChild(item);
                     });
                 }
+            }
+        }
+
+        const historyList = document.getElementById('calculation_history_list');
+        if (historyList) {
+            historyList.replaceChildren();
+            const snapshots = Array.isArray(state.calculationSnapshots) ? state.calculationSnapshots.slice(-12).reverse() : [];
+            if (!snapshots.length) {
+                const empty = document.createElement('li');
+                empty.textContent = 'עדיין לא נשמר חישוב היסטורי. החישוב הראשון יישמר עם שינוי נתונים או בטעינה.';
+                historyList.appendChild(empty);
+            } else {
+                snapshots.forEach(snapshot => {
+                    const item = document.createElement('li');
+                    const captured = new Date(snapshot.capturedAt);
+                    const capturedLabel = Number.isNaN(captured.getTime()) ? '' : captured.toLocaleString('he-IL');
+                    const review = snapshot.provenance && snapshot.provenance.reviewState === 'needs-review'
+                        ? ' · נדרש בירור'
+                        : '';
+                    item.textContent = `${snapshot.evaluatedDate} · ${snapshot.result.text}${review} · נשמר: ${capturedLabel}`;
+                    historyList.appendChild(item);
+                });
             }
         }
 
@@ -1951,6 +2000,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     try {
         UI.init();
+        if (State.captureCurrentCalculation()) State.notify();
     } catch (err) {
         console.error('Init failed:', err);
         document.body.insertAdjacentHTML('afterbegin',

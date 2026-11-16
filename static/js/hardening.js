@@ -42,6 +42,23 @@
         if (!Array.isArray(value.periods) || !validateHefseks(value.hefseks) || !validateDaily(value.daily)) return false;
         if (value.tevilot !== undefined && (!isPlainObject(value.tevilot) || !Object.entries(value.tevilot).every(([date, enabled]) => isValidDateString(date) && enabled === true))) return false;
         if (!isPlainObject(value.settings)) return false;
+        if (value.calculationSnapshots !== undefined) {
+            if (!Array.isArray(value.calculationSnapshots) || value.calculationSnapshots.length > 1000) return false;
+            for (const snapshot of value.calculationSnapshots) {
+                if (!isPlainObject(snapshot) || snapshot.schemaVersion !== 1 ||
+                    typeof snapshot.snapshotId !== 'string' ||
+                    !/^cf-calc-v1:\d{4}-\d{2}-\d{2}:[a-f0-9]{16}$/.test(snapshot.snapshotId) ||
+                    !isValidDateString(snapshot.evaluatedDate) ||
+                    typeof snapshot.capturedAt !== 'string' || Number.isNaN(Date.parse(snapshot.capturedAt)) ||
+                    typeof snapshot.inputFingerprint !== 'string' || !/^[a-f0-9]{16}$/.test(snapshot.inputFingerprint) ||
+                    !snapshot.snapshotId.endsWith(snapshot.inputFingerprint) ||
+                    !isPlainObject(snapshot.result) || typeof snapshot.result.type !== 'string' ||
+                    typeof snapshot.result.text !== 'string' || typeof snapshot.result.canHefsek !== 'boolean' ||
+                    !isPlainObject(snapshot.provenance) || snapshot.provenance.isPersonalPsak !== false) return false;
+            }
+            const snapshotIds = value.calculationSnapshots.map(snapshot => snapshot.snapshotId);
+            if (new Set(snapshotIds).size !== snapshotIds.length) return false;
+        }
         if (!['ashkenaz', 'sepharad', 'chabad'].includes(value.settings.minhag)) return false;
         if (!Number.isFinite(Number(value.settings.cycle)) || Number(value.settings.cycle) < 1 || Number(value.settings.cycle) > 120) return false;
         if (value.settings.pinHash !== null && (typeof value.settings.pinHash !== 'string' || !/^[a-f0-9]{64}$/i.test(value.settings.pinHash))) return false;

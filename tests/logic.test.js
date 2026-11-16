@@ -28,6 +28,8 @@ function loadApp(state) {
     delete window.navigator.serviceWorker;
     const calendarCode = fs.readFileSync(path.join(__dirname, '..', 'static', 'js', 'calendar-services.js'), 'utf8');
     window.eval(calendarCode);
+    const historyCode = fs.readFileSync(path.join(__dirname, '..', 'static', 'js', 'calculation-history.js'), 'utf8');
+    window.eval(historyCode);
     const code = fs.readFileSync(APP_PATH, 'utf8');
     window.eval(code + `
         window.__api = { Utils, HalachaLogic, FertilityLogic, State, UI, todayCivilDate, document: window.document, window };
@@ -86,6 +88,27 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     morning.checked = true;
     morning.dispatchEvent(new window.Event('change', { bubbles: true }));
     eq(State.get().daily['2026-06-10'].checks.morning, true, 'checkbox state persists after change');
+})();
+
+(function testCalculationSnapshotsAreCapturedOnlyForRelevantChanges() {
+    const { State, window } = loadApp({
+        periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {},
+        settings: { ...baseSettings, cityId: 'beit-shemesh', minimumWaitMode: 'five_from_onset', onahBeinonitMode: 'day30_onah' }
+    });
+    const changed = State.update(state => { state.periods.push({
+        id: 'history-p1', date: '2026-11-01', type: 'veset', isSunset: false,
+        cityId: 'beit-shemesh', eventTime: '12:00', sunsetRelation: 'before'
+    }); });
+    eq(changed, true, 'period update should persist successfully');
+    eq(State.get().calculationSnapshots.length, 1, 'a calculation snapshot should be appended after relevant data changes');
+    const original = JSON.stringify(State.get().calculationSnapshots[0]);
+    State.update(state => { state.settings.theme = 'light'; });
+    eq(State.get().calculationSnapshots.length, 1, 'theme-only changes should not create duplicate calculation history');
+    eq(JSON.stringify(State.get().calculationSnapshots[0]), original, 'existing snapshots must not be rewritten');
+    const priorCount = State.get().calculationSnapshots.length;
+    State.update(state => { state.settings.cityId = 'jerusalem'; });
+    eq(State.get().calculationSnapshots.length, priorCount + 1, 'a relevant city change should create a distinct snapshot');
+    eq(State.get().calculationSnapshots[0].provenance.isPersonalPsak, false, 'snapshots must remain explicitly advisory');
 })();
 
 (function testHalacha() {

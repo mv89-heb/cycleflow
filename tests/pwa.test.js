@@ -9,6 +9,8 @@ function assert(condition, message) {
 }
 
 assert(html.includes('/static/js/backup-integrity.js'), 'HTML must load the backup integrity module');
+assert(html.includes('/static/js/calculation-history.js'), 'HTML must load the calculation history module');
+assert(sw.includes("'/static/js/calculation-history.js'"), 'service worker must precache the calculation history module');
 assert(sw.includes("'/static/js/backup-integrity.js'"), 'service worker must precache the backup integrity module');
 assert(sw.includes("await cache.put('/', shell)"), 'service worker must cache the app shell before activation');
 assert(sw.includes('Promise.all(CORE_ASSETS.filter'), 'service worker must cache core assets independently');
