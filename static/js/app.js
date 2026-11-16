@@ -23,6 +23,10 @@ const Utils = {
     chronologicalVesets: (periods) => [...periods].filter(p => p.type === 'veset').sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || '')))
 };
 
+const todayCivilDate = (now = new Date()) => CalendarServices && CalendarServices.getIsraelCivilDate
+    ? CalendarServices.getIsraelCivilDate(now)
+    : Utils.fmt(now);
+
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
 function downloadLocalFile(content, filename, mimeType) {
@@ -301,7 +305,7 @@ const Calculator = {
 };
 
 const UI = {
-    navDate: new Date(),
+    navDate: Utils.newDate(todayCivilDate()),
     selectedDate: null,
     chartInstance: null,
 
@@ -314,7 +318,7 @@ const UI = {
             setTimeout(() => this.toast('השמירה נכשלה. אין לרענן לפני בדיקת שטח האחסון.', true), 0);
         });
         this.applyTheme(State.get().settings.theme || 'dark');
-        document.getElementById('report_date').value = Utils.fmt(new Date());
+        document.getElementById('report_date').value = todayCivilDate();
         State.subscribe(() => this.renderCurrentView());
         this.switchTab('dashboard');
         this.checkSecurity();
@@ -454,7 +458,7 @@ const UI = {
         if (citySelect) citySelect.value = s.cityId || '';
         const sunsetHint = document.getElementById('sunset_hint');
         if (sunsetHint) {
-            const sunset = CalendarServices && s.cityId ? CalendarServices.getSunset(Utils.fmt(new Date()), s.cityId) : null;
+            const sunset = CalendarServices && s.cityId ? CalendarServices.getSunset(todayCivilDate(), s.cityId) : null;
             sunsetHint.textContent = sunset ? `שקיעה משוערת היום: ${sunset.time} (${sunset.timeZone}). החישוב אסטרונומי משוער בלבד.` : 'בחרי יישוב כדי להציג שעת שקיעה משוערת. אין שימוש במיקום GPS.';
         }
     },
@@ -462,7 +466,7 @@ const UI = {
     renderTools() {
         if (!LocalTools) return;
         const state = State.get();
-        const today = Utils.fmt(new Date());
+        const today = todayCivilDate();
         const setDefault = (id, value) => {
             const input = document.getElementById(id);
             if (input && !input.value) input.value = value;
@@ -577,7 +581,7 @@ const UI = {
         
         const firstDay = new Date(y, m, 1).getDay();
         const daysInMonth = new Date(y, m + 1, 0).getDate();
-        const todayStr = Utils.fmt(new Date());
+        const todayStr = todayCivilDate();
 
         for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';
         
@@ -764,7 +768,7 @@ const UI = {
             const d = document.getElementById('report_date').value; 
             if (!d) return;
 
-            const todayStr = Utils.fmt(new Date());
+            const todayStr = todayCivilDate();
             if (d > todayStr) { this.toast('לא ניתן לדווח תאריך עתידי', true); return; }
 
             const state = State.get();

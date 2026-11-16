@@ -30,12 +30,22 @@ function loadApp(state) {
     window.eval(calendarCode);
     const code = fs.readFileSync(APP_PATH, 'utf8');
     window.eval(code + `
-        window.__api = { Utils, HalachaLogic, FertilityLogic, State, UI, document: window.document, window };
+        window.__api = { Utils, HalachaLogic, FertilityLogic, State, UI, todayCivilDate, document: window.document, window };
     `);
     return window.__api;
 }
 
 const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark' };
+
+
+(function testTodayUsesIsraelCivilDateAcrossDeviceTimezone() {
+    const { todayCivilDate, window } = loadApp({
+        periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings }
+    });
+    const instant = new window.Date('2026-11-16T22:30:00.000Z');
+    eq(todayCivilDate(instant), '2026-11-17',
+       'screens use the Israel civil date after midnight in Israel even if the device date is still previous day');
+})();
 
 (function testUtils() {
     const { Utils } = loadApp({ periods: [], hefseks: {}, daily: {}, settings: baseSettings });
