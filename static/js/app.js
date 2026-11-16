@@ -223,6 +223,10 @@ const HalachaLogic = {
     },
     getSuccessfulHefsekDates(state = State.get()) {
         if (!CalendarServices || !CalendarServices.getEventDateInfo) return [];
+        const cityId = state.settings.cityId;
+        const periods = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+            .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)));
         return Object.keys(state.hefseks || {}).filter(date => {
             const meta = state.hefsekMeta && state.hefsekMeta[date];
             if (!meta || !meta.eventTime || !meta.cityId) return false;
@@ -230,7 +234,23 @@ const HalachaLogic = {
                 date, eventTime: meta.eventTime, cityId: meta.cityId,
                 sunsetRelation: meta.sunsetRelation
             }, meta.cityId);
-            return Boolean(info && info.relation === 'before' && info.effectiveDate === date);
+            if (!info || info.relation !== 'before' || info.effectiveDate !== date) return false;
+            const period = periods.filter(item => Utils.halachicDate(item, cityId) <= date).pop();
+            if (!period) return false;
+            const periodDate = Utils.halachicDate(period, cityId);
+            if (date < periodDate) return false;
+            let waitStart = periodDate;
+            let waitDays = 5;
+            if ((state.settings.minimumWaitMode || 'five_from_onset') === 'four_from_last_relations') {
+                const lastRelations = period.lastRelations;
+                if (!lastRelations || !lastRelations.date || !lastRelations.eventTime || !lastRelations.cityId) return false;
+                const relationsInfo = CalendarServices.getEventDateInfo(lastRelations, null);
+                if (!relationsInfo || relationsInfo.relation === 'unknown' || !relationsInfo.effectiveDate) return false;
+                waitStart = relationsInfo.effectiveDate;
+                waitDays = 4;
+            }
+            const earliest = Utils.fmt(Utils.addDays(Utils.newDate(waitStart), waitDays - 1));
+            return date >= earliest;
         }).sort();
     },
     getChabadHaflagahNumbers() {
@@ -270,7 +290,7 @@ const HalachaLogic = {
         if (!lastPeriod) return [];
         const lastDate = Utils.halachicDate(lastPeriod, cityId);
         const hefsekDate = this.getSuccessfulHefsekDates(state)
-            .filter(date => date >= lastDate && date < dateString).pop();
+            .filter(date => date > lastDate && date < dateString).pop();
         if (!hefsekDate) return [];
         const firstNightDate = Utils.fmt(Utils.addDays(Utils.newDate(hefsekDate), 1));
         return this.getChabadHaflagahNumbers().map(number => ({
