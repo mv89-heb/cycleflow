@@ -1335,7 +1335,8 @@ const UI = {
                     eventTime: lastRelationsTime,
                     cityId,
                     sunsetRelation: relationInfo.relation,
-                    isSunset: relationInfo.relation === 'after'
+                    isSunset: relationInfo.relation === 'after',
+                    ruleContext
                 };
             }
             State.update(state => {
