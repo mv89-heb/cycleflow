@@ -811,6 +811,21 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'the dashboard identifies the selected source ruleset');
     assert(sources?.querySelector('a[href="https://hebrew.yoatzot.org/6118-2/"]'),
        'the dashboard links to the Hebrew fixed-veset source');
+    assert(sources?.querySelector('a[href="https://www.yoatzot.org/542/"]'),
+       'the dashboard links to the source explaining local tzeit and mikveh timing');
+})();
+
+(function testImmersionNightDoesNotInventTzeit() {
+    const api = loadApp({
+        periods: [{ date: '2026-06-01', type: 'veset', sunsetRelation: 'before', isSunset: false, id: 'flow' }],
+        hefseks: { '2026-06-06': true },
+        hefsekMeta: { '2026-06-06': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate('2026-06-14'));
+    eq(status.type, 'tevila', 'the eighth-day status marks the scheduled immersion night');
+    assert(status.text.includes('לאחר צאת הכוכבים לפי המקווה המקומי'),
+       'the immersion reminder requires local tzeit confirmation rather than inventing a time');
 })();
 
 (function testUnknownEventProducesNeedsReviewProvenance() {
