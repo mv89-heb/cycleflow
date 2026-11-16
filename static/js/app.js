@@ -20,7 +20,13 @@ const Utils = {
     },
     prettyDate: (d) => d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' }),
     chronologicalPeriods: (periods) => [...periods].sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || ''))),
-    chronologicalVesets: (periods) => [...periods].filter(p => p.type === 'veset').sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || '')))
+    chronologicalVesets: (periods) => [...periods].filter(p => p.type === 'veset').sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || ''))),
+    halachicDate: (record, fallbackCityId) => {
+        const info = CalendarServices && CalendarServices.getEventDateInfo
+            ? CalendarServices.getEventDateInfo(record, fallbackCityId)
+            : null;
+        return info && info.effectiveDate ? info.effectiveDate : record.date;
+    }
 };
 
 const todayCivilDate = (now = new Date()) => CalendarServices && CalendarServices.getIsraelCivilDate
@@ -158,10 +164,7 @@ const HalachaLogic = {
         const state = State.get();
         const dStr = Utils.fmt(date);
         const eventCalculationDate = record => {
-            const info = CalendarServices && CalendarServices.getEventDateInfo
-                ? CalendarServices.getEventDateInfo(record, state.settings.cityId)
-                : null;
-            return info && info.effectiveDate ? info.effectiveDate : record.date;
+            return Utils.halachicDate(record, state.settings.cityId);
         };
         let res = { type: 'regular', text: 'אין דיווח פעיל', color: 'var(--text-muted)', bg: 'rgba(148, 163, 184, 0.08)', canHefsek: false };
         // Calendar cells represent the Hebrew date associated with the civil date at daytime.
@@ -174,7 +177,7 @@ const HalachaLogic = {
 
         const pDate = Utils.newDate(eventCalculationDate(lastP));
         const daysDiff = Utils.diffDays(date, pDate);
-        if (dStr === lastP.date) return { type: 'nidda', text: 'וסת (יום 1)', color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: false };
+        if (dStr === eventCalculationDate(lastP)) return { type: 'nidda', text: 'וסת (יום 1)', color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: false };
 
         const minWait = state.settings.minhag === 'sepharad' ? 4 : 5;
         let hefsekDate = null;
@@ -244,14 +247,18 @@ const HalachaLogic = {
 const FertilityLogic = {
     getAvgCycleLength() {
         const state = State.get();
-        const periods = Utils.chronologicalVesets(state.periods);
+        const periods = Utils.chronologicalVesets(state.periods)
+            .sort((a, b) => Utils.halachicDate(a, state.settings.cityId).localeCompare(Utils.halachicDate(b, state.settings.cityId)));
         if (periods.length < 2) {
             const fixed = parseInt(state.settings.cycle, 10);
             return (fixed && fixed > 0) ? fixed : 28;
         }
         let sum = 0, count = 0;
         for (let i = 0; i < periods.length - 1; i++) {
-            const diff = Utils.diffDays(Utils.newDate(periods[i+1].date), Utils.newDate(periods[i].date));
+            const diff = Utils.diffDays(
+                Utils.newDate(Utils.halachicDate(periods[i+1], state.settings.cityId)),
+                Utils.newDate(Utils.halachicDate(periods[i], state.settings.cityId))
+            );
             if (diff > 10 && diff < 60) { sum += diff; count++; }
         }
         if (count === 0) return 28;
@@ -260,12 +267,13 @@ const FertilityLogic = {
 
     getEstimate() {
         const state = State.get();
-        const periods = Utils.chronologicalVesets(state.periods);
+        const periods = Utils.chronologicalVesets(state.periods)
+            .sort((a, b) => Utils.halachicDate(a, state.settings.cityId).localeCompare(Utils.halachicDate(b, state.settings.cityId)));
         const lastP = periods[periods.length - 1];
         if (!lastP) return null;
 
         const cycleLength = this.getAvgCycleLength();
-        const lastDate = Utils.newDate(lastP.date);
+        const lastDate = Utils.newDate(Utils.halachicDate(lastP, state.settings.cityId));
         const nextPeriodEstimate = Utils.addDays(lastDate, cycleLength);
         const ovulationDate = Utils.addDays(nextPeriodEstimate, -14);
         const fertileStart = Utils.addDays(ovulationDate, -5);
@@ -549,10 +557,12 @@ const UI = {
             cdContainer.classList.add('hidden');
         }
 
-        const vesets = Utils.chronologicalVesets(state.periods);
+        const vesets = Utils.chronologicalVesets(state.periods)
+            .sort((a, b) => Utils.halachicDate(a, state.settings.cityId).localeCompare(Utils.halachicDate(b, state.settings.cityId)));
         const last = vesets[vesets.length - 1];
         if (last) {
-            const diff = Utils.diffDays(today, Utils.newDate(last.date)) + 1;
+            const lastHalachicDate = Utils.halachicDate(last, state.settings.cityId);
+            const diff = Utils.diffDays(today, Utils.newDate(lastHalachicDate)) + 1;
             document.getElementById('main_counter').innerText = diff;
             
             card.className = "card status-hero";
@@ -560,7 +570,7 @@ const UI = {
             if (st.type === 'naki' || st.type === 'tevila' || st.type === 'tevila-done') card.classList.add('pure');
             if (st.type === 'pending-tevila') card.classList.add('pending');
             
-            const lastDate = Utils.newDate(last.date);
+            const lastDate = Utils.newDate(lastHalachicDate);
             const fert = FertilityLogic.getEstimate();
             let fertHtml = '';
             if (fert) {
@@ -666,13 +676,18 @@ const UI = {
             list.appendChild(row);
         });
 
-        const vesets = Utils.chronologicalVesets(State.get().periods);
+        const historyState = State.get();
+        const vesets = Utils.chronologicalVesets(historyState.periods)
+            .sort((a, b) => Utils.halachicDate(a, historyState.settings.cityId).localeCompare(Utils.halachicDate(b, historyState.settings.cityId)));
         if (vesets.length >= 2) {
             let sum = 0, min = 999, max = 0, count = 0;
             const chartData = [];
 
             for(let i=0; i<vesets.length-1; i++) {
-                const diff = Utils.diffDays(Utils.newDate(vesets[i+1].date), Utils.newDate(vesets[i].date));
+                const diff = Utils.diffDays(
+                    Utils.newDate(Utils.halachicDate(vesets[i+1], historyState.settings.cityId)),
+                    Utils.newDate(Utils.halachicDate(vesets[i], historyState.settings.cityId))
+                );
                 if (diff > 0 && diff < 100) {
                     sum += diff;
                     if(diff < min) min = diff;
