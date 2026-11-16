@@ -26,6 +26,8 @@ function loadApp(state) {
     const { window } = dom;
     window.localStorage.setItem('cycleflow_v61_python_pro', JSON.stringify(state));
     delete window.navigator.serviceWorker;
+    const calendarCode = fs.readFileSync(path.join(__dirname, '..', 'static', 'js', 'calendar-services.js'), 'utf8');
+    window.eval(calendarCode);
     const code = fs.readFileSync(APP_PATH, 'utf8');
     window.eval(code + `
         window.__api = { Utils, HalachaLogic, FertilityLogic, State, UI, document: window.document, window };
