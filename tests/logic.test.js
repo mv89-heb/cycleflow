@@ -841,6 +841,40 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'provenance does not guess an onah for an event with missing time');
 })();
 
+(function testProvenanceDistinguishesEstimatedAndRecordedOnsetRelation() {
+    const estimatedApi = loadApp({
+        periods: [{
+            date: '2026-11-16', type: 'veset', eventTime: '23:59',
+            cityId: 'beit-shemesh', id: 'estimated-onset'
+        }],
+        hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const estimated = estimatedApi.HalachaLogic.getStatus(estimatedApi.Utils.newDate('2026-11-17'));
+    eq(estimated.provenance?.assumptions?.onsetDateConfidence, 'astronomical-estimate',
+       'an event date inferred from time and approximate sunset is labeled as estimated');
+    eq(estimated.provenance?.assumptions?.onsetRelationSource,
+       'event-time-compared-with-approximate-sunset',
+       'provenance identifies the astronomical estimate as the date-relation source');
+    assert(estimated.provenance?.sourceEvents?.some(event =>
+        event.id === 'estimated-onset' && event.dateConfidence === 'astronomical-estimate'),
+       'the source event retains its estimated date confidence');
+
+    const recordedApi = loadApp({
+        periods: [{
+            date: '2026-11-16', type: 'veset', sunsetRelation: 'after',
+            id: 'recorded-onset'
+        }],
+        hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const recorded = recordedApi.HalachaLogic.getStatus(recordedApi.Utils.newDate('2026-11-17'));
+    eq(recorded.provenance?.assumptions?.onsetDateConfidence, 'recorded',
+       'an explicitly recorded sunset relation is labeled as recorded');
+    eq(recorded.provenance?.assumptions?.onsetRelationSource, 'explicit-recorded-sunset-relation',
+       'provenance identifies the manually recorded relation source');
+})();
+
 (function testFixedVesetRequiresKnownOnah() {
     const base = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings } });
     const calendar = base.window.CycleFlowCalendar;
