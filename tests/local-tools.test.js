@@ -12,8 +12,8 @@ assert(allDay.includes('DTEND;VALUE=DATE:20261117'));
 assert(allDay.includes('תזכורת אישית'));
 
 const timed = tools.buildIcs([{ id: 'reminder-2', date: '2026-11-16', time: '18:30', title: 'בדיקה, תזכורת; אישית', notes: 'שורה ראשונה\nשורה שנייה' }]);
-assert.match(timed, /DTSTART:\\d{8}T\\d{6}Z/);
-assert.match(timed, /DTEND:\\d{8}T\\d{6}Z/);
+assert.match(timed, /DTSTART:[0-9]{8}T[0-9]{6}Z/);
+assert.match(timed, /DTEND:[0-9]{8}T[0-9]{6}Z/);
 assert(timed.includes('בדיקה\\, תזכורת\\; אישית'));
 assert(timed.includes('שורה ראשונה\\nשורה שנייה'));
 
