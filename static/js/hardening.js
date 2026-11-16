@@ -65,7 +65,7 @@
             if (!Array.isArray(value.manualReminders) || value.manualReminders.length > 500) return false;
             const ids = new Set();
             for (const item of value.manualReminders) {
-                if (!isPlainObject(item) || typeof item.id !== 'string' || ids.has(item.id) || !isValidDateString(item.date)) return false;
+                if (!isPlainObject(item) || typeof item.id !== 'string' || item.id.length > 80 || ids.has(item.id) || !isValidDateString(item.date)) return false;
                 ids.add(item.id);
                 if (typeof item.title !== 'string' || !item.title.trim() || item.title.length > 120) return false;
                 if (item.time !== undefined && item.time !== null && !validTime(item.time)) return false;
@@ -87,7 +87,7 @@
             }
         }
         if (value.mikvehChecklist !== undefined) {
-            if (!isPlainObject(value.mikvehChecklist)) return false;
+            if (!isPlainObject(value.mikvehChecklist) || Object.keys(value.mikvehChecklist).length > 500) return false;
             for (const [date, checked] of Object.entries(value.mikvehChecklist)) {
                 if (!isValidDateString(date) || !Array.isArray(checked) || checked.some(id => !checklistIds.includes(id)) || new Set(checked).size !== checked.length) return false;
             }
