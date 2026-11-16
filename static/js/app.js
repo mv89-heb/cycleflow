@@ -372,6 +372,8 @@ const UI = {
             }
         });
         
+        document.getElementById('mikveh_checklist_date')?.addEventListener('change', () => this.renderTools());
+
         const acBtn = document.getElementById('calc_ac');
         if (acBtn) {
             let pressTimer = null;
