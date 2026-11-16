@@ -173,6 +173,17 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'later status must be based on the explicit immersion report');
 })();
 
+(function testTevilaPanelCanToggleTheReport() {
+    const { UI, State, Utils } = loadApp({
+        periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],
+        hefseks: { '2026-06-06': true }, tevilot: {}, daily: {}, settings: baseSettings
+    });
+    UI.selectedDate = Utils.newDate('2026-06-14');
+    UI.actions.toggleTevilaPanel.call(UI);
+    assert(State.get().tevilot['2026-06-14'] === true,
+       'day panel action records the explicit immersion report');
+})();
+
 (function testFertility() {
     const state = {
         periods: [
