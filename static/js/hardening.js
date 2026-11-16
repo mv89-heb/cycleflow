@@ -59,8 +59,10 @@
         return true;
     }
 
+    let recoveryRequired = false;
     const originalGetItem = Storage.prototype.getItem;
     const originalSetItem = Storage.prototype.setItem;
+    const originalRemoveItem = Storage.prototype.removeItem;
 
     Storage.prototype.getItem = function(key) {
         const raw = originalGetItem.call(this, key);
@@ -71,6 +73,8 @@
         } catch (_) {
             // Preserve malformed data below instead of silently treating it as empty.
         }
+        recoveryRequired = true;
+        window.__cycleflowRecoveryRequired = true;
         try {
             if (originalGetItem.call(this, RECOVERY_KEY) === null) {
                 originalSetItem.call(this, RECOVERY_KEY, raw);
@@ -84,7 +88,7 @@
 
     Storage.prototype.setItem = function(key, value) {
         if (key === STORAGE_KEY) {
-            if (originalGetItem.call(this, RECOVERY_KEY) !== null) {
+            if (recoveryRequired || originalGetItem.call(this, RECOVERY_KEY) !== null) {
                 window.dispatchEvent(new CustomEvent('cycleflow:state-write-blocked'));
                 throw new Error('Existing CycleFlow data requires recovery before overwrite');
             }
@@ -100,6 +104,15 @@
             }
         }
         return originalSetItem.call(this, key, value);
+    };
+
+    Storage.prototype.removeItem = function(key) {
+        const result = originalRemoveItem.call(this, key);
+        if (key === RECOVERY_KEY) {
+            recoveryRequired = false;
+            window.__cycleflowRecoveryRequired = false;
+        }
+        return result;
     };
 
     let pinAttempts = 0;
