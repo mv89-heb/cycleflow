@@ -141,9 +141,11 @@
     }
   }
 
-  function getNextYomHachodeshDate(value) {
+  function getNextYomHachodeshDate(value, targetDayOverride = null) {
     const current = getHebrewDateParts(value);
     if (!current) return null;
+    const targetDay = Number.isInteger(targetDayOverride) ? targetDayOverride : current.day;
+    if (targetDay < 1 || targetDay > 30) return null;
     const monthKey = parts => parts ? `${parts.year}:${parts.month}` : '';
     const currentKey = monthKey(current);
     let nextMonthStart = null;
@@ -169,19 +171,19 @@
       nextMonthLength = parts.day;
     }
 
-    if (current.day <= nextMonthLength) {
+    if (targetDay <= nextMonthLength) {
       for (let offset = 0; offset <= 35; offset++) {
         const candidate = addCivilDays(nextMonthStart, offset);
         const parts = getHebrewDateParts(candidate);
         if (!parts || monthKey(parts) !== nextMonthKey) break;
-        if (parts.day === current.day) return candidate;
+        if (parts.day === targetDay) return candidate;
       }
       return null;
     }
 
     // For a period beginning on day 30 when the next Hebrew month has only 29 days,
     // this source profile follows the view that observes the first of the following month.
-    if (current.day === 30 && nextMonthLength === 29) {
+    if (targetDay === 30 && nextMonthLength === 29) {
       return addCivilDays(nextMonthLastDate, 1);
     }
     return null;
