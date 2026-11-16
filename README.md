@@ -39,7 +39,7 @@ cycleflow-main/
 | `CryptoService` | הצפנת גיבויים (AES-256-GCM + PBKDF2) |
 | `StorageService` | טעינה/שמירה/ייצוא/יבוא ל-localStorage |
 | `StateManager` | ניהול מצב מרכזי עם מנגנון subscribe/notify |
-| `HalachaLogic` | חישוב סטטוס יומי (נידה/הפסק/נקיים/טבילה/עונה בינונית) |
+| `HalachaLogic` | מעקב סטטוס יומי, כולל סימון טבילה מפורש (אינו פוסק הלכה) |
 | `FertilityLogic` | הערכת ביוץ, חלון פוריות ווסת הבאה (שיטת לוח שנה) |
 | `Calculator` | מחשבון פונקציונלי להסוואה |
 | `UI` | רינדור וטיפול באירועים |
@@ -71,7 +71,7 @@ npm install
 npm test
 ```
 
-ה־CI מריץ את בדיקות JavaScript ואת בדיקת ה־Flask smoke test. נכון לסבב הנוכחי, בדיקות הליבה והרגרסיה כוללות **32 בדיקות**.
+ה־CI מריץ את בדיקות JavaScript ואת בדיקת ה־Flask smoke test. בדיקות הליבה, שלמות הנתונים, PWA ושחזור נתונים רצות יחד באמצעות `npm test`.
 
 ---
 
