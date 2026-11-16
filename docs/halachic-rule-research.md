@@ -34,6 +34,15 @@ The current PR adds optional civil event time, city ID, and sunset relation. The
 - Keep sunset, sunrise, and tzeit as separate values. Tzeit is not a fixed universal offset from sunset; the selected calculation convention must be explicit.
 - Preserve an unknown / needs review state. Missing times, ambiguous stains, or missing hefsek data must never be converted into a confident date.
 
+## Solar-time engineering note
+
+The local sunrise/sunset helper uses a NOAA-style astronomical approximation with the apparent-sun horizon correction (90.833°). NOAA explains that the equations are based on Jean Meeus' *Astronomical Algorithms* and that calculated values can differ from observed times because of atmospheric conditions, pressure, temperature, and horizon/elevation effects. NOAA also states its calculator is for research/recreational use and does not certify sunrise or sunset times.
+
+- NOAA, [Solar Calculation Details](https://gmd-prod.cmdl.noaa.gov/grad/solcalc/calcdetails.html).
+- NOAA, [Sunrise/Sunset Calculations](https://gml.noaa.gov/grad/solcalc/solareqns.PDF).
+
+**Product rule:** these values are only an estimate for showing an event's likely daytime/nighttime onah. They are not zmanim, do not calculate tzeit, and must never be presented as a halachic time. A missing city or event time remains unknown.
+
 ## Required calculation and test matrix
 
 1. Event exactly at sunset; one minute before; one minute after; missing event time.
