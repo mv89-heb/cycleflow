@@ -79,6 +79,38 @@ The current PR adds optional civil event time, city ID, and sunset relation. The
 - PUAH, [Fertility medication and halachic veset calculations](https://puah.org.il/%D7%98%D7%99%D7%A4%D7%95%D7%9C-%D7%AA%D7%A8%D7%95%D7%A4%D7%AA%D7%99-%D7%9C%D7%90-%D7%A4%D7%95%D7%A8%D7%99%D7%95%D7%AA/).
 - PUAH, [Vesatot in fertility treatment](https://puah.org.il/Article/203065/).
 
+## Hebrew-source verification audit — 2026-11-16
+
+The following Hebrew-language pages were opened and checked against the rule matrix above. They are research references, not a signed ruling for CycleFlow's users.
+
+| Topic | Verified source finding | Engineering consequence |
+|---|---|---|
+| Fixed veset | Yoatzot Halacha defines a fixed pattern by exact repeated regularity and gives importance to the same day/night onah; a civil/Gregorian recurring date is not enough. | Do not infer a fixed veset from a Gregorian date or average cycle length. Require explicit halachic pattern evidence and reviewer-approved logic. |
+| Day/night onah | The Hebrew Yoatzot guide divides the halachic day into daytime and nighttime onot, with sunrise and sunset as boundaries. | Sunset alone cannot classify an event's onah; sunrise and the actual/unknown event time are also required. |
+| Onah beinonit | Nishmat's current guide describes day 30 as the basic calculation and explicitly identifies day 31 and a full 24-hour day as additional customs/stringencies, not universal defaults. | The current UI's simultaneous day-30/day-31 alerts must not be represented as one universal ruling. A future profile must explicitly choose the approved convention. |
+| Minimum wait | Nishmat explains the rationale for four- and five-day practices and states that the start reference and the applicable community practice matter. It also notes exceptions and individual questions. | A two-option Ashkenaz/Sepharad setting cannot safely select a minimum wait by itself. Do not auto-select four days for every Sephardi user. |
+| Stains | Nishmat describes several cumulative criteria for a stain and distinguishes stains from flow; internal bedikah findings and doubtful colors require separate treatment. | The app may record a stain observation, but must not infer niddah status, reset the wait, or invalidate clean days from a simple stain checkbox. |
+
+### Verified Hebrew-language references
+
+- Yoatzot Halacha (Hebrew), [עונה – חלוקה הלכתית של היממה](https://hebrew.yoatzot.org/5075-2/).
+- Yoatzot Halacha (Hebrew), [וסת קבוע](https://hebrew.yoatzot.org/6118-2/).
+- Yoatzot Halacha, [Guide to Observing Vesatot](https://www.yoatzot.org/547/), updated 10 June 2026.
+- Yoatzot Halacha, [Onah Beinonit](https://www.yoatzot.org/672/).
+- Yoatzot Halacha, [Minimum Wait](https://www.yoatzot.org/526/).
+- Yoatzot Halacha, [Shivah Neki'im](https://www.yoatzot.org/529/).
+- Yoatzot Halacha, [Laws of Stains](https://www.yoatzot.org/522/).
+- Din Online, [זמני הפרישה בעונה בינונית](https://din.org.il/2010/11/25/זמני-הפרישה-בעונה-בינונית/), presenting a 24-hour practice and additional stringencies.
+- Din Online, [עונה בינונית](https://din.org.il/2024/09/12/עונה-בינונית/), explaining the distinction between day 30, day 31 and whether a missed check must be completed.
+- Peninei Halacha, [הפרישה לווסת שאינו קבוע](https://ph.yhb.org.il/18-06-05/), overview of the three basic onot.
+
+### Review outcome
+
+- **Research verified:** the source matrix is sufficient to define implementation questions and negative/edge-case tests.
+- **Technical approval:** date/time capture, explicit unknown states, profile versioning, and non-destructive history can be implemented independently of the halachic decisions.
+- **Not approved for automatic psak:** the source pages describe differing community practices, exceptions, and individual-question cases. No universal CycleFlow profile can be inferred from them.
+- **Release gate remains open:** a qualified reviewer representing the intended community must sign off on each profile row, including the exact source/authority, rule version, exceptions, and test vectors. Until then, all generated dates remain advisory and the existing engine must not be advertised as a halachic ruling.
+
 ## Implementation gate
 
 The online sources provide enough material to build a traceable research matrix and test scenarios. They do not establish one universally applicable rule set. The engine must remain unchanged until an authorized reviewer selects and signs off on the exact profile matrix. A source citation is not a substitute for that approval.
