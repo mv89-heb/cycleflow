@@ -140,6 +140,7 @@
     const periods = (state.periods || []).filter(p => inRange(p.date)).sort((a, b) => a.date.localeCompare(b.date));
     const starts = (state.periods || []).filter(p => p.type === 'veset').sort((a, b) => a.date.localeCompare(b.date));
     const periodLines = periods.filter(p => p.type === 'veset').map(p => `- ${p.date}${p.eventTime ? ' ' + p.eventTime : ''}`);
+    const spottingLines = periods.filter(p => p.type === 'spotting').map(p => `- ${p.date}${p.eventTime ? ' ' + p.eventTime : ''}`);
     const intervals = [];
     for (let i = 1; i < starts.length; i++) {
       const days = Math.round((new Date(starts[i].date + 'T12:00:00Z') - new Date(starts[i - 1].date + 'T12:00:00Z')) / 86400000);
@@ -154,6 +155,9 @@
       '',
       'תחילות וסת שדווחו:',
       ...(periodLines.length ? periodLines : ['- אין דיווחים בטווח']),
+      '',
+      'דיווחי הכתמה/דימום נוספים:',
+      ...(spottingLines.length ? spottingLines : ['- אין דיווחים בטווח']),
       '',
       'מרווחים בין תחילות וסת:',
       ...(intervals.length ? intervals.map(item => `- ${item}`) : ['- אין מספיק נתונים בטווח']),
