@@ -106,7 +106,7 @@ const StorageService = {
             throw new Error('סיסמה שגויה או קובץ פגום');
         }
     },
-    clear() { localStorage.removeItem(STORAGE_KEY); }
+    clear() { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem('cycleflow_recovery_v1'); }
 };
 
 const defaultState = { periods: [], hefseks: {}, daily: {}, settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark' } };
@@ -271,6 +271,7 @@ const UI = {
     init() {
         this.cacheDOM();
         this.bindEvents();
+        this.showRecoveryNotice();
         window.addEventListener('cycleflow:persistence-error', () => {
             // Let action handlers finish before displaying the failure toast.
             setTimeout(() => this.toast('השמירה נכשלה. אין לרענן לפני בדיקת שטח האחסון.', true), 0);
@@ -288,6 +289,24 @@ const UI = {
         if (icon) icon.className = theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
     },
     
+    showRecoveryNotice() {
+        if (localStorage.getItem('cycleflow_recovery_v1') === null) return;
+        const notice = document.createElement('section');
+        notice.className = 'card';
+        notice.setAttribute('role', 'alert');
+        const heading = document.createElement('h3');
+        heading.textContent = 'נמצאו נתונים קיימים שדורשים שחזור';
+        const message = document.createElement('p');
+        message.className = 'text-muted';
+        message.textContent = 'עותק של הנתונים המקוריים נשמר במכשיר. כדי למנוע דריסת מידע, שמירת שינויים הושהתה. אפשר להוריד עותק שחזור או לייבא גיבוי תקין.';
+        const button = document.createElement('button');
+        button.className = 'btn btn-outline';
+        button.dataset.action = 'exportRecovery';
+        button.textContent = 'הורדת עותק נתונים לשחזור';
+        notice.append(heading, message, button);
+        document.getElementById('main_content')?.prepend(notice);
+    },
+
     cacheDOM() {
         this.views = document.querySelectorAll('.app-view');
         this.navItems = document.querySelectorAll('.nav-item');
@@ -741,6 +760,20 @@ const UI = {
             this.toast('גיבוי מוצפן נוצר בהצלחה');
         },
         triggerImport() { document.getElementById('import_file').click(); },
+        exportRecovery() {
+            const raw = localStorage.getItem('cycleflow_recovery_v1');
+            if (raw === null) { this.toast('לא נמצא עותק שחזור', true); return; }
+            const blob = new Blob([raw], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `cycleflow_recovery_${Utils.fmt(new Date())}.json`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            this.toast('עותק השחזור הורד למכשיר. אין לשתף אותו.');
+        },
         resetAll() { if(confirm('למחוק הכל? פעולה זו אינה הפיכה.')) { StorageService.clear(); location.reload(); } },
         generateRabbiText() { 
             let txt = "שלום הרב, להלן הנתונים:\n"; 
