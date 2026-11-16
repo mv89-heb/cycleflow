@@ -126,10 +126,10 @@
                 if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot) ||
                     snapshot.schemaVersion !== 1 ||
                     typeof snapshot.snapshotId !== 'string' ||
-                    !/^cf-calc-v1:\\d{4}-\\d{2}-\\d{2}:[a-f0-9]{8}$/.test(snapshot.snapshotId) ||
+                    !/^cf-calc-v1:\d{4}-\d{2}-\d{2}:[a-f0-9]{16}$/.test(snapshot.snapshotId) ||
                     !isValidDateString(snapshot.evaluatedDate) ||
                     typeof snapshot.capturedAt !== 'string' || Number.isNaN(Date.parse(snapshot.capturedAt)) ||
-                    typeof snapshot.inputFingerprint !== 'string' || !/^[a-f0-9]{8}$/.test(snapshot.inputFingerprint) ||
+                    typeof snapshot.inputFingerprint !== 'string' || !/^[a-f0-9]{16}$/.test(snapshot.inputFingerprint) ||
                     !snapshot.snapshotId.endsWith(snapshot.inputFingerprint) ||
                     !snapshot.result || typeof snapshot.result !== 'object' ||
                     typeof snapshot.result.type !== 'string' || typeof snapshot.result.text !== 'string' ||
