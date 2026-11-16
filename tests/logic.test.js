@@ -95,8 +95,9 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     };
     const { HalachaLogic, Utils } = loadApp(state);
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-01')).type, 'nidda', 'day 1 is nidda');
-    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-03')).canHefsek, false, 'day 3 cannot hefsek (ashkenaz)');
-    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-06')).canHefsek, true, 'day 6 can hefsek (ashkenaz)');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-04')).canHefsek, false, 'day 4 cannot hefsek under the five-day practice');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-05')).canHefsek, true, 'hefsek may be performed on the fifth halachic day when bleeding has ceased');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-06')).canHefsek, true, 'hefsek remains possible after the fifth day');
 
     const stateWithTahara = {
         periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],
@@ -256,6 +257,59 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const { HalachaLogic, Utils } = loadApp(state);
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-05')).canHefsek, true, 'day 5 can hefsek (sepharad)');
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-04')).canHefsek, false, 'day 4 cannot hefsek (sepharad)');
+})();
+
+(function testMinimumWaitProfilesRequireTheirCorrectStartReference() {
+    const fourDayState = {
+        periods: [{
+            date: '2026-06-01', type: 'veset', isSunset: false, id: 'four-day',
+            lastRelations: { date: '2026-05-30', eventTime: '15:00', cityId: 'beit-shemesh' }
+        }],
+        hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, minimumWaitMode: 'four_from_last_relations', cityId: 'beit-shemesh' }
+    };
+    const fourDayApi = loadApp(fourDayState);
+    eq(fourDayApi.HalachaLogic.getStatus(fourDayApi.Utils.newDate('2026-06-01')).canHefsek, false,
+       'four-day wait does not finish before the fourth day from last relations');
+    eq(fourDayApi.HalachaLogic.getStatus(fourDayApi.Utils.newDate('2026-06-02')).canHefsek, true,
+       'four-day wait permits a hefsek on the fourth halachic day from last relations');
+
+    const missingDataState = {
+        periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'missing-last-relations' }],
+        hefseks: {}, daily: {},
+        settings: { ...baseSettings, minimumWaitMode: 'four_from_last_relations' }
+    };
+    const missingApi = loadApp(missingDataState);
+    eq(missingApi.HalachaLogic.getStatus(missingApi.Utils.newDate('2026-06-05')).type, 'needs-review',
+       'four-day profile never guesses the missing last-relations reference');
+})();
+
+(function testOnahBeinonitProfileDefaultsAndCustoms() {
+    const state = {
+        periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'onah-profile' }],
+        hefseks: { '2026-06-06': true }, daily: {}, settings: { ...baseSettings }
+    };
+    const { HalachaLogic, Utils } = loadApp(state);
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-30')).type, 'onah',
+       'day 30 is the baseline onah beinonit');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-07-01')).type, 'pending-tevila',
+       'day 31 is not silently enabled in the default profile');
+
+    const customState = {
+        ...state,
+        settings: { ...baseSettings, onahBeinonitMode: 'day30_plus31_onah' }
+    };
+    const customApi = loadApp(customState);
+    eq(customApi.HalachaLogic.getStatus(customApi.Utils.newDate('2026-07-01')).type, 'onah',
+       'day 31 is included only when the selected custom profile requests it');
+
+    const fullDayState = {
+        ...state,
+        settings: { ...baseSettings, onahBeinonitMode: 'day30_full_day' }
+    };
+    const fullDayApi = loadApp(fullDayState);
+    assert(fullDayApi.HalachaLogic.getStatus(fullDayApi.Utils.newDate('2026-06-30')).text.includes('כל היממה'),
+       'the 24-hour custom is displayed only when explicitly selected');
 })();
 
 (function testCleanDays() {
