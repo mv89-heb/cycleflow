@@ -695,6 +695,14 @@ HalachaLogic.getStatus = function(date) {
         ? CalendarServices.getEventDateInfo(lastPeriod, cityId)
         : null;
     const ruleContext = captureRuleContext(state.settings);
+    const summarizeRuleContext = context => context ? {
+        rulesetId: context.rulesetId || null,
+        rulesetVersion: context.rulesetVersion || null,
+        sourceIds: Array.isArray(context.sourceIds) ? context.sourceIds : [],
+        community: context.community || null,
+        minimumWaitMode: context.minimumWaitMode || null,
+        onahBeinonitMode: context.onahBeinonitMode || null
+    } : null;
     const sourceEvents = [];
     const addSourceEvent = event => {
         if (!event) return;
@@ -705,7 +713,8 @@ HalachaLogic.getStatus = function(date) {
         if (!period) return;
         addSourceEvent({
             type: 'period', id: period.id || null, date: period.date,
-            effectiveDate: Utils.halachicDate(period, cityId)
+            effectiveDate: Utils.halachicDate(period, cityId),
+            recordedRuleContext: summarizeRuleContext(period.ruleContext)
         });
     });
     const fixedCandidates = HalachaLogic.getFixedVesetCandidates(dateLabel);
@@ -713,13 +722,16 @@ HalachaLogic.getStatus = function(date) {
     periods.filter(period => evidenceDates.has(Utils.halachicDate(period, cityId))).forEach(period => {
         addSourceEvent({
             type: 'fixed-pattern-evidence', id: period.id || null, date: period.date,
-            effectiveDate: Utils.halachicDate(period, cityId)
+            effectiveDate: Utils.halachicDate(period, cityId),
+            recordedRuleContext: summarizeRuleContext(period.ruleContext)
         });
     });
     if (lastPeriod && lastPeriod.lastRelations) {
         addSourceEvent({
             type: 'last-relations', date: lastPeriod.lastRelations.date,
-            eventTime: lastPeriod.lastRelations.eventTime || null
+            eventTime: lastPeriod.lastRelations.eventTime || null,
+            cityId: lastPeriod.lastRelations.cityId || null,
+            recordedRuleContext: summarizeRuleContext(lastPeriod.lastRelations.ruleContext)
         });
     }
     const lastHefsekDate = Object.keys(state.hefseks || {})
@@ -730,7 +742,8 @@ HalachaLogic.getStatus = function(date) {
         const meta = (state.hefsekMeta || {})[lastHefsekDate] || {};
         addSourceEvent({
             type: 'hefsek', date: lastHefsekDate,
-            eventTime: meta.eventTime || null, cityId: meta.cityId || null
+            eventTime: meta.eventTime || null, cityId: meta.cityId || null,
+            recordedRuleContext: summarizeRuleContext(meta.ruleContext)
         });
     }
     const statusText = String(status && status.text || '');
@@ -755,6 +768,9 @@ HalachaLogic.getStatus = function(date) {
             rulesetId: ruleContext.rulesetId,
             rulesetVersion: ruleContext.rulesetVersion,
             sourceIds: ruleContext.sourceIds,
+            calculationProfile: summarizeRuleContext(ruleContext),
+            sourceEventProfileState: lastPeriod && lastPeriod.ruleContext ? 'recorded' : (lastPeriod ? 'unknown-historical' : 'no-source-event'),
+            sourceEventProfile: summarizeRuleContext(lastPeriod && lastPeriod.ruleContext),
             evaluatedDate: dateLabel,
             evaluatedAt: new Date().toISOString(),
             ruleIds: [...new Set(ruleIds)],
