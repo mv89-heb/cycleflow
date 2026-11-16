@@ -692,6 +692,7 @@ const UI = {
         }
 
         const vesets = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, state.settings.cityId))
             .sort((a, b) => Utils.halachicDate(a, state.settings.cityId).localeCompare(Utils.halachicDate(b, state.settings.cityId)));
         const last = vesets[vesets.length - 1];
         if (last) {
@@ -815,6 +816,7 @@ const UI = {
 
         const historyState = State.get();
         const vesets = Utils.chronologicalVesets(historyState.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, historyState.settings.cityId))
             .sort((a, b) => Utils.halachicDate(a, historyState.settings.cityId).localeCompare(Utils.halachicDate(b, historyState.settings.cityId)));
         if (vesets.length >= 2) {
             let sum = 0, min = 999, max = 0, count = 0;
