@@ -41,7 +41,7 @@
     const { year, month, day } = dateParts(date);
     const n = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 0)) / 86400000);
     const longitudeHour = city.lon / 15;
-    const t = n + ((18 - longitudeHour) / 24);
+    const t = n + (((isSunrise ? 6 : 18) - longitudeHour) / 24);
     const meanAnomaly = 0.9856 * t - 3.289;
     const trueLongitude = normalizeDegrees(meanAnomaly + 1.916 * Math.sin(toRadians(meanAnomaly)) +
       0.020 * Math.sin(2 * toRadians(meanAnomaly)) + 282.634);
