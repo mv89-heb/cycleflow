@@ -170,7 +170,8 @@
         (item.endDate != null && (!validDate(item.endDate) || item.endDate < item.date)) ||
         (item.endTime != null && !validTime(item.endTime)) ||
         !['yes', 'no', 'unknown'].includes(item.distinctive) ||
-        !['yes', 'no', 'unknown'].includes(item.occursOutsideFlow) ||\n        !['yes', 'no', 'unknown'].includes(item.flowWithoutSymptom) ||
+        !['yes', 'no', 'unknown'].includes(item.occursOutsideFlow) ||
+        !['yes', 'no', 'unknown'].includes(item.flowWithoutSymptom) ||
         (item.relatedFlowDate != null && !validDate(item.relatedFlowDate)) ||
         (item.type === 'other' && (typeof item.customDescription !== 'string' || !item.customDescription.trim())) ||
         (item.customDescription !== undefined && (typeof item.customDescription !== 'string' || item.customDescription.length > 120)) ||
@@ -185,7 +186,8 @@
       `תסמין: ${symptom}`,
       `תחילת התסמין: ${item.date}${item.time ? ' ' + item.time : ''}${end}`,
       `האם נתפס כייחודי: ${SYMPTOM_ANSWER_LABELS[item.distinctive]}`,
-      `האם מופיע גם בזמנים אחרים: ${SYMPTOM_ANSWER_LABELS[item.occursOutsideFlow]}`,\n      `האם דווח דימום ללא הסימן: ${SYMPTOM_ANSWER_LABELS[item.flowWithoutSymptom]}`,
+      `האם מופיע גם בזמנים אחרים: ${SYMPTOM_ANSWER_LABELS[item.occursOutsideFlow]}`,
+      `האם דווח דימום ללא הסימן: ${SYMPTOM_ANSWER_LABELS[item.flowWithoutSymptom]}`,
       `תאריך תחילת דימום שסומן כקשור: ${item.relatedFlowDate || 'לא צוין'}`,
       `הערות: ${String(item.note || '').trim() || 'ללא'}`,
       'הקישור לדימום הוא דיווח משתמש בלבד; לא בוצעה התאמה או מסקנה אוטומטית.'
