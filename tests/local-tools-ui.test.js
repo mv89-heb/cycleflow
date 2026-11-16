@@ -19,6 +19,8 @@ const { UI, State, document } = window.__api;
 UI.cacheDOM();
 UI.bindEvents();
 UI.switchTab('tools');
+document.getElementById('mikveh_checklist_date').value = '2026-11-16';
+UI.renderTools();
 
 document.getElementById('reminder_date').value = '2026-11-16';
 document.getElementById('reminder_title').value = 'תזכורת פרטית';
