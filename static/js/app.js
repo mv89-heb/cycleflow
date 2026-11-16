@@ -645,7 +645,7 @@ const HalachaLogic = {
             if (cleanDay === 8) {
                 return {
                     type: tevilaReported ? 'tevila-done' : 'tevila',
-                    text: tevilaReported ? 'טבילה סומנה' : 'ליל טבילה משוער – יש לסמן ביצוע',
+                    text: tevilaReported ? 'טבילה סומנה' : 'ליל טבילה משוער – לאחר צאת הכוכבים לפי המקווה המקומי; יש לסמן ביצוע',
                     color: 'var(--st-tevila)', bg: 'rgba(14, 165, 233, 0.1)',
                     expectedTevilaDate, reportedTevilaDate, canHefsek: false
                 };
@@ -1213,7 +1213,8 @@ const UI = {
                         `עונה בינונית: ${onahLabels[values.onahBeinonitMode] || 'לא ידועה'}`,
                         `יישוב: ${city && (city.name || city.label) || values.cityId || 'לא ידוע'}`,
                         `עונת תחילת הווסת: ${onahLabel}`,
-                        `תאריך הפסק אחרון: ${values.hefsekDate || 'לא נרשם'}`
+                        `תאריך הפסק אחרון: ${values.hefsekDate || 'לא נרשם'}`,
+                        'זמן טבילה: לאחר צאת הכוכבים לפי זמן המקווה המקומי; המערכת אינה מחשבת צאת הכוכבים'
                     ].join(' · ');
                 }
 
