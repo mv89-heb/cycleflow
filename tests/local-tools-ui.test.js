@@ -14,7 +14,7 @@ window.localStorage.setItem('cycleflow_v61_python_pro', JSON.stringify({
 const sources = ['calendar-services.js', 'local-tools.js', 'app.js'].map(file =>
   fs.readFileSync(path.join(__dirname, '..', 'static', 'js', file), 'utf8')
 );
-window.eval(sources.join('\\n') + '\\nwindow.__api = { UI, State, document: window.document, window };');
+window.eval(sources.join('\n') + '\nwindow.__api = { UI, State, document: window.document, window };');
 const { UI, State, document } = window.__api;
 UI.cacheDOM();
 UI.bindEvents();
