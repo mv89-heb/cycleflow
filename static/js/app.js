@@ -221,6 +221,64 @@ const HalachaLogic = {
         const latestIndex = Math.max(...candidates.map(candidate => candidate.establishedIndex));
         return candidates.filter(candidate => candidate.establishedIndex === latestIndex);
     },
+    getSuccessfulHefsekDates(state = State.get()) {
+        if (!CalendarServices || !CalendarServices.getEventDateInfo) return [];
+        return Object.keys(state.hefseks || {}).filter(date => {
+            const meta = state.hefsekMeta && state.hefsekMeta[date];
+            if (!meta || !meta.eventTime || !meta.cityId) return false;
+            const info = CalendarServices.getEventDateInfo({
+                date, eventTime: meta.eventTime, cityId: meta.cityId,
+                sunsetRelation: meta.sunsetRelation
+            }, meta.cityId);
+            return Boolean(info && info.relation === 'before' && info.effectiveDate === date);
+        }).sort();
+    },
+    getChabadHaflagahNumbers() {
+        const state = State.get();
+        if (state.settings.minhag !== 'chabad') return [];
+        const cityId = state.settings.cityId;
+        const periods = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+            .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)));
+        const hefsekDates = this.getSuccessfulHefsekDates(state);
+        const activeNumbers = [];
+        for (let i = 1; i < periods.length; i++) {
+            const previousDate = Utils.halachicDate(periods[i - 1], cityId);
+            const currentDate = Utils.halachicDate(periods[i], cityId);
+            const hefsekDate = hefsekDates.filter(date => date >= previousDate && date < currentDate).pop();
+            if (!hefsekDate) continue;
+            const firstNightDate = Utils.fmt(Utils.addDays(Utils.newDate(hefsekDate), 1));
+            const daysDiff = Utils.diffDays(Utils.newDate(currentDate), Utils.newDate(firstNightDate));
+            const currentInfo = CalendarServices.getEventDateInfo(periods[i], cityId);
+            if (daysDiff < 0 || !currentInfo || !['day', 'night'].includes(currentInfo.estimatedOnah)) continue;
+            const number = (2 * daysDiff) + (currentInfo.estimatedOnah === 'night' ? 1 : 2);
+            if (!Number.isInteger(number) || number < 1) continue;
+            const carried = activeNumbers.filter(existing => existing > number);
+            carried.push(number);
+            activeNumbers.splice(0, activeNumbers.length, ...new Set(carried));
+        }
+        return activeNumbers.sort((a, b) => a - b);
+    },
+    getChabadHaflagahTargets(dateString) {
+        const state = State.get();
+        if (state.settings.minhag !== 'chabad') return [];
+        const cityId = state.settings.cityId;
+        const periods = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+            .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)));
+        const lastPeriod = periods[periods.length - 1];
+        if (!lastPeriod) return [];
+        const lastDate = Utils.halachicDate(lastPeriod, cityId);
+        const hefsekDate = this.getSuccessfulHefsekDates(state)
+            .filter(date => date >= lastDate && date < dateString).pop();
+        if (!hefsekDate) return [];
+        const firstNightDate = Utils.fmt(Utils.addDays(Utils.newDate(hefsekDate), 1));
+        return this.getChabadHaflagahNumbers().map(number => ({
+            number,
+            date: Utils.fmt(Utils.addDays(Utils.newDate(firstNightDate), Math.floor((number - 1) / 2))),
+            onah: number % 2 === 1 ? 'night' : 'day'
+        })).filter(target => target.date === dateString);
+    },
     getStatus(date) {
         const state = State.get();
         const dStr = Utils.fmt(date);
@@ -312,17 +370,25 @@ const HalachaLogic = {
             : null;
         const getOnahLabels = () => {
             const labels = [];
-            if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && dStr === Utils.fmt(Utils.addDays(pDate, 29))) labels.push({ label: 'עונה בינונית (30)', day: 30 });
-            if (onsetInfo && onsetInfo.relation !== 'unknown' && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) labels.push({ label: 'עונה בינונית (31)', day: 31 });
-            if (hachodeshDate && dStr === hachodeshDate) labels.push({ label: 'וסת החודש', day: null });
-            if (haflagahDate && dStr === haflagahDate) labels.push({ label: `וסת הפלגה (${intervalDays})`, day: null });
+            if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && dStr === Utils.fmt(Utils.addDays(pDate, 29))) {
+                labels.push({ label: 'עונה בינונית (30)', suffix: onahSuffixFor(30) });
+            }
+            if (onsetInfo && onsetInfo.relation !== 'unknown' && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) {
+                labels.push({ label: 'עונה בינונית (31)', suffix: onahSuffix });
+            }
+            if (hachodeshDate && dStr === hachodeshDate) labels.push({ label: 'וסת החודש', suffix: onahSuffix });
+            if (haflagahDate && dStr === haflagahDate) labels.push({ label: `וסת הפלגה (${intervalDays})`, suffix: onahSuffix });
+            if (isChabadProfile) {
+                HalachaLogic.getChabadHaflagahTargets(dStr).forEach(target => {
+                    labels.push({
+                        label: `וסת הפלגה חב״ד (${target.number}) · עונת ${target.onah === 'night' ? 'לילה' : 'יום'}`,
+                        suffix: ''
+                    });
+                });
+            }
             return labels;
         };
-        const onahText = labels => {
-            const day30 = labels.some(item => item.day === 30);
-            const dayNumber = day30 ? 30 : (labels.find(item => item.day === 31)?.day || null);
-            return `${labels.map(item => item.label).join(' + ')}${dayNumber ? onahSuffixFor(dayNumber) : onahSuffix}`;
-        };
+        const onahText = labels => labels.map(item => `${item.label}${item.suffix || ''}`).join(' + ');
         const daysDiff = Utils.diffDays(date, pDate);
         const minimumWaitMode = state.settings.minimumWaitMode || 'five_from_onset';
         let minimumWaitStartDate = pDate;
