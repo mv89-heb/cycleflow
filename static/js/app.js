@@ -340,8 +340,19 @@ const UI = {
         document.body.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
+            if (btn.matches('select[data-action], input[type="checkbox"][data-action]')) return;
             const action = btn.dataset.action;
             if (typeof this.actions[action] === 'function') this.actions[action].call(this, btn, e);
+        });
+        document.body.addEventListener('change', (e) => {
+            const control = e.target.closest('[data-action]');
+            if (!control) return;
+            const action = control.dataset.action;
+            if (action === 'saveSettings' && control.tagName === 'SELECT') {
+                this.actions.saveSettings.call(this, control, e);
+            } else if (action === 'saveDaily' && control.matches('input[type="checkbox"]')) {
+                this.actions.saveDaily.call(this, control, e);
+            }
         });
         
         const acBtn = document.getElementById('calc_ac');
