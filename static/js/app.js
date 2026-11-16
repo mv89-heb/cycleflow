@@ -484,7 +484,7 @@ const UI = {
             const color = LocalTools.STAIN_LABELS.color[item.color] || 'לא ידוע';
             const size = LocalTools.STAIN_LABELS.size[item.size] || 'לא ידוע';
             return `<div class="tool-list-row"><div><strong>${item.date} · ${escapeHTML(color)}</strong><div class="text-muted small-note">${escapeHTML(size)} · ${escapeHTML(LocalTools.STAIN_LABELS.surface[item.surface] || 'לא ידוע')}</div></div>
-            <div class="flex gap-10"><button class="btn btn-outline" data-action="copyStainSummary" data-id="${escapeHTML(item.id)}">העתקה</button><button class="btn btn-outline" data-action="downloadStainSummary" data-id="${escapeHTML(item.id)}">הורדה</button></div></div>`;
+            <div class="flex gap-10"><button class="btn btn-outline" data-action="copyStainSummary" data-id="${escapeHTML(item.id)}">העתקה</button><button class="btn btn-outline" data-action="downloadStainSummary" data-id="${escapeHTML(item.id)}">הורדה</button><button class="btn btn-outline" data-action="deleteStainReport" data-id="${escapeHTML(item.id)}">מחיקה</button></div></div>`;
         }).join('') : '<p class="text-muted small-note">אין עדיין תיאורי כתמים שמורים.</p>';
 
         const checklistDate = document.getElementById('mikveh_checklist_date').value || today;
@@ -496,7 +496,7 @@ const UI = {
         const indicator = document.getElementById('ovulation_indicator');
         indicator.textContent = observations.length ? LocalTools.earlyOvulationIndicator(observations[0]) : 'אין עדיין תיעוד ביוץ.';
         document.getElementById('ovulation_list').innerHTML = observations.length ? observations.map(item => `
-            <div class="tool-list-row"><div><strong>${item.date}${item.time ? ' · ' + item.time : ''}</strong><div class="text-muted small-note">${escapeHTML(LocalTools.OVULATION_LABELS[item.type] || item.type)} · ${escapeHTML(LocalTools.earlyOvulationIndicator(item))}</div></div></div>`).join('') : '<p class="text-muted small-note">אין עדיין תיעודי ביוץ.</p>';
+            <div class="tool-list-row"><div><strong>${item.date}${item.time ? ' · ' + item.time : ''}</strong><div class="text-muted small-note">${escapeHTML(LocalTools.OVULATION_LABELS[item.type] || item.type)} · ${escapeHTML(LocalTools.earlyOvulationIndicator(item))}</div></div><button class="btn btn-outline" data-action="deleteOvulationObservation" data-id="${escapeHTML(item.id)}">מחיקה</button></div>`).join('') : '<p class="text-muted small-note">אין עדיין תיעודי ביוץ.</p>';
     },
 
     renderDashboard() {
@@ -899,6 +899,11 @@ const UI = {
                 this.toast('הסיכום הורד למכשיר');
             }
         },
+        deleteStainReport(btn) {
+            if (!confirm('למחוק את תיאור הכתם השמור?')) return;
+            State.update(state => { state.stainReports = (state.stainReports || []).filter(item => item.id !== btn.dataset.id); });
+            this.toast('תיאור הכתם נמחק');
+        },
         downloadStainSummary(btn) {
             const item = (State.get().stainReports || []).find(record => record.id === btn.dataset.id);
             if (!item) { this.toast('לא נמצא תיאור כתם', true); return; }
@@ -940,6 +945,11 @@ const UI = {
             if (!saved) { this.toast('שמירת התיעוד נכשלה', true); return; }
             document.getElementById('ovulation_note').value = '';
             this.toast('תיעוד הביוץ נשמר מקומית');
+        },
+        deleteOvulationObservation(btn) {
+            if (!confirm('למחוק את תיעוד הביוץ?')) return;
+            State.update(state => { state.ovulationObservations = (state.ovulationObservations || []).filter(item => item.id !== btn.dataset.id); });
+            this.toast('תיעוד הביוץ נמחק');
         },
         exportDoctorSummary() {
             const from = document.getElementById('doctor_from').value;
