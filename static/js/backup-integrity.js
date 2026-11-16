@@ -124,7 +124,7 @@
             if (!Array.isArray(state.manualReminders) || state.manualReminders.length > 500) throw new Error('רשימת התזכורות אינה תקינה');
             const ids = new Set();
             for (const item of state.manualReminders) {
-                if (!item || typeof item !== 'object' || typeof item.id !== 'string' || ids.has(item.id) || !isValidDateString(item.date)) throw new Error('תזכורת לא תקינה');
+                if (!item || typeof item !== 'object' || typeof item.id !== 'string' || item.id.length > 80 || ids.has(item.id) || !isValidDateString(item.date)) throw new Error('תזכורת לא תקינה');
                 ids.add(item.id);
                 if (typeof item.title !== 'string' || !item.title.trim() || item.title.length > 120) throw new Error('כותרת תזכורת לא תקינה');
                 if (item.time !== undefined && item.time !== null && !validTime(item.time)) throw new Error('שעת תזכורת לא תקינה');
@@ -146,7 +146,7 @@
             }
         }
         if (state.mikvehChecklist !== undefined) {
-            if (!state.mikvehChecklist || typeof state.mikvehChecklist !== 'object' || Array.isArray(state.mikvehChecklist)) throw new Error('רשימת הכנות למקווה אינה תקינה');
+            if (!state.mikvehChecklist || typeof state.mikvehChecklist !== 'object' || Array.isArray(state.mikvehChecklist) || Object.keys(state.mikvehChecklist).length > 500) throw new Error('רשימת הכנות למקווה אינה תקינה');
             for (const [date, checked] of Object.entries(state.mikvehChecklist)) {
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Array.isArray(checked) || checked.some(id => !checklistIds.includes(id)) || new Set(checked).size !== checked.length) throw new Error('סימון הכנה למקווה אינו תקין');
             }
