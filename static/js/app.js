@@ -370,10 +370,6 @@ const UI = {
         });
         
         document.getElementById('mikveh_checklist_date')?.addEventListener('change', () => this.renderTools());
-        document.getElementById('mikveh_checklist_items')?.addEventListener('change', e => {
-            const control = e.target.closest('input[type="checkbox"][data-action="toggleMikvehChecklist"]');
-            if (control) this.actions.toggleMikvehChecklist.call(this, control, e);
-        });
 
         const acBtn = document.getElementById('calc_ac');
         if (acBtn) {
@@ -490,8 +486,12 @@ const UI = {
 
         const checklistDate = document.getElementById('mikveh_checklist_date').value || today;
         const checked = (state.mikvehChecklist || {})[checklistDate] || [];
-        document.getElementById('mikveh_checklist_items').innerHTML = LocalTools.CHECKLIST_ITEMS.map(item => `
-            <label><input type="checkbox" data-action="toggleMikvehChecklist" data-item="${item.id}" data-date="${checklistDate}" ${checked.includes(item.id) ? 'checked' : ''}><span>${escapeHTML(item.label)}</span></label>`).join('');
+        const checklistContainer = document.getElementById('mikveh_checklist_items');
+        checklistContainer.innerHTML = LocalTools.CHECKLIST_ITEMS.map(item => `
+            <label><input type="checkbox" data-action="toggleMikvehChecklist" data-item="${item.id}" data-date="${escapeHTML(checklistDate)}" ${checked.includes(item.id) ? 'checked' : ''}><span>${escapeHTML(item.label)}</span></label>`).join('');
+        checklistContainer.querySelectorAll('input[data-action="toggleMikvehChecklist"]').forEach(input => {
+            input.addEventListener('change', e => this.actions.toggleMikvehChecklist.call(this, input, e));
+        });
 
         const observations = [...(state.ovulationObservations || [])].sort((a, b) => b.date.localeCompare(a.date));
         const indicator = document.getElementById('ovulation_indicator');
