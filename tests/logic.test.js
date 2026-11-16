@@ -116,6 +116,7 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     try { UI.renderCalendar(); } catch (error) { renderError = error; }
     assert(renderError === null, 'calendar must render legacy daily notes without a checks object');
     assert(document.querySelector('#cal_grid .cal-day'), 'calendar days should render for legacy daily notes');
+    assert(document.querySelector('#cal_grid .day-hebrew')?.textContent, 'calendar cells should include Hebrew dates');
 })();
 
 (function testHalachaUsesVesetChronology() {
