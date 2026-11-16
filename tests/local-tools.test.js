@@ -44,12 +44,12 @@ assert(stain.includes('אינו קובע מעמד הלכתי'));
 const symptom = {
   id: 'symptom-1', date: '2026-10-19', time: '08:15', endDate: '2026-10-19', endTime: '12:00',
   type: 'back_pain', distinctive: 'yes', occursOutsideFlow: 'no',
-  relatedFlowDate: '2026-10-20', note: 'תיאור עובדתי'
+  relatedFlowDate: '2026-10-20', flowWithoutSymptom: 'no', note: 'תיאור עובדתי'
 };
 const symptomSummary = tools.buildSymptomSummary(symptom);
 assert(symptomSummary.includes('כאב גב'));
 assert(symptomSummary.includes('האם נתפס כייחודי: כן'));
-assert(symptomSummary.includes('האם מופיע גם בזמנים אחרים: לא'));
+assert(symptomSummary.includes('האם מופיע גם בזמנים אחרים: לא'));\nassert(symptomSummary.includes('האם דווח דימום ללא הסימן: לא'));
 assert(symptomSummary.includes('לא בוצעה התאמה או מסקנה אוטומטית'));
 assert.throws(() => tools.buildSymptomSummary({ ...symptom, endDate: '2026-10-18' }), /תיעוד התסמין אינו תקין/);
 assert.throws(() => tools.buildSymptomSummary({ ...symptom, distinctive: 'certain' }), /תיעוד התסמין אינו תקין/);
