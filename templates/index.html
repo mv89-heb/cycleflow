@@ -12,9 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="MyCycle">
     <title>CycleFlow Pro</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/local-icons.css?v={{ asset_version('css/local-icons.css') }}">
     <link rel="stylesheet" href="/static/css/main.css?v={{ asset_version('css/main.css') }}">
 </head>
 <body>
@@ -73,8 +71,9 @@
             <div class="card glass">
                 <h3><i class="fas fa-tint text-danger"></i> דיווח וסת מהיר</h3>
                 <input type="date" id="report_date">
+                <label for="report_time">שעת האירוע (אופציונלי)</label><input type="time" id="report_time">
                 <div class="flex gap-10 mb-10">
-                    <label class="checkbox-label"><input type="checkbox" id="chk_sunset_report"> אחרי שקיעה 🌙</label>
+                    <label class="checkbox-label"><input type="checkbox" id="chk_sunset_report"> אחרי שקיעה (אם לא ידועה השעה) 🌙</label>
                     <label class="checkbox-label"><input type="checkbox" id="chk_spotting_report"> כתם בלבד</label>
                 </div>
                 <button class="btn btn-danger" data-action="reportPeriod">שמירת וסת</button>
@@ -91,7 +90,7 @@
         </section>
 
         <section id="view_settings" class="app-view hidden">
-            <div class="card glass"><h3>הגדרות הלכתיות</h3><label>מנהג</label><select id="set_minhag" data-action="saveSettings"><option value="ashkenaz">אשכנז (5 ימי המתנה)</option><option value="sepharad">ספרד (4 ימי המתנה)</option><option value="chabad">חב"ד</option></select><label>הגדרת פרישה (וסת קבוע)</label><select id="set_cycle_len" data-action="saveSettings"><option value="28">ממוצע אוטומטי (ברירת מחדל)</option><option value="30">30 יום קבוע</option></select></div>
+            <div class="card glass"><h3>הגדרות הלכתיות</h3><label>מנהג (פרופיל מידע – כללי החישוב דורשים אימות הלכתי)</label><select id="set_minhag" data-action="saveSettings"><option value="ashkenaz">אשכנז</option><option value="sepharad">ספרד</option><option value="chabad">חב"ד</option></select><label>יישוב לחישוב שקיעה משוערת (בחירה ידנית, ללא GPS)</label><select id="set_city" data-action="saveSettings"><option value="">יש לבחור יישוב</option><option value="beit-shemesh">בית שמש</option><option value="jerusalem">ירושלים</option><option value="bnei-brak">בני ברק</option><option value="tel-aviv">תל אביב–יפו</option><option value="haifa">חיפה</option><option value="ashdod">אשדוד</option><option value="ashkelon">אשקלון</option><option value="netanya">נתניה</option><option value="petah-tikva">פתח תקווה</option><option value="modiin">מודיעין</option><option value="other">יישוב אחר – ללא חישוב שקיעה</option></select><p id="sunset_hint" class="text-muted small-note">בחרי יישוב כדי להציג שעת שקיעה משוערת. אין שימוש במיקום GPS.</p><p class="text-muted small-note">חישוב השקיעה הוא אומדן אסטרונומי בלבד ואינו זמן הלכתי מוסמך. פרופילי המנהג אינם פסיקה.</p><label>הגדרת פרישה (וסת קבוע)</label><select id="set_cycle_len" data-action="saveSettings"><option value="28">ממוצע אוטומטי (ברירת מחדל)</option><option value="30">30 יום קבוע</option></select></div>
             <div class="card glass"><h3>ניהול נתונים</h3><button class="btn btn-outline mb-10" data-action="exportBackup"><i class="fas fa-lock"></i> גיבוי מוצפן</button><button class="btn btn-outline mb-10" data-action="triggerImport"><i class="fas fa-file-upload"></i> שחזור מגיבוי</button><input type="file" id="import_file" class="hidden" data-action="importBackup" accept=".enc,.cfbk,application/json"><hr class="divider"><button class="btn btn-outline btn-danger-outline" data-action="resetAll"><i class="fas fa-trash"></i> מחיקת נתונים</button></div>
             <div class="card glass"><h3>אבטחה</h3><input type="password" id="set_new_pin" placeholder="הגדר קוד PIN חדש (4 ספרות)" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password"><button class="btn btn-primary" data-action="setNewPin">הפעלת נעילה</button></div>
             <div class="card glass"><h3>פרטיות</h3><p class="text-muted" style="line-height:1.6">המידע העסקי נשמר בדפדפן בלבד. גיבוי מוצפן נשמר אצלך בלבד. הפוריות היא הערכה סטטיסטית ואינה תחליף לייעוץ רפואי או הלכתי.</p></div>
@@ -105,11 +104,12 @@
         <div class="flex-between mb-20"><h2 id="panel_date" class="m-0 text-lg"></h2><button data-action="closePanel" class="close-btn" aria-label="סגירה">&times;</button></div>
         <div id="panel_status_banner" class="status-banner"></div>
         <div class="action-grid mb-20"><button id="btn_hefsek_panel" class="btn btn-primary" data-action="doHefsekPanel">בצעי הפסק</button><button id="btn_undo_panel" class="btn btn-outline hidden" data-action="undoHefsekPanel">ביטול הפסק</button><button id="btn_tevila_panel" class="btn btn-outline hidden" data-action="toggleTevilaPanel">סמני טבילה בוצעה</button></div>
-        <div class="card glass p-15"><h4 class="mt-0">בדיקות הלכתיות</h4><div class="flex-between mb-10"><span>בדיקת שחרית</span><input type="checkbox" id="chk_morning" data-action="saveDaily" class="lg-checkbox"></div><div class="flex-between mb-10"><span>מוך דחוק</span><input type="checkbox" id="chk_moch" data-action="saveDaily" class="lg-checkbox"></div><div class="flex-between"><span>בדיקת שקיעה</span><input type="checkbox" id="chk_sunset" data-action="saveDaily" class="lg-checkbox"></div></div>
+        <div class="card glass p-15"><h4 class="mt-0">תיעוד זמן הפסק (אופציונלי)</h4><input type="time" id="hefsek_time" aria-label="שעת הפסק טהרה"><p class="text-muted small-note">השעה והיישוב נשמרים בגיבוי המקומי בלבד. אין בכך קביעה הלכתית.</p><h4 class="mt-0">בדיקות הלכתיות</h4><div class="flex-between mb-10"><span>בדיקת שחרית</span><input type="checkbox" id="chk_morning" data-action="saveDaily" class="lg-checkbox"></div><div class="flex-between mb-10"><span>מוך דחוק</span><input type="checkbox" id="chk_moch" data-action="saveDaily" class="lg-checkbox"></div><div class="flex-between"><span>בדיקת שקיעה</span><input type="checkbox" id="chk_sunset" data-action="saveDaily" class="lg-checkbox"></div></div>
         <textarea id="daily_note" placeholder="הערות יומיות..." rows="3" data-action="saveDaily"></textarea>
     </div>
 
     <script src="/static/js/hardening.js?v={{ asset_version('js/hardening.js') }}"></script>
+    <script src="/static/js/calendar-services.js?v={{ asset_version('js/calendar-services.js') }}"></script>
     <script type="module" src="/static/js/app.js?v={{ asset_version('js/app.js') }}"></script>
     <script src="/static/js/backup-integrity.js?v={{ asset_version('js/backup-integrity.js') }}"></script>
 </body>
