@@ -361,6 +361,9 @@ const HalachaLogic = {
         if (onsetInfo && onsetInfo.relation === 'unknown') {
             return { type: 'needs-review', text: 'לא ידוע אם תחילת הווסת הייתה לפני או אחרי שקיעה; חישובי התאריך והעונות דורשים בדיקה', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', canHefsek: false };
         }
+        const fixedHachodeshStatus = HalachaLogic.getFixedHachodeshStatus(dStr);
+        const fixedHachodeshActive = Boolean(fixedHachodeshStatus && fixedHachodeshStatus.active);
+        const fixedHachodeshDeviated = fixedHachodeshActive && fixedHachodeshStatus.missedCount > 0;
         const onsetOnah = onsetInfo ? onsetInfo.estimatedOnah : 'unknown';
         const onahSuffix = onsetOnah === 'day'
             ? ' · עונת יום (אומדן)'
@@ -425,20 +428,35 @@ const HalachaLogic = {
             return Boolean(info && info.relation !== 'unknown' && info.effectiveDate);
         });
         const longCycleExempt = !isChabadProfile && allPeriodDatesKnown && longMode === 'exempt';
-        const hachodeshDate = !longCycleExempt && CalendarServices && CalendarServices.getNextYomHachodeshDate
+        const rawHachodeshDate = CalendarServices && CalendarServices.getNextYomHachodeshDate
             ? CalendarServices.getNextYomHachodeshDate(eventCalculationDate(lastP))
             : null;
+        const hachodeshDate = !longCycleExempt ? rawHachodeshDate : null;
         const getOnahLabels = () => {
             const labels = [];
-            if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && dStr === Utils.fmt(Utils.addDays(pDate, 29))) {
-                labels.push({ label: 'עונה בינונית (30)', suffix: onahSuffixFor(30) });
+            if (fixedHachodeshActive && fixedHachodeshStatus.expectedDate === dStr) {
+                labels.push({
+                    label: `וסת קבוע – וסת החודש (יום ${fixedHachodeshStatus.day}) · עונת ${fixedHachodeshStatus.onah === 'day' ? 'יום' : 'לילה'}`,
+                    suffix: ''
+                });
             }
-            if (onsetInfo && onsetInfo.relation !== 'unknown' && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) {
-                labels.push({ label: 'עונה בינונית (31)', suffix: onahSuffix });
+            if (!fixedHachodeshActive) {
+                if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && dStr === Utils.fmt(Utils.addDays(pDate, 29))) {
+                    labels.push({ label: 'עונה בינונית (30)', suffix: onahSuffixFor(30) });
+                }
+                if (onsetInfo && onsetInfo.relation !== 'unknown' && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) {
+                    labels.push({ label: 'עונה בינונית (31)', suffix: onahSuffix });
+                }
             }
-            if (hachodeshDate && dStr === hachodeshDate) labels.push({ label: 'וסת החודש', suffix: onahSuffix });
-            if (haflagahDate && dStr === haflagahDate) labels.push({ label: `וסת הפלגה (${intervalDays})`, suffix: onahSuffix });
-            if (isChabadProfile) {
+            if ((!fixedHachodeshActive || fixedHachodeshDeviated) &&
+                (fixedHachodeshDeviated ? rawHachodeshDate : hachodeshDate) &&
+                dStr === (fixedHachodeshDeviated ? rawHachodeshDate : hachodeshDate)) {
+                labels.push({ label: 'וסת החודש', suffix: onahSuffix });
+            }
+            if ((!fixedHachodeshActive || fixedHachodeshDeviated) && haflagahDate && dStr === haflagahDate) {
+                labels.push({ label: isChabadProfile ? 'וסת הפלגה חב״ד' : `וסת הפלגה (${intervalDays})`, suffix: isChabadProfile ? '' : onahSuffix });
+            }
+            if (isChabadProfile && (!fixedHachodeshActive || fixedHachodeshDeviated)) {
                 HalachaLogic.getChabadHaflagahTargets(dStr).forEach(target => {
                     labels.push({
                         label: `וסת הפלגה חב״ד (${target.number}) · עונת ${target.onah === 'night' ? 'לילה' : 'יום'}`,
