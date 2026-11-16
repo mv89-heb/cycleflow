@@ -102,12 +102,28 @@
             if (p.eventTime !== undefined && p.eventTime !== null && (typeof p.eventTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(p.eventTime))) throw new Error('שעת אירוע לא תקינה');
             if (p.cityId !== undefined && p.cityId !== null && !cityIds.includes(p.cityId)) throw new Error('יישוב אירוע לא תקין');
             if (p.sunsetRelation !== undefined && !['before', 'after', 'unknown'].includes(p.sunsetRelation)) throw new Error('יחס שקיעה לא תקין');
+            if (p.lastRelations !== undefined && p.lastRelations !== null) {
+                const relation = p.lastRelations;
+                if (!relation || typeof relation !== 'object' || Array.isArray(relation) ||
+                    !isValidDateString(relation.date) ||
+                    typeof relation.eventTime !== 'string' || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(relation.eventTime) ||
+                    typeof relation.cityId !== 'string' || !cityIds.includes(relation.cityId)) {
+                    throw new Error('נתוני יחסי אישות אחרונים לא תקינים');
+                }
+                if (relation.sunsetRelation !== undefined && !['before', 'after', 'unknown'].includes(relation.sunsetRelation)) {
+                    throw new Error('יחס שקיעה של יחסי אישות לא תקין');
+                }
+            }
         }
         if (state.hefseks !== undefined && (typeof state.hefseks !== 'object' || Array.isArray(state.hefseks))) throw new Error('נתוני הפסק לא תקינים');
         if (state.tevilot !== undefined && (state.tevilot === null || typeof state.tevilot !== 'object' || Array.isArray(state.tevilot) || Object.entries(state.tevilot).some(([date, enabled]) => !isValidDateString(date) || enabled !== true))) throw new Error('נתוני טבילה לא תקינים');
         if (state.daily !== undefined && (typeof state.daily !== 'object' || Array.isArray(state.daily))) throw new Error('נתוני דיווח יומי לא תקינים');
         if (state.settings !== undefined && (typeof state.settings !== 'object' || Array.isArray(state.settings))) throw new Error('הגדרות לא תקינות');
         if (state.settings && state.settings.cityId !== undefined && state.settings.cityId !== null && !cityIds.includes(state.settings.cityId)) throw new Error('יישוב לא תקין');
+        if (state.settings && state.settings.minimumWaitMode !== undefined &&
+            !['five_from_onset', 'four_from_last_relations'].includes(state.settings.minimumWaitMode)) throw new Error('שיטת מינימום המתנה לא תקינה');
+        if (state.settings && state.settings.onahBeinonitMode !== undefined &&
+            !['day30_onah', 'day30_full_day', 'day30_plus31_onah', 'day30_full_day_plus31_onah'].includes(state.settings.onahBeinonitMode)) throw new Error('שיטת עונה בינונית לא תקינה');
         if (state.hefsekMeta !== undefined) {
             if (!state.hefsekMeta || typeof state.hefsekMeta !== 'object' || Array.isArray(state.hefsekMeta)) throw new Error('נתוני זמן הפסק לא תקינים');
             for (const [date, meta] of Object.entries(state.hefsekMeta)) {
