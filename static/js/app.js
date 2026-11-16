@@ -174,6 +174,17 @@ const HalachaLogic = {
                 };
             }
             if (cleanDay > 8 && !tevilaReported) {
+                const onah30 = dStr === Utils.fmt(Utils.addDays(pDate, 29));
+                const onah31 = dStr === Utils.fmt(Utils.addDays(pDate, 30));
+                if (onah30 || onah31) {
+                    const dayNumber = onah30 ? 30 : 31;
+                    return {
+                        type: 'onah',
+                        text: `עונה בינונית (${dayNumber}) · טרם סומנה טבילה`,
+                        color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)',
+                        expectedTevilaDate, reportedTevilaDate, canHefsek: false
+                    };
+                }
                 return { type: 'pending-tevila', text: 'טרם סומנה טבילה', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', expectedTevilaDate, reportedTevilaDate, canHefsek: false };
             }
             if (cleanDay > 8 && tevilaReported) res = { ...res, text: 'לאחר טבילה מדווחת', expectedTevilaDate, reportedTevilaDate };
