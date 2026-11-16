@@ -178,10 +178,12 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
         periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],
         hefseks: { '2026-06-06': true }, tevilot: {}, daily: {}, settings: baseSettings
     });
-    UI.selectedDate = Utils.newDate('2026-06-14');
+    UI.selectedDate = Utils.newDate('2026-06-15');
     UI.actions.toggleTevilaPanel.call(UI);
-    assert(State.get().tevilot['2026-06-14'] === true,
-       'day panel action records the explicit immersion report');
+    assert(State.get().tevilot['2026-06-15'] === true,
+       'day panel action records the actual reported immersion date');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-15')).text, 'לאחר טבילה מדווחת',
+       'status changes only after the actual immersion date is recorded');
 })();
 
 (function testFertility() {
