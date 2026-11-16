@@ -47,7 +47,7 @@ Online sources confirm that the rules cannot safely be reduced to a single Ashke
 
 - Nishmat explains that Ashkenazi and some Sephardi communities use a five-day wait, while some Sephardi authorities use a four-day method with a different starting point; community practice varies.
 - Nishmat's guide describes the basic calendar vesatot: Hebrew-date veset, haflagah interval, and onah beinonit, and explicitly notes a distinct Chabad haflagah calculation.
-- The Chabad reference by Rabbi Dov Tverדוביץ describes the Chabad-specific calculation from the hefsek taharah rather than the ordinary start-to-start interval in the approach described there.
+- The Chabad reference by הרב דב טברדוביץ describes the Chabad-specific calculation from the hefsek taharah rather than the ordinary start-to-start interval in the approach described there.
 
 Until a rule matrix is reviewed and approved by a qualified halachic authority, the existing calculation rules remain unchanged and must not be described as a halachic decision engine.
 
