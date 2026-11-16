@@ -717,7 +717,10 @@ HalachaLogic.getStatus = function(date) {
             recordedRuleContext: summarizeRuleContext(period.ruleContext)
         });
     });
-    const fixedCandidates = HalachaLogic.getFixedVesetCandidates(dateLabel);
+    const statusText = String(status && status.text || '');
+    const fixedCandidates = statusText.includes('וסת קבוע')
+        ? HalachaLogic.getFixedVesetCandidates(dateLabel)
+        : [];
     const evidenceDates = new Set(fixedCandidates.flatMap(candidate => candidate.evidenceDates || []));
     periods.filter(period => evidenceDates.has(Utils.halachicDate(period, cityId))).forEach(period => {
         addSourceEvent({
@@ -746,7 +749,6 @@ HalachaLogic.getStatus = function(date) {
             recordedRuleContext: summarizeRuleContext(meta.ruleContext)
         });
     }
-    const statusText = String(status && status.text || '');
     const ruleIds = [];
     if (statusText.includes('עונה בינונית')) ruleIds.push('onah-beinonit');
     if (statusText.includes('וסת קבוע') && statusText.includes('החודש')) ruleIds.push('fixed-veset-hachodesh');
