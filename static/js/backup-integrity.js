@@ -289,7 +289,11 @@
             toast('שחזור הושלם בהצלחה');
             setTimeout(() => location.reload(), 500);
         } catch (error) {
-            toast(error.message === 'קובץ גיבוי לא תקין' ? error.message : 'סיסמה שגויה או קובץ פגום', true);
+            const message = error && typeof error.message === 'string' &&
+                error.message.startsWith('השחזור מכיל יותר מדי צילומי חישוב')
+                ? error.message
+                : (error.message === 'קובץ גיבוי לא תקין' ? error.message : 'סיסמה שגויה או קובץ פגום');
+            toast(message, true);
         } finally { fileInput.value = ''; }
     }
 
