@@ -433,6 +433,105 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'after three consecutive 32-day-or-longer intervals, day 30 and yom hachodesh are exempt in this source profile');
 })();
 
+(function testFixedHachodeshSuppressesNonfixedOnotWhenNoDeviation() {
+    const base = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
+    const calendar = base.window.CycleFlowCalendar;
+    const dates = ['2026-01-01'];
+    dates.push(calendar.getNextYomHachodeshDate(dates[0]));
+    dates.push(calendar.getNextYomHachodeshDate(dates[1]));
+    const day = calendar.getHebrewDateParts(dates[0]).day;
+    const expected = calendar.getNextYomHachodeshDate(dates[2], day);
+    const hefsekDate = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(dates[2]), 5));
+    const api = loadApp({
+        periods: dates.map((date, index) => ({
+            date, type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh',
+            isSunset: false, id: `fixed-${index}`
+        })),
+        hefseks: { [hefsekDate]: true },
+        hefsekMeta: { [hefsekDate]: { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const fixed = api.HalachaLogic.getFixedHachodeshStatus(expected);
+    assert(fixed && fixed.active && fixed.missedCount === 0 && fixed.expectedDate === expected,
+       'a simple fixed yom-hachodesh pattern remains active before its next expected onah');
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate(expected));
+    assert(status.text.includes('וסת קבוע – וסת החודש'),
+       'the calendar displays the fixed yom-hachodesh onah');
+    assert(!status.text.includes('עונה בינונית (30)'),
+       'onah beinonit is suppressed while the fixed pattern is active without deviation');
+})();
+
+(function testFixedHachodeshOneDeviationKeepsFixedButSuppressesBeinonit() {
+    const base = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
+    const calendar = base.window.CycleFlowCalendar;
+    const dates = ['2026-01-01'];
+    dates.push(calendar.getNextYomHachodeshDate(dates[0]));
+    dates.push(calendar.getNextYomHachodeshDate(dates[1]));
+    const day = calendar.getHebrewDateParts(dates[0]).day;
+    const expected = calendar.getNextYomHachodeshDate(dates[2], day);
+    const deviation = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(expected), 1));
+    const target = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(deviation), 29));
+    const hefsekDate = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(deviation), 5));
+    const periods = [...dates, deviation].map((date, index) => ({
+        date, type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh',
+        isSunset: false, id: `deviation-${index}`
+    }));
+    const api = loadApp({
+        periods, hefseks: { [hefsekDate]: true },
+        hefsekMeta: { [hefsekDate]: { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const fixed = api.HalachaLogic.getFixedHachodeshStatus(target);
+    assert(fixed && fixed.active && fixed.missedCount === 1,
+       'one passed fixed date without onset is one deviation, not uprooting');
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate(target));
+    assert(!status.text.includes('עונה בינונית (30)'),
+       'onah beinonit remains suppressed after one deviation');
+})();
+
+(function testFixedHachodeshUprootsAfterThreeMissesAndCanReinstate() {
+    const base = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
+    const calendar = base.window.CycleFlowCalendar;
+    const dates = ['2026-01-01'];
+    dates.push(calendar.getNextYomHachodeshDate(dates[0]));
+    dates.push(calendar.getNextYomHachodeshDate(dates[1]));
+    const day = calendar.getHebrewDateParts(dates[0]).day;
+    const expected1 = calendar.getNextYomHachodeshDate(dates[2], day);
+    const expected2 = calendar.getNextYomHachodeshDate(expected1, day);
+    const expected3 = calendar.getNextYomHachodeshDate(expected2, day);
+    const expected4 = calendar.getNextYomHachodeshDate(expected3, day);
+    const p4 = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(expected1), 1));
+    const p5 = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(expected2), 2));
+    const p6 = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(expected3), 1));
+    const p7 = expected4;
+    const periods = [...dates, p4, p5, p6].map((date, index) => ({
+        date, type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh',
+        isSunset: false, id: `miss-${index}`
+    }));
+    const hefsekDate = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(p6), 5));
+    const api = loadApp({
+        periods, hefseks: { [hefsekDate]: true },
+        hefsekMeta: { [hefsekDate]: { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const afterThirdMiss = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(p6), 29));
+    const uprooted = api.HalachaLogic.getFixedHachodeshStatus(afterThirdMiss);
+    assert(uprooted && !uprooted.active && uprooted.missedCount >= 3,
+       'three consecutive passed fixed onot uproot the simple fixed hachodesh pattern');
+    const uprootedStatus = api.HalachaLogic.getStatus(api.Utils.newDate(afterThirdMiss));
+    assert(uprootedStatus.text.includes('עונה בינונית (30)'),
+       'after uprooting, the regular onah beinonit is restored');
+
+    const reinstatedApi = loadApp({
+        periods: [...periods, { date: p7, type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'reinstated' }],
+        hefseks: { [hefsekDate]: true }, hefsekMeta: { [hefsekDate]: { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const reinstated = reinstatedApi.HalachaLogic.getFixedHachodeshStatus(p7);
+    assert(reinstated && reinstated.active && reinstated.missedCount === 0,
+       'one later onset on the fixed date/onah reinstates the prior pattern if no new fixed pattern replaced it');
+})();
+
 (function testFixedVesetHachodeshPatternDetection() {
     const base = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
     const calendar = base.window.CycleFlowCalendar;
