@@ -52,6 +52,7 @@ assert(doctor.includes('28 ימים'));
 assert(doctor.includes('דיווחי הכתמה/דימום נוספים'));
 assert(doctor.includes('2026-10-10'));
 assert(doctor.includes('בדיקת LH חיובית'));
+assert(doctor.includes('טבילה להשוואה 2026-10-18'));
 assert(doctor.includes('תיאורי כתמים'));
 assert(doctor.includes('2026-10-18'));
 assert(!doctor.includes('שם:'));
