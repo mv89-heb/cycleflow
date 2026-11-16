@@ -187,7 +187,7 @@ For the selected Yoatzot Halacha source profile, CycleFlow now calculates the tw
 
 - **Yom hachodesh:** the same Hebrew day in the next month, during the same day/night onah as the most recent flow. If the prior flow began on day 30 and the next month has only 29 days, this profile follows the published Yoatzot position to observe the first of the following month.
 - **Standard haflagah:** the interval between the two most recent flow onsets, measured by Hebrew-date labels (sunset to sunset), counted forward from the latest onset. The onah is based on the most recent flow.
-- **Chabad haflagah:** intentionally not calculated by the standard day-interval formula. The Chabad method counts onot and uses the hefsek taharah as its starting point; it requires a dedicated implementation and tests before activation. The long-cycle exemption is also not automatically applied in the Chabad selector until its applicability is verified.
+- **Chabad haflagah:** uses the dedicated onot-count implementation described above, never the standard day-interval formula. The long-cycle exemption is not automatically applied in the Chabad selector because its applicability to that count method has not been verified.
 - **Long-cycle exemption:** the source profile suspends onah beinonit and yom hachodesh after three consecutive intervals of 32 days or more. One or two shorter intervals resume them; a subsequent long interval restores the exemption immediately. Three consecutive shorter intervals reset the requirement for three long intervals.
 
 **Still intentionally not automated:** unusual or compound fixed-veset patterns (including veset haguf, dilug, and overlapping patterns) that the source itself directs users to review with a halachic authority. The two common patterns—fixed yom hachodesh and standard fixed haflagah—now have tested state machines for establishment, deviations, uprooting, and reinstatement.
@@ -198,13 +198,22 @@ Sources:
 - [Guide to Observing Vesatot](https://www.yoatzot.org/547/) – the three basic onot for a non-fixed pattern.
 - [Keeping a Veset Calendar](https://www.yoatzot.org/548/) – practical calendar calculations.
 
+### Tzeit and immersion timing boundary
+
+Nishmat–Yoatzot Halacha states that immersion takes place after tzeit hakochavim and notes that the interval after sunset varies by geography and local custom (approximately 20 minutes to an hour in its general guidance). It directs users who are unsure to verify the local time with the mikveh attendant. Therefore CycleFlow deliberately does **not** convert sunset into a fixed tzeit offset, does not assume 8.5° or 72 minutes for every community, and does not display an exact immersion time. It calculates the scheduled immersion night only; the actual time must be verified with the local mikveh and the user's practice.
+
+Source:
+- [Mikveh Timing & Scheduling](https://www.yoatzot.org/542/)
+- [Mikveh timing FAQ](https://www.yoatzot.org/faq/mikveh-timing/) – notes that the time may be roughly 20–60 minutes after sunset depending on geography and custom.
+
 ### Review outcome
 
-- **Research verified:** the source matrix is sufficient to define implementation questions and negative/edge-case tests.
-- **Technical approval:** date/time capture, explicit unknown states, profile versioning, and non-destructive history can be implemented independently of the halachic decisions.
-- **Not approved for automatic psak:** the source pages describe differing community practices, exceptions, and individual-question cases. No universal CycleFlow profile can be inferred from them.
-- **Release gate remains open:** a qualified reviewer representing the intended community must sign off on each profile row, including the exact source/authority, rule version, exceptions, and test vectors. Until then, all generated dates remain advisory and the existing engine must not be advertised as a halachic ruling.
+- **Research verified:** the documented public sources are sufficient to implement the common, explicitly scoped rule families and negative/edge-case tests.
+- **Selected baseline:** standard common rules follow the published Nishmat–Yoatzot Halacha guides; Chabad haflagah follows the separate onot-count sources listed above. The user has chosen to rely on these published source families as the system's baseline.
+- **Implemented:** Israel date/time handling, event onah estimates, explicit minimum-wait and onah-beinonit choices, common fixed-veset state machines, Chabad haflagah count, versioned event context, and calculation provenance.
+- **Not an individualized psak:** source-based calculations are advisory. The source pages themselves describe differing community practices and individual-question cases; unsupported exceptions remain review-only.
+- **Release boundary:** do not automate stains, veset haguf, dilug, overlapping patterns, hormonal/fertility exceptions, or unusual cases without a dedicated source profile, explicit rule specification, and regression tests. Do not present a calculated tzeit or immersion time until a local convention is selected.
 
-## Implementation gate
+## Implementation boundary
 
-The online sources provide enough material to build a traceable research matrix and test scenarios. They do not establish one universally applicable rule set. The engine must remain unchanged until an authorized reviewer selects and signs off on the exact profile matrix. A source citation is not a substitute for that approval.
+The common source-based profiles are active for the supported patterns. A citation is the basis for the documented rule implementation, not a claim that the software can decide every personal halachic question. Unknown or exceptional cases remain explicitly flagged for review.
