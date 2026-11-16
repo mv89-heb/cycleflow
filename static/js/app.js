@@ -1096,28 +1096,43 @@ const UI = {
             State.update(s => { s.periods = s.periods.filter(p => (p.id || p.date) !== id); });
             this.toast('הרישום נמחק');
         },
-        doHefsekDirect() { 
-            const st = HalachaLogic.getStatus(new Date()); 
-            if (st.canHefsek) {
-                const now = new Date();
-                const date = Utils.fmt(now);
-                const eventTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-                const cityId = State.get().settings.cityId || null;
-                const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
+        doHefsekDirect() {
+            const now = new Date();
+            const clock = CalendarServices && CalendarServices.getIsraelClock
+                ? CalendarServices.getIsraelClock(now)
+                : null;
+            const date = clock ? clock.date : (CalendarServices ? CalendarServices.getIsraelCivilDate(now) : Utils.fmt(now));
+            const eventTime = clock ? clock.time : '';
+            const cityId = State.get().settings.cityId || null;
+            if (!date || !eventTime || !cityId) {
+                this.toast('כדי לרשום הפסק יש לבחור יישוב ולוודא ששעת ישראל זמינה', true);
+                return;
+            }
+            const st = HalachaLogic.getStatus(Utils.newDate(date));
+            const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
+            if (st.canHefsek && relation === 'before') {
                 State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
-                this.toast('הפסק טהרה נרשם'); 
+                this.toast('הפסק טהרה נרשם');
             } else {
-                this.toast('לא ניתן לבצע הפסק כרגע', true); 
+                this.toast('לא ניתן לרשום הפסק: יש לבצע אותו לפני השקיעה, ביום שבו המערכת מאפשרת הפסק', true);
             }
         },
-        doHefsekPanel() { 
-            if (!this.selectedDate) return; 
+        doHefsekPanel() {
+            if (!this.selectedDate) return;
             const date = Utils.fmt(this.selectedDate);
-            const eventTime = document.getElementById('hefsek_time')?.value || null;
+            const eventTime = document.getElementById('hefsek_time')?.value || '';
             const cityId = State.get().settings.cityId || null;
+            if (!eventTime || !cityId) {
+                this.toast('יש להזין שעה ולבחור יישוב כדי לאמת שההפסק נעשה לפני השקיעה', true);
+                return;
+            }
             const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
+            if (relation !== 'before') {
+                this.toast('הפסק טהרה חייב להיעשות לפני השקיעה', true);
+                return;
+            }
             State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
-            this.actions.closePanel.call(this); 
+            this.actions.closePanel.call(this);
         },
         undoHefsekPanel() {
             if (!this.selectedDate) return;
