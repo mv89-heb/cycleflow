@@ -310,6 +310,16 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const dayStatus = dayApi.HalachaLogic.getStatus(dayApi.Utils.newDate('2026-12-15'));
     assert(dayStatus.text.includes('עונת יום (אומדן)'),
        'onah beinonit uses the estimated daytime onah of the original onset');
+    eq(dayStatus.provenance?.rulesetId, 'cycleflow-yoatzot-standard',
+       'status results identify the active source ruleset');
+    assert(dayStatus.provenance?.ruleIds.includes('onah-beinonit'),
+       'status provenance identifies the onah-beinonit rule');
+    assert(dayStatus.provenance?.sourceEventIds.includes('day-onset'),
+       'status provenance links the calculation to its source period record');
+    eq(dayStatus.provenance?.sourceEventProfileState, 'unknown-historical',
+       'historical records without a saved rule context remain explicitly unknown');
+    eq(dayStatus.provenance?.confidence, 'advisory',
+       'source-based calendar results are labeled advisory, not as personal psak');
 
     const nightState = {
         periods: [{ date: '2026-11-16', type: 'veset', eventTime: '18:00', cityId: 'beit-shemesh', id: 'night-onset' }],
@@ -719,6 +729,12 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const targetStatus = base.HalachaLogic.getStatus(base.Utils.newDate('2026-09-22'));
     assert(targetStatus.text.includes('וסת קבוע – וסת הפלגה (28)'),
        'the expected fixed haflagah onah is displayed explicitly');
+    assert(targetStatus.provenance?.ruleIds.includes('fixed-veset-haflagah'),
+       'fixed haflagah status identifies its dedicated rule');
+    ['interval-0', 'interval-1', 'interval-2', 'interval-3'].forEach(id =>
+        assert(targetStatus.provenance?.sourceEventIds.includes(id),
+            `fixed haflagah provenance includes evidence event ${id}`)
+    );
     const beinonitStatus = base.HalachaLogic.getStatus(base.Utils.newDate('2026-09-23'));
     assert(!beinonitStatus.text.includes('עונה בינונית'),
        'onah beinonit is suppressed while a fixed haflagah is active');
