@@ -1136,9 +1136,101 @@ const UI = {
         const card = document.getElementById('status_card');
         const badge = document.getElementById('status_badge');
         
-        badge.innerText = st.text; 
-        badge.style.color = st.color; 
-        
+        badge.innerText = st.text;
+        badge.style.color = st.color;
+
+        const provenance = st.provenance || null;
+        const provenanceDetails = document.getElementById('status_provenance_details');
+        if (provenanceDetails) {
+            provenanceDetails.hidden = !provenance;
+            if (provenance) {
+                const reviewLabels = {
+                    'needs-review': 'נדרש בירור – חסר מידע או קיימת עמימות',
+                    'insufficient-data': 'אין עדיין נתוני מקור מספיקים',
+                    'source-based-advisory': 'חישוב לפי פרופיל מקורות – לא פסק אישי'
+                };
+                const profileMatchLabel = provenance.sourceEventProfileMatchesCurrent === false
+                    ? 'הגדרות החישוב שונות מפרופיל האירוע המקורי'
+                    : (provenance.sourceEventProfileMatchesCurrent === true
+                        ? 'הגדרות החישוב תואמות לפרופיל האירוע'
+                        : 'פרופיל האירוע ההיסטורי לא נשמר');
+                const summary = document.getElementById('status_provenance_summary');
+                if (summary) summary.textContent =
+                    `${provenance.rulesetId} v${provenance.rulesetVersion} · ${reviewLabels[provenance.reviewState] || 'סטטוס חישוב לא ידוע'} · ${profileMatchLabel}`;
+
+                const sources = document.getElementById('status_provenance_sources');
+                if (sources) {
+                    sources.replaceChildren();
+                    const catalog = {
+                        'nishmat-yoatzot-common': [
+                            ['מדריך עונות', 'https://www.yoatzot.org/547/'],
+                            ['וסת קבוע', 'https://www.yoatzot.org/676/'],
+                            ['מינימום המתנה', 'https://www.yoatzot.org/526/'],
+                            ['עונה בינונית', 'https://www.yoatzot.org/672/']
+                        ],
+                        'chabad-onot-count-sources': [
+                            ['מקור לחישוב עונות חב״ד', 'https://www.mikvah.org/images/cheshbon%20calendar%20outline.pdf']
+                        ]
+                    };
+                    (provenance.sourceIds || []).forEach(sourceId => {
+                        (catalog[sourceId] || []).forEach(([label, url]) => {
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.target = '_blank';
+                            link.rel = 'noopener noreferrer';
+                            link.textContent = label;
+                            link.style.marginInlineEnd = '10px';
+                            sources.appendChild(link);
+                        });
+                    });
+                }
+
+                const assumptions = document.getElementById('status_provenance_assumptions');
+                if (assumptions) {
+                    const values = provenance.assumptions || {};
+                    const waitLabel = values.minimumWaitMode === 'four_from_last_relations'
+                        ? '4 ימים מיחסים אחרונים'
+                        : '5 ימים מתחילת הנידה';
+                    const onahLabels = {
+                        day30_onah: 'יום 30 באותה עונה',
+                        day30_full_day: 'כל יום 30',
+                        day30_plus31_onah: 'יום 30 ויום 31',
+                        day30_full_day_plus31_onah: 'כל יום 30 ויום 31'
+                    };
+                    const city = CalendarServices && CalendarServices.cityById && values.cityId
+                        ? CalendarServices.cityById(values.cityId)
+                        : null;
+                    const onahLabel = values.onsetEstimatedOnah === 'day'
+                        ? 'יום (אומדן)'
+                        : (values.onsetEstimatedOnah === 'night' ? 'לילה (אומדן)' : 'לא ידועה');
+                    assumptions.textContent = [
+                        `מנהג: ${values.community || 'לא ידוע'}`,
+                        `המתנה: ${waitLabel}`,
+                        `עונה בינונית: ${onahLabels[values.onahBeinonitMode] || 'לא ידועה'}`,
+                        `יישוב: ${city && (city.name || city.label) || values.cityId || 'לא ידוע'}`,
+                        `עונת תחילת הווסת: ${onahLabel}`,
+                        `תאריך הפסק אחרון: ${values.hefsekDate || 'לא נרשם'}`
+                    ].join(' · ');
+                }
+
+                const events = document.getElementById('status_provenance_events');
+                if (events) {
+                    events.replaceChildren();
+                    const eventLabels = {
+                        period: 'רישום וסת',
+                        'fixed-pattern-evidence': 'ראיה ששימשה לזיהוי דפוס קבוע',
+                        'last-relations': 'יחסי אישות אחרונים',
+                        hefsek: 'הפסק טהרה'
+                    };
+                    (provenance.sourceEvents || []).slice(0, 8).forEach(event => {
+                        const item = document.createElement('li');
+                        item.textContent = `${eventLabels[event.type] || 'אירוע מקור'}: ${event.date || 'תאריך לא ידוע'}${event.eventTime ? ` · ${event.eventTime}` : ''}`;
+                        events.appendChild(item);
+                    });
+                }
+            }
+        }
+
         const cdContainer = document.getElementById('clean_days_container');
         if (st.type === 'naki' || st.type === 'hefsek' || st.type === 'tevila' || st.type === 'tevila-done') {
             cdContainer.classList.remove('hidden');
