@@ -13,3 +13,11 @@ assert(sw.includes("'/static/js/backup-integrity.js'"), 'service worker must pre
 assert(sw.includes('cache.addAll(CORE_ASSETS)'), 'service worker must precache all core assets during install');
 
 console.log('PWA offline asset regression tests passed.');
+
+assert(sw.includes("'/static/js/calendar-services.js'"), 'service worker must precache Hebrew calendar services');
+assert(sw.includes("'/static/css/local-icons.css'"), 'service worker must precache local icon CSS');
+assert(html.includes('/static/js/calendar-services.js'), 'HTML must load local calendar services');
+for (const remote of ['fonts.googleapis.com', 'cdnjs.cloudflare.com', 'cdn.jsdelivr.net']) {
+  assert(!html.includes(remote), `HTML must not depend on remote asset host: ${remote}`);
+}
+assert(!html.includes('chart.js'), 'chart rendering must not require a remote Chart.js script');
