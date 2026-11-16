@@ -768,7 +768,7 @@ const UI = {
             const d = document.getElementById('report_date').value; 
             if (!d) return;
 
-            const todayStr = Utils.fmt(new Date());
+            const todayStr = todayCivilDate();
             if (d > todayStr) { this.toast('לא ניתן לדווח תאריך עתידי', true); return; }
 
             const state = State.get();
