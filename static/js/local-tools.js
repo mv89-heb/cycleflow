@@ -57,7 +57,7 @@
       }
     }
     output.push(current);
-    return output.join('\\r\\n');
+    return output.join('\r\n');
   }
 
   function icsDate(value) {
