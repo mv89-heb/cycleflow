@@ -119,6 +119,28 @@
         if (state.tevilot !== undefined && (state.tevilot === null || typeof state.tevilot !== 'object' || Array.isArray(state.tevilot) || Object.entries(state.tevilot).some(([date, enabled]) => !isValidDateString(date) || enabled !== true))) throw new Error('נתוני טבילה לא תקינים');
         if (state.daily !== undefined && (typeof state.daily !== 'object' || Array.isArray(state.daily))) throw new Error('נתוני דיווח יומי לא תקינים');
         if (state.settings !== undefined && (typeof state.settings !== 'object' || Array.isArray(state.settings))) throw new Error('הגדרות לא תקינות');
+        if (state.calculationSnapshots !== undefined) {
+            if (!Array.isArray(state.calculationSnapshots) || state.calculationSnapshots.length > 5000) throw new Error('היסטוריית חישובים אינה תקינה');
+            const snapshotIds = new Set();
+            for (const snapshot of state.calculationSnapshots) {
+                if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot) ||
+                    snapshot.schemaVersion !== 1 ||
+                    typeof snapshot.snapshotId !== 'string' ||
+                    !/^cf-calc-v1:\\d{4}-\\d{2}-\\d{2}:[a-f0-9]{8}$/.test(snapshot.snapshotId) ||
+                    !isValidDateString(snapshot.evaluatedDate) ||
+                    typeof snapshot.capturedAt !== 'string' || Number.isNaN(Date.parse(snapshot.capturedAt)) ||
+                    typeof snapshot.inputFingerprint !== 'string' || !/^[a-f0-9]{8}$/.test(snapshot.inputFingerprint) ||
+                    !snapshot.snapshotId.endsWith(snapshot.inputFingerprint) ||
+                    !snapshot.result || typeof snapshot.result !== 'object' ||
+                    typeof snapshot.result.type !== 'string' || typeof snapshot.result.text !== 'string' ||
+                    typeof snapshot.result.canHefsek !== 'boolean' ||
+                    !snapshot.provenance || typeof snapshot.provenance !== 'object' ||
+                    snapshot.provenance.isPersonalPsak !== false || snapshotIds.has(snapshot.snapshotId)) {
+                    throw new Error('רשומת היסטוריית חישוב אינה תקינה');
+                }
+                snapshotIds.add(snapshot.snapshotId);
+            }
+        }
         if (state.settings && state.settings.cityId !== undefined && state.settings.cityId !== null && !cityIds.includes(state.settings.cityId)) throw new Error('יישוב לא תקין');
         if (state.settings && state.settings.minimumWaitMode !== undefined &&
             !['five_from_onset', 'four_from_last_relations'].includes(state.settings.minimumWaitMode)) throw new Error('שיטת מינימום המתנה לא תקינה');
