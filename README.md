@@ -20,6 +20,7 @@ cycleflow-main/
 │   ├── css/main.css        # עיצוב (כולל ערכת נושא כהה/בהירה)
 │   ├── js/app.js           # כל הלוגיקה (state, halacha, fertility, UI)
 │   ├── js/backup-integrity.js # פורמט גיבוי מוצפן versioned וייבוא transactional
+│   ├── js/calculation-history.js # יומן צילומי חישוב מקומי ובלתי משתנה
 │   ├── js/hardening.js     # ולידציית state והקשחת צד לקוח
 │   ├── sw.js               # Service Worker - תמיכה offline
 │   └── manifest.json       # PWA manifest (התקנה למסך הבית)
