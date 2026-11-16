@@ -27,11 +27,12 @@ const { TextEncoder, TextDecoder } = require('util');
   assert(api, 'test-only backup API should be available when explicitly enabled');
 
   const state = {
-    periods: [{ id: 'p1', date: '2026-06-01', type: 'veset', isSunset: false }],
+    periods: [{ id: 'p1', date: '2026-06-01', type: 'veset', isSunset: false, eventTime: '14:20', cityId: 'beit-shemesh', sunsetRelation: 'before' }],
     hefseks: { '2026-06-06': true },
+    hefsekMeta: { '2026-06-06': { eventTime: '17:10', cityId: 'beit-shemesh', sunsetRelation: 'after' } },
     tevilot: { '2026-06-15': true },
     daily: {},
-    settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark' }
+    settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: 'beit-shemesh' }
   };
 
   const encrypted = await api.encrypt(state, 'correct horse battery');
@@ -51,6 +52,9 @@ const { TextEncoder, TextDecoder } = require('util');
   cipherBytes[cipherBytes.length - 1] ^= 1;
   tamperedEnvelope.ciphertext = cipherBytes.toString('base64');
   await assert.rejects(() => api.decrypt(JSON.stringify(tamperedEnvelope), 'correct horse battery'));
+
+  assert.throws(() => api.validateState({ ...state, periods: [{ ...state.periods[0], eventTime: '25:99' }] }), /שעת אירוע לא תקינה/);
+  assert.throws(() => api.validateState({ ...state, settings: { ...state.settings, cityId: 'not-a-city' } }), /יישוב לא תקין/);
 
   assert.throws(() => api.validateState({ ...state, tevilot: { 'not-a-date': true } }),
     /נתוני טבילה לא תקינים/);
