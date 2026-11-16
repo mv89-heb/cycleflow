@@ -13,12 +13,26 @@ const CORE_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(CORE_ASSETS))
-            .catch(() => {})
-            .then(() => self.skipWaiting())
-    );
+    event.waitUntil((async () => {
+        const cache = await caches.open(CACHE_NAME);
+
+        // The app shell is required for offline startup; fail installation if it cannot be cached.
+        const shell = await fetch('/');
+        if (!shell.ok) throw new Error('CycleFlow app shell could not be cached');
+        await cache.put('/', shell);
+
+        // Cache each asset independently so one transient failure does not discard every asset.
+        await Promise.all(CORE_ASSETS.filter((asset) => asset !== '/').map(async (asset) => {
+            try {
+                const response = await fetch(asset, { cache: 'reload' });
+                if (response.ok) await cache.put(asset, response);
+            } catch (_) {
+                // A failed optional asset can be retried by the runtime fetch handler.
+            }
+        }));
+
+        await self.skipWaiting();
+    })());
 });
 
 self.addEventListener('activate', (event) => {
@@ -57,7 +71,7 @@ self.addEventListener('fetch', (event) => {
 
     if (isStatic) {
         event.respondWith(
-            caches.match(event.request).then((cached) => {
+            caches.match(event.request, { ignoreSearch: true }).then((cached) => {
                 const network = fetch(event.request).then((response) => {
                     if (response.ok) {
                         const copy = response.clone();
