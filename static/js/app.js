@@ -455,7 +455,7 @@ const UI = {
             }
             
             let dots = '';
-            if (daily && (daily.checks.morning || daily.checks.sunset || daily.note)) {
+            if (daily && (daily.checks?.morning || daily.checks?.sunset || daily.note)) {
                 dots += `<div style="position:absolute; top:6px; left:6px; width:6px; height:6px; background-color:var(--accent); border-radius:50%"></div>`;
             }
             if (fert.isFertile) {
