@@ -193,7 +193,9 @@
     if (!record || !validDate(record.date)) {
       return { relation: 'unknown', source: 'missing-or-invalid-event', confidence: 'unknown', approximate: false };
     }
-    const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId') ? record.cityId : (fallbackCityId || null);
+    const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId')
+      ? record.cityId
+      : (record.ruleContext && typeof record.ruleContext.cityId === 'string' ? record.ruleContext.cityId : null);
     if (typeof record.eventTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(record.eventTime)) {
       const sunset = getSunset(record.date, cityId);
       if (sunset) {
@@ -239,7 +241,7 @@
     }
     const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId')
       ? record.cityId
-      : fallbackCityId;
+      : (record.ruleContext && typeof record.ruleContext.cityId === 'string' ? record.ruleContext.cityId : null);
     const solarTimes = getSolarTimes(record.date, cityId);
     if (!solarTimes) return 'unknown';
     return record.eventTime >= solarTimes.sunrise && record.eventTime < solarTimes.sunset
@@ -251,7 +253,9 @@
     if (!record || !validDate(record.date)) return null;
     const relationDetails = resolveEventRelationDetails(record, fallbackCityId);
     const relation = relationDetails.relation;
-    const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId') ? record.cityId : fallbackCityId;
+    const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId')
+      ? record.cityId
+      : (record.ruleContext && typeof record.ruleContext.cityId === 'string' ? record.ruleContext.cityId : null);
     const effectiveDate = relation === 'after' ? addCivilDays(record.date, 1) : record.date;
     const hebrewDate = formatHebrewDate(record.date, { afterSunset: relation === 'after' });
     const sunset = getSunset(record.date, cityId);

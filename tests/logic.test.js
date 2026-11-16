@@ -877,6 +877,26 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'provenance does not guess an onah for an event with missing time');
 })();
 
+(function testHistoricalEventDoesNotBorrowCurrentProfileCity() {
+    const api = loadApp({
+        periods: [{
+            date: '2026-11-16', type: 'veset', eventTime: '23:59',
+            id: 'legacy-without-city'
+        }],
+        hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate('2026-11-17'));
+    eq(status.provenance?.assumptions?.onsetSunsetRelation, 'unknown',
+       'a historical event without a saved city or relation is not recalculated against the current city');
+    eq(status.provenance?.assumptions?.onsetDateConfidence, 'unknown',
+       'the date confidence remains unknown when historical location is missing');
+    eq(status.provenance?.assumptions?.onsetEstimatedOnah, 'unknown',
+       'the onah is not guessed from the current profile city');
+    eq(status.provenance?.reviewState, 'needs-review',
+       'the missing historical location is surfaced for review');
+})();
+
 (function testProvenanceDistinguishesEstimatedAndRecordedOnsetRelation() {
     const estimatedApi = loadApp({
         periods: [{
