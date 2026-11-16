@@ -645,7 +645,7 @@ const HalachaLogic = {
             if (cleanDay === 8) {
                 return {
                     type: tevilaReported ? 'tevila-done' : 'tevila',
-                    text: tevilaReported ? 'טבילה סומנה' : 'ליל טבילה משוער – יש לסמן ביצוע',
+                    text: tevilaReported ? 'טבילה סומנה' : 'ליל טבילה משוער – לאחר צאת הכוכבים לפי המקווה המקומי; יש לסמן ביצוע',
                     color: 'var(--st-tevila)', bg: 'rgba(14, 165, 233, 0.1)',
                     expectedTevilaDate, reportedTevilaDate, canHefsek: false
                 };
@@ -1169,7 +1169,8 @@ const UI = {
                             ['וסת קבוע – מקור בעברית', 'https://hebrew.yoatzot.org/6118-2/'],
                             ['מדריך עונות', 'https://www.yoatzot.org/547/'],
                             ['מינימום המתנה', 'https://www.yoatzot.org/526/'],
-                            ['עונה בינונית', 'https://www.yoatzot.org/672/']
+                            ['עונה בינונית', 'https://www.yoatzot.org/672/'],
+                            ['תזמון טבילה וצאת הכוכבים', 'https://www.yoatzot.org/542/']
                         ],
                         'chabad-onot-count-sources': [
                             ['מקור לחישוב עונות חב״ד', 'https://www.mikvah.org/images/cheshbon%20calendar%20outline.pdf']
@@ -1212,7 +1213,8 @@ const UI = {
                         `עונה בינונית: ${onahLabels[values.onahBeinonitMode] || 'לא ידועה'}`,
                         `יישוב: ${city && (city.name || city.label) || values.cityId || 'לא ידוע'}`,
                         `עונת תחילת הווסת: ${onahLabel}`,
-                        `תאריך הפסק אחרון: ${values.hefsekDate || 'לא נרשם'}`
+                        `תאריך הפסק אחרון: ${values.hefsekDate || 'לא נרשם'}`,
+                        'זמן טבילה: לאחר צאת הכוכבים לפי זמן המקווה המקומי; המערכת אינה מחשבת צאת הכוכבים'
                     ].join(' · ');
                 }
 
