@@ -176,8 +176,25 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'after-sunset onset is not applied to the preceding daytime Hebrew date');
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-02')).type, 'nidda',
        'after-sunset onset begins on the next Hebrew-date calendar label');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-02')).text, 'וסת (יום 1)',
+       'the effective Hebrew-date label is also recognized as cycle day one');
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-07')).canHefsek, true,
        'minimum-wait day count is based on the effective Hebrew-date label');
+})();
+
+(function testCycleStatisticsUseEffectiveHebrewDates() {
+    const state = {
+        periods: [
+            { date: '2026-06-01', type: 'veset', sunsetRelation: 'after', isSunset: true, id: 'first' },
+            { date: '2026-06-30', type: 'veset', sunsetRelation: 'before', isSunset: false, id: 'second' }
+        ],
+        hefseks: {}, daily: {}, settings: { ...baseSettings }
+    };
+    const { FertilityLogic, Utils } = loadApp(state);
+    eq(FertilityLogic.getAvgCycleLength(), 28,
+       'cycle length is measured between effective Hebrew-date labels, not raw civil entry dates');
+    eq(Utils.fmt(FertilityLogic.getEstimate().nextPeriodEstimate), '2026-07-28',
+       'future estimates start from the effective Hebrew-date label');
 })();
 
 (function testAfterSunsetHefsekIsNotSilentlyAccepted() {
