@@ -3,6 +3,7 @@
     'use strict';
 
     const STORAGE_KEY = 'cycleflow_v61_python_pro';
+    const RECOVERY_KEY = 'cycleflow_recovery_v1';
     const MAX_PIN_ATTEMPTS = 5;
     const LOCKOUT_MS = 30_000;
 
@@ -66,14 +67,27 @@
         if (key !== STORAGE_KEY || raw === null) return raw;
         try {
             const parsed = JSON.parse(raw);
-            return validateState(parsed) ? raw : null;
+            if (validateState(parsed)) return raw;
         } catch (_) {
-            return null;
+            // Preserve malformed data below instead of silently treating it as empty.
         }
+        try {
+            if (originalGetItem.call(this, RECOVERY_KEY) === null) {
+                originalSetItem.call(this, RECOVERY_KEY, raw);
+            }
+            window.dispatchEvent(new CustomEvent('cycleflow:state-recovery-needed'));
+        } catch (recoveryError) {
+            console.error('CycleFlow could not preserve an invalid local state.', recoveryError);
+        }
+        return null;
     };
 
     Storage.prototype.setItem = function(key, value) {
         if (key === STORAGE_KEY) {
+            if (originalGetItem.call(this, RECOVERY_KEY) !== null) {
+                window.dispatchEvent(new CustomEvent('cycleflow:state-write-blocked'));
+                throw new Error('Existing CycleFlow data requires recovery before overwrite');
+            }
             try {
                 const parsed = JSON.parse(value);
                 if (!validateState(parsed)) {
