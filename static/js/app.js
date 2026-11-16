@@ -39,6 +39,37 @@ const todayCivilDate = (now = new Date()) => CalendarServices && CalendarService
     ? CalendarServices.getIsraelCivilDate(now)
     : Utils.fmt(now);
 
+const RULE_PROFILE_VERSION = '1.0.0';
+const captureRuleContext = (settings = {}, recordedAt = new Date()) => {
+    const community = ['ashkenaz', 'sepharad', 'chabad'].includes(settings.minhag)
+        ? settings.minhag
+        : 'ashkenaz';
+    const isChabad = community === 'chabad';
+    const validOnahModes = [
+        'day30_onah', 'day30_full_day',
+        'day30_plus31_onah', 'day30_full_day_plus31_onah'
+    ];
+    return {
+        schemaVersion: 1,
+        rulesetId: isChabad ? 'cycleflow-chabad-onot-count' : 'cycleflow-yoatzot-standard',
+        rulesetVersion: RULE_PROFILE_VERSION,
+        sourceIds: isChabad
+            ? ['nishmat-yoatzot-common', 'chabad-onot-count-sources']
+            : ['nishmat-yoatzot-common'],
+        community,
+        minimumWaitMode: settings.minimumWaitMode === 'four_from_last_relations'
+            ? 'four_from_last_relations'
+            : 'five_from_onset',
+        onahBeinonitMode: validOnahModes.includes(settings.onahBeinonitMode)
+            ? settings.onahBeinonitMode
+            : 'day30_onah',
+        cityId: settings.cityId || null,
+        timeZone: 'Asia/Jerusalem',
+        solarTimeMethod: 'noaa-apparent-horizon-estimate',
+        recordedAt: recordedAt.toISOString()
+    };
+};
+
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
 function downloadLocalFile(content, filename, mimeType) {
@@ -1280,6 +1311,7 @@ const UI = {
                 : d;
             const isSpotting = document.getElementById('chk_spotting_report').checked;
             const minimumWaitMode = state.settings.minimumWaitMode || 'five_from_onset';
+            const ruleContext = captureRuleContext(state.settings);
             let lastRelations = null;
             if (!isSpotting && minimumWaitMode === 'four_from_last_relations') {
                 const lastRelationsDate = document.getElementById('last_relations_date')?.value || '';
@@ -1315,6 +1347,7 @@ const UI = {
                     sunsetRelation: relation,
                     isSunset: relation === 'after' ? true : (relation === 'before' ? false : null),
                     lastRelations,
+                    ruleContext,
                     type: isSpotting ? 'spotting' : 'veset'
                 });
                 const cutoff = Utils.newDate(effectiveDate); 
@@ -1341,7 +1374,9 @@ const UI = {
                 : null;
             const date = clock ? clock.date : (CalendarServices ? CalendarServices.getIsraelCivilDate(now) : Utils.fmt(now));
             const eventTime = clock ? clock.time : '';
-            const cityId = State.get().settings.cityId || null;
+            const currentSettings = State.get().settings;
+            const cityId = currentSettings.cityId || null;
+            const ruleContext = captureRuleContext(currentSettings, now);
             if (!date || !eventTime || !cityId) {
                 this.toast('כדי לרשום הפסק יש לבחור יישוב ולוודא ששעת ישראל זמינה', true);
                 return;
@@ -1349,7 +1384,7 @@ const UI = {
             const st = HalachaLogic.getStatus(Utils.newDate(date));
             const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
             if (st.canHefsek && relation === 'before') {
-                State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
+                State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation, ruleContext }; });
                 this.toast('הפסק טהרה נרשם');
             } else {
                 this.toast('לא ניתן לרשום הפסק: יש לבצע אותו לפני השקיעה, ביום שבו המערכת מאפשרת הפסק', true);
@@ -1374,7 +1409,8 @@ const UI = {
                 this.toast('הפסק טהרה חייב להיעשות לפני השקיעה', true);
                 return;
             }
-            State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
+            const ruleContext = captureRuleContext(State.get().settings);
+            State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation, ruleContext }; });
             this.actions.closePanel.call(this);
         },
         undoHefsekPanel() {
