@@ -189,6 +189,27 @@
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Array.isArray(checked) || checked.some(id => !checklistIds.includes(id)) || new Set(checked).size !== checked.length) throw new Error('סימון הכנה למקווה אינו תקין');
             }
         }
+        if (state.symptomObservations !== undefined) {
+            if (!Array.isArray(state.symptomObservations) || state.symptomObservations.length > 500) throw new Error('תיעודי תסמינים אינם תקינים');
+            const ids = new Set();
+            const symptomTypes = ['cramps', 'back_pain', 'breast_soreness', 'bloating', 'sneezing_yawning', 'other'];
+            const answers = ['yes', 'no', 'unknown'];
+            for (const item of state.symptomObservations) {
+                if (!item || typeof item !== 'object' || Array.isArray(item) || typeof item.id !== 'string' ||
+                    item.id.length > 80 || ids.has(item.id) || !isValidDateString(item.date) ||
+                    !symptomTypes.includes(item.type) || !answers.includes(item.distinctive) ||
+                    !answers.includes(item.occursOutsideFlow)) throw new Error('תיעוד תסמין לא תקין');
+                ids.add(item.id);
+                if (item.time !== undefined && item.time !== null && !validTime(item.time)) throw new Error('שעת תסמין לא תקינה');
+                if (item.endDate !== undefined && item.endDate !== null &&
+                    (!isValidDateString(item.endDate) || item.endDate < item.date)) throw new Error('תאריך סיום תסמין לא תקין');
+                if (item.endTime !== undefined && item.endTime !== null && !validTime(item.endTime)) throw new Error('שעת סיום תסמין לא תקינה');
+                if (item.relatedFlowDate !== undefined && item.relatedFlowDate !== null && !isValidDateString(item.relatedFlowDate)) throw new Error('תאריך דימום קשור לא תקין');
+                if (item.type === 'other' && (typeof item.customDescription !== 'string' || !item.customDescription.trim())) throw new Error('יש לתאר את התסמין האחר');
+                if (item.customDescription !== undefined && (typeof item.customDescription !== 'string' || item.customDescription.length > 120)) throw new Error('תיאור תסמין ארוך מדי');
+                if (item.note !== undefined && (typeof item.note !== 'string' || item.note.length > 500)) throw new Error('הערת תסמין ארוכה מדי');
+            }
+        }
         if (state.ovulationObservations !== undefined) {
             if (!Array.isArray(state.ovulationObservations) || state.ovulationObservations.length > 500) throw new Error('תיעודי ביוץ אינם תקינים');
             const ids = new Set();
