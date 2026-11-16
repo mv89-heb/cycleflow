@@ -679,6 +679,112 @@ const HalachaLogic = {
     }
 };
 
+const getStatusWithoutProvenance = HalachaLogic.getStatus.bind(HalachaLogic);
+HalachaLogic.getStatus = function(date) {
+    const status = getStatusWithoutProvenance(date);
+    const state = State.get();
+    const dateLabel = Utils.fmt(date);
+    const cityId = state.settings.cityId || null;
+    const periods = Utils.chronologicalVesets(state.periods)
+        .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+        .filter(period => Utils.halachicDate(period, cityId) <= dateLabel)
+        .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)));
+    const lastPeriod = periods[periods.length - 1] || null;
+    const previousPeriod = periods.length > 1 ? periods[periods.length - 2] : null;
+    const lastInfo = lastPeriod && CalendarServices && CalendarServices.getEventDateInfo
+        ? CalendarServices.getEventDateInfo(lastPeriod, cityId)
+        : null;
+    const ruleContext = captureRuleContext(state.settings);
+    const sourceEvents = [];
+    const addSourceEvent = event => {
+        if (!event) return;
+        const key = `${event.type}:${event.id || event.date || ''}`;
+        if (!sourceEvents.some(existing => existing.key === key)) sourceEvents.push({ ...event, key });
+    };
+    [previousPeriod, lastPeriod].forEach(period => {
+        if (!period) return;
+        addSourceEvent({
+            type: 'period', id: period.id || null, date: period.date,
+            effectiveDate: Utils.halachicDate(period, cityId)
+        });
+    });
+    const fixedCandidates = HalachaLogic.getFixedVesetCandidates(dateLabel);
+    const evidenceDates = new Set(fixedCandidates.flatMap(candidate => candidate.evidenceDates || []));
+    periods.filter(period => evidenceDates.has(Utils.halachicDate(period, cityId))).forEach(period => {
+        addSourceEvent({
+            type: 'fixed-pattern-evidence', id: period.id || null, date: period.date,
+            effectiveDate: Utils.halachicDate(period, cityId)
+        });
+    });
+    if (lastPeriod && lastPeriod.lastRelations) {
+        addSourceEvent({
+            type: 'last-relations', date: lastPeriod.lastRelations.date,
+            eventTime: lastPeriod.lastRelations.eventTime || null
+        });
+    }
+    const lastHefsekDate = Object.keys(state.hefseks || {})
+        .filter(value => value <= dateLabel && (!lastPeriod || value >= Utils.halachicDate(lastPeriod, cityId)))
+        .sort()
+        .pop() || null;
+    if (lastHefsekDate) {
+        const meta = (state.hefsekMeta || {})[lastHefsekDate] || {};
+        addSourceEvent({
+            type: 'hefsek', date: lastHefsekDate,
+            eventTime: meta.eventTime || null, cityId: meta.cityId || null
+        });
+    }
+    const statusText = String(status && status.text || '');
+    const ruleIds = [];
+    if (statusText.includes('עונה בינונית')) ruleIds.push('onah-beinonit');
+    if (statusText.includes('וסת קבוע') && statusText.includes('החודש')) ruleIds.push('fixed-veset-hachodesh');
+    if (statusText.includes('וסת קבוע') && statusText.includes('הפלגה')) ruleIds.push('fixed-veset-haflagah');
+    if (statusText.includes('וסת החודש')) ruleIds.push('veset-hachodesh');
+    if (statusText.includes('וסת הפלגה')) ruleIds.push('veset-haflagah');
+    if (status && (status.type === 'nidda' || status.canHefsek)) ruleIds.push('minimum-wait');
+    if (status && ['naki', 'tevila', 'tevila-done', 'pending-tevila'].includes(status.type)) ruleIds.push('shivah-nekiim');
+    if (statusText.includes('טבילה')) ruleIds.push('immersion-tracking');
+    if (lastInfo && lastInfo.estimatedOnah !== 'unknown') ruleIds.push('estimated-day-night-onah');
+    const noData = !lastPeriod;
+    const needsReview = Boolean(status && status.type === 'needs-review') ||
+        Boolean(lastPeriod && (!lastInfo || lastInfo.relation === 'unknown'));
+    const confidence = needsReview ? 'needs-review' : (noData ? 'insufficient-data' : 'advisory');
+    return {
+        ...status,
+        provenance: {
+            schemaVersion: 1,
+            rulesetId: ruleContext.rulesetId,
+            rulesetVersion: ruleContext.rulesetVersion,
+            sourceIds: ruleContext.sourceIds,
+            evaluatedDate: dateLabel,
+            evaluatedAt: new Date().toISOString(),
+            ruleIds: [...new Set(ruleIds)],
+            sourceEvents: sourceEvents.map(({ key, ...event }) => event),
+            sourceEventIds: [...new Set(sourceEvents.map(event => event.id || event.date).filter(Boolean))],
+            assumptions: {
+                community: ruleContext.community,
+                minimumWaitMode: ruleContext.minimumWaitMode,
+                onahBeinonitMode: ruleContext.onahBeinonitMode,
+                cityId: lastPeriod && Object.prototype.hasOwnProperty.call(lastPeriod, 'cityId')
+                    ? lastPeriod.cityId
+                    : cityId,
+                timeZone: ruleContext.timeZone,
+                solarTimeMethod: ruleContext.solarTimeMethod,
+                onsetCivilDate: lastPeriod ? lastPeriod.date : null,
+                onsetEffectiveDate: lastInfo ? lastInfo.effectiveDate : null,
+                onsetEventTime: lastPeriod ? lastPeriod.eventTime || null : null,
+                onsetSunsetRelation: lastInfo ? lastInfo.relation : 'unknown',
+                onsetEstimatedOnah: lastInfo ? lastInfo.estimatedOnah : 'unknown',
+                hefsekDate: lastHefsekDate
+            },
+            confidence,
+            reviewState: confidence === 'needs-review'
+                ? 'needs-review'
+                : (noData ? 'insufficient-data' : 'source-based-advisory'),
+            isPersonalPsak: false
+        }
+    };
+};
+
 const FertilityLogic = {
     getAvgCycleLength() {
         const state = State.get();
