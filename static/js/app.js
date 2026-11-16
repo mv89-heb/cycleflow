@@ -367,6 +367,7 @@ const UI = {
                 this.actions.saveSettings.call(this, control, e);
             } else if (action === 'saveDaily' && control.matches('input[type="checkbox"]')) {
                 this.actions.saveDaily.call(this, control, e);
+            }
         });
         
         document.getElementById('mikveh_checklist_date')?.addEventListener('change', () => this.renderTools());
