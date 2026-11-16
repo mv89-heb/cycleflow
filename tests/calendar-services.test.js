@@ -25,8 +25,10 @@ assert.equal(calendar.resolveEventRelation({ date: '2026-11-16', eventTime: '18:
   'manual legacy sunset choice remains available when no city is selected');
 assert.equal(calendar.resolveEventRelation({ date: '2026-11-16' }), 'unknown',
   'missing historical event time must remain unknown');
-assert.equal(calendar.resolveEventRelation({ date: '2026-11-16', isSunset: false }), 'unknown',
-  'legacy unchecked sunset flags must not be mistaken for verified before-sunset times');
+assert.equal(calendar.resolveEventRelation({ date: '2026-11-16', isSunset: false }), 'before',
+  'an explicit unchecked after-sunset flag preserves the recorded before-sunset choice');
+assert.equal(calendar.resolveEventRelation({ date: '2026-11-16', isSunset: null }), 'unknown',
+  'missing sunset relation remains unknown');
 assert.equal(calendar.getEventDateInfo({
   date: '2026-11-16', sunsetRelation: 'after'
 }).effectiveDate, '2026-11-17', 'after-sunset event belongs to the next Hebrew-date civil label');
