@@ -58,6 +58,10 @@ assert(day30Rollover, 'the test year should include a 30-day month followed by a
 assert.equal(calendar.getHebrewDateParts(day30Rollover.target).day, 1,
   'day 30 followed by a 29-day month rolls to the first of the following month in this source profile');
 
+const israelClock = calendar.getIsraelClock(new Date('2026-11-16T20:00:00Z'));
+assert.deepEqual(israelClock, { date: '2026-11-16', time: '22:00' },
+  'direct event recording uses Israel-local civil date and time independent of device timezone');
+
 const sunset = calendar.getSunset('2026-11-16', 'beit-shemesh');
 assert(sunset && /^([01]\d|2[0-3]):[0-5]\d$/.test(sunset.time), 'sunset estimate is a local HH:mm time');
 const before = sunset.time === '00:00' ? '00:01' : '00:00';

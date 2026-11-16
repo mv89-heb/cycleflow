@@ -298,6 +298,108 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     assert(haflagahStatus.text.includes('וסת הפלגה (28)'), 'standard haflagah uses the interval between the two most recent flows');
 })();
 
+(function testChabadHaflagahCountsFromFirstNightAfterHefsek() {
+    const state = {
+        periods: [
+            { date: '2026-01-01', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'a' },
+            { date: '2026-01-30', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'b' }
+        ],
+        hefseks: { '2026-01-05': true, '2026-02-04': true },
+        hefsekMeta: {
+            '2026-01-05': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' },
+            '2026-02-04': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' }
+        },
+        daily: {}, settings: { ...baseSettings, minhag: 'chabad', cityId: 'beit-shemesh' }
+    };
+    const api = loadApp(state);
+    eq(api.HalachaLogic.getChabadHaflagahNumbers().join(','), '50',
+       'the Chabad count includes the onset onah, counting from the first night after the prior hefsek');
+    const targets = api.HalachaLogic.getChabadHaflagahTargets('2026-03-01');
+    assert(targets.some(target => target.number === 50 && target.onah === 'day'),
+       'an even Chabad haflagah number maps to a daytime onah after the current hefsek');
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate('2026-03-01'));
+    assert(status.text.includes('וסת הפלגה חב״ד (50)') && status.text.includes('עונת יום'),
+       'the Chabad onah-count prediction appears on the calendar');
+})();
+
+(function testChabadHaflagahCarriesHigherNumbersAndCancelsLowerOnes() {
+    const state = {
+        periods: [
+            { date: '2026-01-01', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'a' },
+            { date: '2026-01-30', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'b' },
+            { date: '2026-02-20', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'c' }
+        ],
+        hefseks: { '2026-01-05': true, '2026-02-04': true, '2026-02-25': true },
+        hefsekMeta: {
+            '2026-01-05': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' },
+            '2026-02-04': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' },
+            '2026-02-25': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' }
+        },
+        daily: {}, settings: { ...baseSettings, minhag: 'chabad', cityId: 'beit-shemesh' }
+    };
+    const api = loadApp(state);
+    eq(api.HalachaLogic.getChabadHaflagahNumbers().join(','), '32,50',
+       'a lower new haflagah number is added while the larger existing number is carried forward');
+    const targets = api.HalachaLogic.getChabadHaflagahTargets('2026-03-13');
+    assert(targets.some(target => target.number === 32 && target.onah === 'day'),
+       'the lower carried number is projected from the newest successful hefsek');
+})();
+
+(function testChabadHigherHaflagahNumberCancelsLowerNumbers() {
+    const state = {
+        periods: [
+            { date: '2026-01-01', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'a' },
+            { date: '2026-01-30', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'b' },
+            { date: '2026-03-20', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'c' }
+        ],
+        hefseks: { '2026-01-05': true, '2026-02-04': true, '2026-03-25': true },
+        hefsekMeta: {
+            '2026-01-05': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' },
+            '2026-02-04': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' },
+            '2026-03-25': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' }
+        },
+        daily: {}, settings: { ...baseSettings, minhag: 'chabad', cityId: 'beit-shemesh' }
+    };
+    const api = loadApp(state);
+    eq(api.HalachaLogic.getChabadHaflagahNumbers().join(','), '88',
+       'a new higher haflagah number cancels all lower numbers');
+})();
+
+(function testChabadHaflagahRequiresEligibleMinimumWaitAndCurrentHefsek() {
+    const state = {
+        periods: [
+            { date: '2026-01-01', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'a' },
+            { date: '2026-01-30', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'b' }
+        ],
+        hefseks: { '2026-01-04': true },
+        hefsekMeta: { '2026-01-04': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' } },
+        daily: {}, settings: { ...baseSettings, minhag: 'chabad', cityId: 'beit-shemesh' }
+    };
+    const api = loadApp(state);
+    eq(api.HalachaLogic.getChabadHaflagahNumbers().length, 0,
+       'a hefsek before the fifth halachic day is not used to establish a Chabad haflagah number');
+    eq(api.HalachaLogic.getChabadHaflagahTargets('2026-03-01').length, 0,
+       'no future Chabad haflagah is projected without a successful hefsek after the latest period');
+})();
+
+(function testChabadHaflagahIgnoresUnverifiedHefsek() {
+    const state = {
+        periods: [
+            { date: '2026-01-01', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'a' },
+            { date: '2026-01-30', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'b' }
+        ],
+        hefseks: { '2026-01-05': true, '2026-02-04': true },
+        hefsekMeta: {
+            '2026-01-05': { eventTime: '20:30', cityId: 'beit-shemesh', sunsetRelation: 'after' },
+            '2026-02-04': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' }
+        },
+        daily: {}, settings: { ...baseSettings, minhag: 'chabad', cityId: 'beit-shemesh' }
+    };
+    const api = loadApp(state);
+    eq(api.HalachaLogic.getChabadHaflagahNumbers().length, 0,
+       'an after-sunset hefsek is not accepted as the start of the Chabad onot count');
+})();
+
 (function testChabadDoesNotUseStandardDayIntervalForHaflagah() {
     const state = {
         periods: [

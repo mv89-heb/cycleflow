@@ -221,6 +221,84 @@ const HalachaLogic = {
         const latestIndex = Math.max(...candidates.map(candidate => candidate.establishedIndex));
         return candidates.filter(candidate => candidate.establishedIndex === latestIndex);
     },
+    getSuccessfulHefsekDates(state = State.get()) {
+        if (!CalendarServices || !CalendarServices.getEventDateInfo) return [];
+        const cityId = state.settings.cityId;
+        const periods = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+            .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)));
+        return Object.keys(state.hefseks || {}).filter(date => {
+            const meta = state.hefsekMeta && state.hefsekMeta[date];
+            if (!meta || !meta.eventTime || !meta.cityId) return false;
+            const info = CalendarServices.getEventDateInfo({
+                date, eventTime: meta.eventTime, cityId: meta.cityId,
+                sunsetRelation: meta.sunsetRelation
+            }, meta.cityId);
+            if (!info || info.relation !== 'before' || info.effectiveDate !== date) return false;
+            const period = periods.filter(item => Utils.halachicDate(item, cityId) <= date).pop();
+            if (!period) return false;
+            const periodDate = Utils.halachicDate(period, cityId);
+            if (date < periodDate) return false;
+            let waitStart = periodDate;
+            let waitDays = 5;
+            if ((state.settings.minimumWaitMode || 'five_from_onset') === 'four_from_last_relations') {
+                const lastRelations = period.lastRelations;
+                if (!lastRelations || !lastRelations.date || !lastRelations.eventTime || !lastRelations.cityId) return false;
+                const relationsInfo = CalendarServices.getEventDateInfo(lastRelations, null);
+                if (!relationsInfo || relationsInfo.relation === 'unknown' || !relationsInfo.effectiveDate) return false;
+                waitStart = relationsInfo.effectiveDate;
+                waitDays = 4;
+            }
+            const earliest = Utils.fmt(Utils.addDays(Utils.newDate(waitStart), waitDays - 1));
+            return date >= earliest;
+        }).sort();
+    },
+    getChabadHaflagahNumbers() {
+        const state = State.get();
+        if (state.settings.minhag !== 'chabad') return [];
+        const cityId = state.settings.cityId;
+        const periods = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+            .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)));
+        const hefsekDates = this.getSuccessfulHefsekDates(state);
+        const activeNumbers = [];
+        for (let i = 1; i < periods.length; i++) {
+            const previousDate = Utils.halachicDate(periods[i - 1], cityId);
+            const currentDate = Utils.halachicDate(periods[i], cityId);
+            const hefsekDate = hefsekDates.filter(date => date >= previousDate && date < currentDate).pop();
+            if (!hefsekDate) continue;
+            const firstNightDate = Utils.fmt(Utils.addDays(Utils.newDate(hefsekDate), 1));
+            const daysDiff = Utils.diffDays(Utils.newDate(currentDate), Utils.newDate(firstNightDate));
+            const currentInfo = CalendarServices.getEventDateInfo(periods[i], cityId);
+            if (daysDiff < 0 || !currentInfo || !['day', 'night'].includes(currentInfo.estimatedOnah)) continue;
+            const number = (2 * daysDiff) + (currentInfo.estimatedOnah === 'night' ? 1 : 2);
+            if (!Number.isInteger(number) || number < 1) continue;
+            const carried = activeNumbers.filter(existing => existing > number);
+            carried.push(number);
+            activeNumbers.splice(0, activeNumbers.length, ...new Set(carried));
+        }
+        return activeNumbers.sort((a, b) => a - b);
+    },
+    getChabadHaflagahTargets(dateString) {
+        const state = State.get();
+        if (state.settings.minhag !== 'chabad') return [];
+        const cityId = state.settings.cityId;
+        const periods = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+            .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)));
+        const lastPeriod = periods[periods.length - 1];
+        if (!lastPeriod) return [];
+        const lastDate = Utils.halachicDate(lastPeriod, cityId);
+        const hefsekDate = this.getSuccessfulHefsekDates(state)
+            .filter(date => date > lastDate && date < dateString).pop();
+        if (!hefsekDate) return [];
+        const firstNightDate = Utils.fmt(Utils.addDays(Utils.newDate(hefsekDate), 1));
+        return this.getChabadHaflagahNumbers().map(number => ({
+            number,
+            date: Utils.fmt(Utils.addDays(Utils.newDate(firstNightDate), Math.floor((number - 1) / 2))),
+            onah: number % 2 === 1 ? 'night' : 'day'
+        })).filter(target => target.date === dateString);
+    },
     getStatus(date) {
         const state = State.get();
         const dStr = Utils.fmt(date);
@@ -312,17 +390,25 @@ const HalachaLogic = {
             : null;
         const getOnahLabels = () => {
             const labels = [];
-            if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && dStr === Utils.fmt(Utils.addDays(pDate, 29))) labels.push({ label: 'עונה בינונית (30)', day: 30 });
-            if (onsetInfo && onsetInfo.relation !== 'unknown' && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) labels.push({ label: 'עונה בינונית (31)', day: 31 });
-            if (hachodeshDate && dStr === hachodeshDate) labels.push({ label: 'וסת החודש', day: null });
-            if (haflagahDate && dStr === haflagahDate) labels.push({ label: `וסת הפלגה (${intervalDays})`, day: null });
+            if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && dStr === Utils.fmt(Utils.addDays(pDate, 29))) {
+                labels.push({ label: 'עונה בינונית (30)', suffix: onahSuffixFor(30) });
+            }
+            if (onsetInfo && onsetInfo.relation !== 'unknown' && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) {
+                labels.push({ label: 'עונה בינונית (31)', suffix: onahSuffix });
+            }
+            if (hachodeshDate && dStr === hachodeshDate) labels.push({ label: 'וסת החודש', suffix: onahSuffix });
+            if (haflagahDate && dStr === haflagahDate) labels.push({ label: `וסת הפלגה (${intervalDays})`, suffix: onahSuffix });
+            if (isChabadProfile) {
+                HalachaLogic.getChabadHaflagahTargets(dStr).forEach(target => {
+                    labels.push({
+                        label: `וסת הפלגה חב״ד (${target.number}) · עונת ${target.onah === 'night' ? 'לילה' : 'יום'}`,
+                        suffix: ''
+                    });
+                });
+            }
             return labels;
         };
-        const onahText = labels => {
-            const day30 = labels.some(item => item.day === 30);
-            const dayNumber = day30 ? 30 : (labels.find(item => item.day === 31)?.day || null);
-            return `${labels.map(item => item.label).join(' + ')}${dayNumber ? onahSuffixFor(dayNumber) : onahSuffix}`;
-        };
+        const onahText = labels => labels.map(item => `${item.label}${item.suffix || ''}`).join(' + ');
         const daysDiff = Utils.diffDays(date, pDate);
         const minimumWaitMode = state.settings.minimumWaitMode || 'five_from_onset';
         let minimumWaitStartDate = pDate;
@@ -1096,28 +1182,48 @@ const UI = {
             State.update(s => { s.periods = s.periods.filter(p => (p.id || p.date) !== id); });
             this.toast('הרישום נמחק');
         },
-        doHefsekDirect() { 
-            const st = HalachaLogic.getStatus(new Date()); 
-            if (st.canHefsek) {
-                const now = new Date();
-                const date = Utils.fmt(now);
-                const eventTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-                const cityId = State.get().settings.cityId || null;
-                const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
+        doHefsekDirect() {
+            const now = new Date();
+            const clock = CalendarServices && CalendarServices.getIsraelClock
+                ? CalendarServices.getIsraelClock(now)
+                : null;
+            const date = clock ? clock.date : (CalendarServices ? CalendarServices.getIsraelCivilDate(now) : Utils.fmt(now));
+            const eventTime = clock ? clock.time : '';
+            const cityId = State.get().settings.cityId || null;
+            if (!date || !eventTime || !cityId) {
+                this.toast('כדי לרשום הפסק יש לבחור יישוב ולוודא ששעת ישראל זמינה', true);
+                return;
+            }
+            const st = HalachaLogic.getStatus(Utils.newDate(date));
+            const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
+            if (st.canHefsek && relation === 'before') {
                 State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
-                this.toast('הפסק טהרה נרשם'); 
+                this.toast('הפסק טהרה נרשם');
             } else {
-                this.toast('לא ניתן לבצע הפסק כרגע', true); 
+                this.toast('לא ניתן לרשום הפסק: יש לבצע אותו לפני השקיעה, ביום שבו המערכת מאפשרת הפסק', true);
             }
         },
-        doHefsekPanel() { 
-            if (!this.selectedDate) return; 
+        doHefsekPanel() {
+            if (!this.selectedDate) return;
+            const status = HalachaLogic.getStatus(this.selectedDate);
+            if (!status.canHefsek) {
+                this.toast('לא ניתן לבצע הפסק בתאריך שנבחר', true);
+                return;
+            }
             const date = Utils.fmt(this.selectedDate);
-            const eventTime = document.getElementById('hefsek_time')?.value || null;
+            const eventTime = document.getElementById('hefsek_time')?.value || '';
             const cityId = State.get().settings.cityId || null;
+            if (!eventTime || !cityId) {
+                this.toast('יש להזין שעה ולבחור יישוב כדי לאמת שההפסק נעשה לפני השקיעה', true);
+                return;
+            }
             const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
+            if (relation !== 'before') {
+                this.toast('הפסק טהרה חייב להיעשות לפני השקיעה', true);
+                return;
+            }
             State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
-            this.actions.closePanel.call(this); 
+            this.actions.closePanel.call(this);
         },
         undoHefsekPanel() {
             if (!this.selectedDate) return;
