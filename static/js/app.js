@@ -734,7 +734,7 @@ const UI = {
                 const eventTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
                 const cityId = State.get().settings.cityId || null;
                 const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
-                State.update(s => { s.hefseks[date] = true; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
+                State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
                 this.toast('הפסק טהרה נרשם'); 
             } else {
                 this.toast('לא ניתן לבצע הפסק כרגע', true); 
@@ -746,7 +746,7 @@ const UI = {
             const eventTime = document.getElementById('hefsek_time')?.value || null;
             const cityId = State.get().settings.cityId || null;
             const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
-            State.update(s => { s.hefseks[date] = true; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
+            State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
             this.actions.closePanel.call(this); 
         },
         undoHefsekPanel() {
