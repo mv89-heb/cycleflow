@@ -1178,6 +1178,24 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     eq(Utils.fmt(est.nextPeriodEstimate), '2026-04-01', 'latest chronological veset drives estimate');
 })();
 
+(function testMonthNavigationDoesNotOverflowAtMonthEnd() {
+    const { UI, Utils, document } = loadApp({
+        periods: [], hefseks: {}, daily: {}, settings: baseSettings
+    });
+    UI.navDate = Utils.newDate('2026-03-31');
+    UI.renderCalendar();
+    UI.actions.navMonth.call(UI, { dataset: { dir: '-1' } });
+    eq(Utils.fmt(UI.navDate), '2026-02-01',
+       'navigating backward from the 31st must open February instead of overflowing into March');
+    eq(document.getElementById('cal_month_title').innerText, 'פברואר',
+       'calendar title must match the month selected after backward navigation');
+
+    UI.navDate = Utils.newDate('2026-01-31');
+    UI.actions.navMonth.call(UI, { dataset: { dir: '1' } });
+    eq(Utils.fmt(UI.navDate), '2026-02-01',
+       'navigating forward from the 31st must open February instead of skipping to March');
+})();
+
 console.log(`\n${'='.repeat(50)}`);
 console.log(`בדיקות עברו: ${passed} | נכשלו: ${failed}`);
 if (failures.length) {
