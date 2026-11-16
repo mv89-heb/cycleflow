@@ -21,6 +21,12 @@ const Utils = {
     prettyDate: (d) => d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' }),
     chronologicalPeriods: (periods) => [...periods].sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || ''))),
     chronologicalVesets: (periods) => [...periods].filter(p => p.type === 'veset').sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || ''))),
+    hasKnownHalachicDate: (record, fallbackCityId) => {
+        const info = CalendarServices && CalendarServices.getEventDateInfo
+            ? CalendarServices.getEventDateInfo(record, fallbackCityId)
+            : null;
+        return Boolean(info && info.relation !== 'unknown' && info.effectiveDate);
+    },
     halachicDate: (record, fallbackCityId) => {
         const info = CalendarServices && CalendarServices.getEventDateInfo
             ? CalendarServices.getEventDateInfo(record, fallbackCityId)
@@ -179,6 +185,9 @@ const HalachaLogic = {
         const onsetInfo = CalendarServices && CalendarServices.getEventDateInfo
             ? CalendarServices.getEventDateInfo(lastP, state.settings.cityId)
             : null;
+        if (onsetInfo && onsetInfo.relation === 'unknown') {
+            return { type: 'needs-review', text: 'לא ידוע אם תחילת הווסת הייתה לפני או אחרי שקיעה; חישובי התאריך והעונות דורשים בדיקה', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', canHefsek: false };
+        }
         const onsetOnah = onsetInfo ? onsetInfo.estimatedOnah : 'unknown';
         const onahSuffix = onsetOnah === 'day'
             ? ' · עונת יום (אומדן)'
@@ -189,6 +198,76 @@ const HalachaLogic = {
         const onahSuffixFor = dayNumber => dayNumber === 30 && onahDay30FullDay
             ? ' · כל היממה (לפי ההגדרה)'
             : onahSuffix;
+        const previousPeriod = periods.length > 1 ? periods[periods.length - 2] : null;
+        const previousInfo = previousPeriod && CalendarServices && CalendarServices.getEventDateInfo
+            ? CalendarServices.getEventDateInfo(previousPeriod, state.settings.cityId)
+            : null;
+        const previousEffectiveDate = previousInfo && previousInfo.relation !== 'unknown'
+            ? previousInfo.effectiveDate
+            : null;
+        const intervalDays = previousEffectiveDate
+            ? Utils.diffDays(pDate, Utils.newDate(previousEffectiveDate))
+            : null;
+        const isChabadProfile = state.settings.minhag === 'chabad';
+        const haflagahDate = !isChabadProfile && Number.isInteger(intervalDays) && intervalDays > 0
+            ? Utils.fmt(Utils.addDays(pDate, intervalDays))
+            : null;
+        let longMode = 'normal';
+        let longStreak = 0;
+        let shortAfterExemption = 0;
+        for (let i = 1; i < periods.length; i++) {
+            const currentInterval = Utils.diffDays(
+                Utils.newDate(eventCalculationDate(periods[i])),
+                Utils.newDate(eventCalculationDate(periods[i - 1]))
+            );
+            if (longMode === 'exempt') {
+                if (currentInterval < 32) {
+                    longMode = 'short-after-exemption';
+                    shortAfterExemption = 1;
+                }
+            } else if (longMode === 'short-after-exemption') {
+                if (currentInterval >= 32) {
+                    longMode = 'exempt';
+                    shortAfterExemption = 0;
+                    longStreak = 0;
+                } else {
+                    shortAfterExemption += 1;
+                    if (shortAfterExemption >= 3) {
+                        longMode = 'normal';
+                        shortAfterExemption = 0;
+                        longStreak = 0;
+                    }
+                }
+            } else if (currentInterval >= 32) {
+                longStreak += 1;
+                if (longStreak >= 3) longMode = 'exempt';
+            } else {
+                longStreak = 0;
+            }
+        }
+        const allPeriodDatesKnown = periods.every(period => {
+            const info = CalendarServices && CalendarServices.getEventDateInfo
+                ? CalendarServices.getEventDateInfo(period, state.settings.cityId)
+                : null;
+            return Boolean(info && info.relation !== 'unknown' && info.effectiveDate);
+        });
+        const longCycleExempt = !isChabadProfile && allPeriodDatesKnown && longMode === 'exempt';
+        const hachodeshDate = !longCycleExempt && CalendarServices && CalendarServices.getNextYomHachodeshDate
+            ? CalendarServices.getNextYomHachodeshDate(eventCalculationDate(lastP))
+            : null;
+        const getOnahLabels = () => {
+            const labels = [];
+            if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && dStr === Utils.fmt(Utils.addDays(pDate, 29))) labels.push({ label: 'עונה בינונית (30)', day: 30 });
+            if (onsetInfo && onsetInfo.relation !== 'unknown' && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) labels.push({ label: 'עונה בינונית (31)', day: 31 });
+            if (hachodeshDate && dStr === hachodeshDate) labels.push({ label: 'וסת החודש', day: null });
+            if (haflagahDate && dStr === haflagahDate) labels.push({ label: `וסת הפלגה (${intervalDays})`, day: null });
+            return labels;
+        };
+        const onahText = labels => {
+            const day30 = labels.some(item => item.day === 30);
+            const dayNumber = day30 ? 30 : (labels.find(item => item.day === 31)?.day || null);
+            return `${labels.map(item => item.label).join(' + ')}${dayNumber ? onahSuffixFor(dayNumber) : onahSuffix}`;
+        };
         const daysDiff = Utils.diffDays(date, pDate);
         const minimumWaitMode = state.settings.minimumWaitMode || 'five_from_onset';
         let minimumWaitStartDate = pDate;
@@ -259,13 +338,11 @@ const HalachaLogic = {
                 };
             }
             if (cleanDay > 8 && !tevilaReported) {
-                const onah30 = dStr === Utils.fmt(Utils.addDays(pDate, 29));
-                const onah31 = onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30));
-                if (onah30 || onah31) {
-                    const dayNumber = onah30 ? 30 : 31;
+                const todayOnot = getOnahLabels();
+                if (todayOnot.length) {
                     return {
                         type: 'onah',
-                        text: `עונה בינונית (${dayNumber}) · טרם סומנה טבילה${onahSuffixFor(dayNumber)}`,
+                        text: `${onahText(todayOnot)} · טרם סומנה טבילה`,
                         color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)',
                         expectedTevilaDate, reportedTevilaDate, canHefsek: false
                     };
@@ -278,10 +355,13 @@ const HalachaLogic = {
             return { type: 'nidda', text: 'נידה - ממתינה להפסק', color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: true };
         }
 
-        const beinonit30 = Utils.addDays(pDate, 29);
-        const beinonit31 = Utils.addDays(pDate, 30);
-        if (dStr === Utils.fmt(beinonit30)) return { type: 'onah', text: `עונה בינונית (30)${onahSuffixFor(30)}`, color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
-        if (onahDay31Enabled && dStr === Utils.fmt(beinonit31)) return { type: 'onah', text: `עונה בינונית (31)${onahSuffixFor(31)}`, color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
+        const todayOnot = getOnahLabels();
+        if (todayOnot.length) return {
+            type: 'onah', text: onahText(todayOnot),
+            color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)',
+            canHefsek: false, expectedTevilaDate: res.expectedTevilaDate,
+            reportedTevilaDate: res.reportedTevilaDate
+        };
         return res;
     }
 };
@@ -290,6 +370,7 @@ const FertilityLogic = {
     getAvgCycleLength() {
         const state = State.get();
         const periods = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, state.settings.cityId))
             .sort((a, b) => Utils.halachicDate(a, state.settings.cityId).localeCompare(Utils.halachicDate(b, state.settings.cityId)));
         if (periods.length < 2) {
             const fixed = parseInt(state.settings.cycle, 10);
@@ -309,7 +390,12 @@ const FertilityLogic = {
 
     getEstimate() {
         const state = State.get();
-        const periods = Utils.chronologicalVesets(state.periods)
+        const allPeriods = Utils.chronologicalVesets(state.periods)
+            .sort((a, b) => a.date.localeCompare(b.date));
+        const latestRecord = allPeriods[allPeriods.length - 1];
+        if (!latestRecord || !Utils.hasKnownHalachicDate(latestRecord, state.settings.cityId)) return null;
+        const periods = allPeriods
+            .filter(period => Utils.hasKnownHalachicDate(period, state.settings.cityId))
             .sort((a, b) => Utils.halachicDate(a, state.settings.cityId).localeCompare(Utils.halachicDate(b, state.settings.cityId)));
         const lastP = periods[periods.length - 1];
         if (!lastP) return null;
@@ -606,6 +692,7 @@ const UI = {
         }
 
         const vesets = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, state.settings.cityId))
             .sort((a, b) => Utils.halachicDate(a, state.settings.cityId).localeCompare(Utils.halachicDate(b, state.settings.cityId)));
         const last = vesets[vesets.length - 1];
         if (last) {
@@ -729,6 +816,7 @@ const UI = {
 
         const historyState = State.get();
         const vesets = Utils.chronologicalVesets(historyState.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, historyState.settings.cityId))
             .sort((a, b) => Utils.halachicDate(a, historyState.settings.cityId).localeCompare(Utils.halachicDate(b, historyState.settings.cityId)));
         if (vesets.length >= 2) {
             let sum = 0, min = 999, max = 0, count = 0;

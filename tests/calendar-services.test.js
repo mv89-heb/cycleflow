@@ -39,6 +39,25 @@ assert.equal(calendar.resolveEventOnah({
   date: '2026-11-16', eventTime: '12:00', cityId: null
 }), 'unknown', 'onah remains unknown without the event city');
 
+let ordinaryMonthDay = null;
+let day30Rollover = null;
+for (let cursor = '2026-01-01'; cursor <= '2027-01-01'; cursor = calendar.addCivilDays(cursor, 1)) {
+  const parts = calendar.getHebrewDateParts(cursor);
+  if (parts && parts.day === 15 && !ordinaryMonthDay) ordinaryMonthDay = cursor;
+  if (parts && parts.day === 30 && !day30Rollover) {
+    const target = calendar.getNextYomHachodeshDate(cursor);
+    const targetParts = target && calendar.getHebrewDateParts(target);
+    if (targetParts && targetParts.day === 1) day30Rollover = { source: cursor, target };
+  }
+}
+assert(ordinaryMonthDay, 'Hebrew calendar parts should identify day 15');
+const ordinaryTarget = calendar.getNextYomHachodeshDate(ordinaryMonthDay);
+assert.equal(calendar.getHebrewDateParts(ordinaryTarget).day, 15,
+  'yom hachodesh preserves the Hebrew day number in the next month');
+assert(day30Rollover, 'the test year should include a 30-day month followed by a 29-day month');
+assert.equal(calendar.getHebrewDateParts(day30Rollover.target).day, 1,
+  'day 30 followed by a 29-day month rolls to the first of the following month in this source profile');
+
 const sunset = calendar.getSunset('2026-11-16', 'beit-shemesh');
 assert(sunset && /^([01]\d|2[0-3]):[0-5]\d$/.test(sunset.time), 'sunset estimate is a local HH:mm time');
 const before = sunset.time === '00:00' ? '00:01' : '00:00';

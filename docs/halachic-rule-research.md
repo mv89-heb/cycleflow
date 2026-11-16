@@ -131,6 +131,23 @@ The implementation is based on the following specific guidance:
 - [Onah Beinonit](https://www.yoatzot.org/672/) describes day 30 as the baseline and day 31 as a view held by some authorities.
 - [Keeping days 30 & 31 as onah beinonit](https://www.yoatzot.org/faq/keeping-days-30-31-as-onah-beinonit/) and [Guide to Observing Vesatot](https://www.yoatzot.org/547/) describe day 31 and the full 24-hour day as additional customs.
 
+### Basic calendar onot added
+
+For the selected Yoatzot Halacha source profile, CycleFlow now calculates the two remaining basic calendar onot for non-fixed patterns:
+
+- **Yom hachodesh:** the same Hebrew day in the next month, during the same day/night onah as the most recent flow. If the prior flow began on day 30 and the next month has only 29 days, this profile follows the published Yoatzot position to observe the first of the following month.
+- **Standard haflagah:** the interval between the two most recent flow onsets, measured by Hebrew-date labels (sunset to sunset), counted forward from the latest onset. The onah is based on the most recent flow.
+- **Chabad haflagah:** intentionally not calculated by the standard day-interval formula. The Chabad method counts onot and uses the hefsek taharah as its starting point; it requires a dedicated implementation and tests before activation. The long-cycle exemption is also not automatically applied in the Chabad selector until its applicability is verified.
+- **Long-cycle exemption:** the source profile suspends onah beinonit and yom hachodesh after three consecutive intervals of 32 days or more. One or two shorter intervals resume them; a subsequent long interval restores the exemption immediately. Three consecutive shorter intervals reset the requirement for three long intervals.
+
+**Still intentionally not automated:** fixed-veset establishment and uprooting. The source describes a fixed yom hachodesh after three consecutive flows on the same Hebrew date and same onah, and a fixed haflagah after three equal intervals (four periods), with the relevant onah conditions. It also describes uprooting after three consecutive expected onot pass without the onset. Until the full state machine (including deviations, reinstatement, and profile exceptions) is implemented and tested, CycleFlow keeps the standard calendar onot visible and does not infer that they are cancelled.
+
+Sources:
+- [Veset Hachodesh](https://www.yoatzot.org/677/) – including the day-30 / 29-day-month case and the long-cycle exemption.
+- [Haflagah (Interval)](https://www.yoatzot.org/670/) – Hebrew-date interval, onah of the latest flow, Chabad distinction, and differing views on shorter cycles.
+- [Guide to Observing Vesatot](https://www.yoatzot.org/547/) – the three basic onot for a non-fixed pattern.
+- [Keeping a Veset Calendar](https://www.yoatzot.org/548/) – practical calendar calculations.
+
 ### Review outcome
 
 - **Research verified:** the source matrix is sufficient to define implementation questions and negative/edge-case tests.

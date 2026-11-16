@@ -124,6 +124,69 @@
     }
   }
 
+  function getHebrewDateParts(value) {
+    if (!validDate(value)) return null;
+    const { year, month, day } = dateParts(value);
+    const instant = new Date(Date.UTC(year, month - 1, day, 12));
+    try {
+      const parts = new Intl.DateTimeFormat('en-US-u-ca-hebrew-nu-latn', {
+        timeZone: TIME_ZONE, day: 'numeric', month: 'long', year: 'numeric'
+      }).formatToParts(instant);
+      const values = Object.fromEntries(parts.filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+      const hebrewDay = Number(values.day);
+      if (!Number.isInteger(hebrewDay) || !values.month || !values.year) return null;
+      return { day: hebrewDay, month: values.month, year: values.year };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function getNextYomHachodeshDate(value) {
+    const current = getHebrewDateParts(value);
+    if (!current) return null;
+    const monthKey = parts => parts ? `${parts.year}:${parts.month}` : '';
+    const currentKey = monthKey(current);
+    let nextMonthStart = null;
+    let nextMonthKey = '';
+    for (let offset = 1; offset <= 40; offset++) {
+      const candidate = addCivilDays(value, offset);
+      const parts = getHebrewDateParts(candidate);
+      if (parts && monthKey(parts) !== currentKey) {
+        nextMonthStart = candidate;
+        nextMonthKey = monthKey(parts);
+        break;
+      }
+    }
+    if (!nextMonthStart) return null;
+
+    let nextMonthLastDate = nextMonthStart;
+    let nextMonthLength = 0;
+    for (let offset = 0; offset <= 35; offset++) {
+      const candidate = addCivilDays(nextMonthStart, offset);
+      const parts = getHebrewDateParts(candidate);
+      if (!parts || monthKey(parts) !== nextMonthKey) break;
+      nextMonthLastDate = candidate;
+      nextMonthLength = parts.day;
+    }
+
+    if (current.day <= nextMonthLength) {
+      for (let offset = 0; offset <= 35; offset++) {
+        const candidate = addCivilDays(nextMonthStart, offset);
+        const parts = getHebrewDateParts(candidate);
+        if (!parts || monthKey(parts) !== nextMonthKey) break;
+        if (parts.day === current.day) return candidate;
+      }
+      return null;
+    }
+
+    // For a period beginning on day 30 when the next Hebrew month has only 29 days,
+    // this source profile follows the view that observes the first of the following month.
+    if (current.day === 30 && nextMonthLength === 29) {
+      return addCivilDays(nextMonthLastDate, 1);
+    }
+    return null;
+  }
+
   function resolveEventRelation(record, fallbackCityId) {
     if (!record || !validDate(record.date)) return 'unknown';
     const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId') ? record.cityId : (fallbackCityId || null);
@@ -189,7 +252,7 @@
 
   globalThis.CycleFlowCalendar = Object.freeze({
     CITIES, cityById, getSunrise, getSunset, getSolarTimes,
-    formatHebrewDate, formatHebrewMonth, getEventDateInfo,
+    formatHebrewDate, formatHebrewMonth, getHebrewDateParts, getNextYomHachodeshDate, getEventDateInfo,
     resolveEventRelation, resolveEventOnah, getCurrentHebrewDate, getIsraelCivilDate, addCivilDays, TIME_ZONE
   });
 })();
