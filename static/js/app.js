@@ -367,12 +367,13 @@ const UI = {
                 this.actions.saveSettings.call(this, control, e);
             } else if (action === 'saveDaily' && control.matches('input[type="checkbox"]')) {
                 this.actions.saveDaily.call(this, control, e);
-            } else if (control.matches('input[type="checkbox"][data-action]') && typeof this.actions[action] === 'function') {
-                this.actions[action].call(this, control, e);
-            }
         });
         
         document.getElementById('mikveh_checklist_date')?.addEventListener('change', () => this.renderTools());
+        document.getElementById('mikveh_checklist_items')?.addEventListener('change', e => {
+            const control = e.target.closest('input[type="checkbox"][data-action="toggleMikvehChecklist"]');
+            if (control) this.actions.toggleMikvehChecklist.call(this, control, e);
+        });
 
         const acBtn = document.getElementById('calc_ac');
         if (acBtn) {
