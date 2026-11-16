@@ -86,6 +86,12 @@
         return JSON.parse(dec.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher)));
     }
 
+    function isValidDateString(value) {
+        if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+        const date = new Date(value + 'T12:00:00Z');
+        return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+    }
+
     function validateState(state) {
         if (!state || typeof state !== 'object' || !Array.isArray(state.periods)) throw new Error('מבנה הגיבוי אינו תקין');
         if (state.periods.length > 10000) throw new Error('הגיבוי מכיל יותר מדי רשומות');
