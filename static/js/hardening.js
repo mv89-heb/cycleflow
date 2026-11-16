@@ -40,6 +40,7 @@
     function validateState(value) {
         if (!isPlainObject(value)) return false;
         if (!Array.isArray(value.periods) || !validateHefseks(value.hefseks) || !validateDaily(value.daily)) return false;
+        if (value.tevilot !== undefined && (!isPlainObject(value.tevilot) || !Object.entries(value.tevilot).every(([date, enabled]) => isValidDateString(date) && enabled === true))) return false;
         if (!isPlainObject(value.settings)) return false;
         if (!['ashkenaz', 'sepharad', 'chabad'].includes(value.settings.minhag)) return false;
         if (!Number.isFinite(Number(value.settings.cycle)) || Number(value.settings.cycle) < 1 || Number(value.settings.cycle) > 120) return false;
