@@ -98,7 +98,7 @@
 
   function resolveEventRelation(record, fallbackCityId) {
     if (!record || !validDate(record.date)) return 'unknown';
-    const cityId = record.cityId || fallbackCityId || null;
+    const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId') ? record.cityId : (fallbackCityId || null);
     if (typeof record.eventTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(record.eventTime)) {
       const sunset = getSunset(record.date, cityId);
       if (sunset) return record.eventTime >= sunset.time ? 'after' : 'before';
@@ -111,7 +111,7 @@
 
   function getEventDateInfo(record, fallbackCityId) {
     const relation = resolveEventRelation(record, fallbackCityId);
-    const cityId = record && (record.cityId || fallbackCityId);
+    const cityId = record && (Object.prototype.hasOwnProperty.call(record, 'cityId') ? record.cityId : fallbackCityId);
     const hebrewDate = formatHebrewDate(record.date, { afterSunset: relation === 'after' });
     const sunset = getSunset(record.date, cityId);
     return { hebrewDate, relation, sunsetTime: sunset ? sunset.time : null, approximate: Boolean(sunset) };
