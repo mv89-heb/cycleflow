@@ -350,6 +350,30 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'three consecutive same-Hebrew-day, same-onah flows are detected as a possible fixed yom hachodesh');
 })();
 
+(function testFixedPatternCandidateDoesNotCancelStandardOnotYet() {
+    const base = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
+    const calendar = base.window.CycleFlowCalendar;
+    const dates = ['2026-01-01'];
+    dates.push(calendar.getNextYomHachodeshDate(dates[0]));
+    dates.push(calendar.getNextYomHachodeshDate(dates[1]));
+    const lastDate = dates[2];
+    const hefsekDate = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(lastDate), 5));
+    const targetDate = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(lastDate), 29));
+    const state = {
+        periods: dates.map((date, index) => ({
+            date, type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh',
+            isSunset: false, id: `month-${index}`
+        })),
+        hefseks: { [hefsekDate]: true },
+        hefsekMeta: { [hefsekDate]: { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    };
+    const api = loadApp(state);
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate(targetDate));
+    assert(status.text.includes('עונה בינונית (30)'),
+       'review-only fixed-pattern detection does not suppress the baseline onot');
+})();
+
 (function testFixedHaflagahPatternDetectionAndChabadGuard() {
     const dates = ['2026-06-01', '2026-06-30', '2026-07-28', '2026-08-25'];
     const periods = dates.map((date, index) => ({
