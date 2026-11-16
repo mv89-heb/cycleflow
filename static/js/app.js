@@ -1220,7 +1220,7 @@ const UI = {
     },
 
     renderDashboard() {
-        const today = new Date();
+        const today = Utils.newDate(todayCivilDate());
         const st = HalachaLogic.getStatus(today);
         const state = State.get();
         const card = document.getElementById('status_card');
