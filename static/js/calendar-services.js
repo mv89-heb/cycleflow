@@ -101,8 +101,7 @@
     const cityId = record.cityId || fallbackCityId || null;
     if (typeof record.eventTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(record.eventTime)) {
       const sunset = getSunset(record.date, cityId);
-      if (!sunset) return 'unknown';
-      return record.eventTime >= sunset.time ? 'after' : 'before';
+      if (sunset) return record.eventTime >= sunset.time ? 'after' : 'before';
     }
     if (record.sunsetRelation === 'before' || record.sunsetRelation === 'after') return record.sunsetRelation;
     if (record.isSunset === true) return 'after';
