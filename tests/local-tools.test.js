@@ -41,6 +41,19 @@ assert(stain.includes('חום'));
 assert(!stain.includes('שם:'));
 assert(stain.includes('אינו קובע מעמד הלכתי'));
 
+const symptom = {
+  id: 'symptom-1', date: '2026-10-19', time: '08:15', endDate: '2026-10-19', endTime: '12:00',
+  type: 'back_pain', distinctive: 'yes', occursOutsideFlow: 'no',
+  relatedFlowDate: '2026-10-20', note: 'תיאור עובדתי'
+};
+const symptomSummary = tools.buildSymptomSummary(symptom);
+assert(symptomSummary.includes('כאב גב'));
+assert(symptomSummary.includes('האם נתפס כייחודי: כן'));
+assert(symptomSummary.includes('האם מופיע גם בזמנים אחרים: לא'));
+assert(symptomSummary.includes('לא בוצעה התאמה או מסקנה אוטומטית'));
+assert.throws(() => tools.buildSymptomSummary({ ...symptom, endDate: '2026-10-18' }), /תיעוד התסמין אינו תקין/);
+assert.throws(() => tools.buildSymptomSummary({ ...symptom, distinctive: 'certain' }), /תיעוד התסמין אינו תקין/);
+
 const doctor = tools.buildDoctorSummary({
   periods: [
     { date: '2026-09-01', type: 'veset' },
@@ -48,16 +61,16 @@ const doctor = tools.buildDoctorSummary({
     { date: '2026-10-27', type: 'veset' },
     { date: '2026-10-10', type: 'spotting' }
   ],
-  ovulationObservations: [{ date: '2026-10-20', type: 'opk_positive', immersionDate: '2026-10-18', note: 'תוצאה חיובית' }],
+  symptomObservations: [symptom],\n  ovulationObservations: [{ date: '2026-10-20', type: 'opk_positive', immersionDate: '2026-10-18', note: 'תוצאה חיובית' }],
   tevilot: { '2026-10-18': true },
   stainReports: [{ date: '2026-10-10', color: 'pink', size: 'small', surface: 'tissue', source: 'unknown' }]
-}, '2026-10-01', '2026-10-31', { includeStains: true });
+}, '2026-10-01', '2026-10-31', { includeStains: true, includeSymptoms: true });
 assert(doctor.includes('28 ימים'));
 assert(doctor.includes('דיווחי הכתמה/דימום נוספים'));
 assert(doctor.includes('2026-10-10'));
 assert(doctor.includes('בדיקת LH חיובית'));
 assert(doctor.includes('טבילה להשוואה 2026-10-18'));
-assert(doctor.includes('תיאורי כתמים'));
+assert(doctor.includes('תיאורי כתמים'));\nassert(doctor.includes('תיעודי סימנים גופניים (דיווח בלבד)'));\nassert(doctor.includes('כאב גב'));
 assert(doctor.includes('2026-10-18'));
 assert(!doctor.includes('שם:'));
 
