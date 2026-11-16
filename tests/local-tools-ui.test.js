@@ -45,7 +45,7 @@ assert.equal(State.get().stainReports.length, 0, 'stain report can be deleted lo
 
 const checklist = document.querySelector('[data-action="toggleMikvehChecklist"][data-item="hair"]');
 checklist.checked = true;
-UI.actions.toggleMikvehChecklist.call(UI, checklist);
+checklist.dispatchEvent(new window.Event('change', { bubbles: true }));
 assert(State.get().mikvehChecklist['2026-11-16'].includes('hair'));
 
 const checklistDate = document.getElementById('mikveh_checklist_date');
