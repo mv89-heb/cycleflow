@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: cycleflow-flask-pro
+    name: cycleflow
     plan: free
     runtime: python
     buildCommand: pip install -r requirements.txt
