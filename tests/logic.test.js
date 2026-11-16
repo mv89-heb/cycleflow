@@ -489,6 +489,34 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'onah beinonit remains suppressed after one deviation');
 })();
 
+(function testFixedHachodeshEarlyDeviationAddsNonfixedTrackingBeforeExpectedDate() {
+    const base = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
+    const calendar = base.window.CycleFlowCalendar;
+    const dates = ['2026-01-01'];
+    dates.push(calendar.getNextYomHachodeshDate(dates[0]));
+    dates.push(calendar.getNextYomHachodeshDate(dates[1]));
+    const day = calendar.getHebrewDateParts(dates[0]).day;
+    const expected = calendar.getNextYomHachodeshDate(dates[2], day);
+    const deviation = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(expected), -20));
+    const asOfDate = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(deviation), 14));
+    const hefsekDate = base.Utils.fmt(base.Utils.addDays(base.Utils.newDate(deviation), 5));
+    const api = loadApp({
+        periods: [...dates, deviation].map((date, index) => ({
+            date, type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh',
+            isSunset: false, id: `early-${index}`
+        })),
+        hefseks: { [hefsekDate]: true },
+        hefsekMeta: { [hefsekDate]: { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const fixed = api.HalachaLogic.getFixedHachodeshStatus(asOfDate);
+    assert(fixed && fixed.active && fixed.missedCount === 0 && fixed.deviated,
+       'an early period is recognized as a deviation before the fixed date itself passes');
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate(asOfDate));
+    assert(!status.text.includes('עונה בינונית (30)'),
+       'onah beinonit remains suppressed while the fixed pattern has one deviation');
+})();
+
 (function testFixedHachodeshUprootsAfterThreeMissesAndCanReinstate() {
     const base = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
     const calendar = base.window.CycleFlowCalendar;
