@@ -2,7 +2,7 @@ services:
   - type: web
     name: cycleflow-flask-pro
     plan: free
-    env: python
+    runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn --workers 2 --threads 4 --timeout 60 app:app
     healthCheckPath: /health
