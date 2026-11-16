@@ -131,6 +131,22 @@ The implementation is based on the following specific guidance:
 - [Onah Beinonit](https://www.yoatzot.org/672/) describes day 30 as the baseline and day 31 as a view held by some authorities.
 - [Keeping days 30 & 31 as onah beinonit](https://www.yoatzot.org/faq/keeping-days-30-31-as-onah-beinonit/) and [Guide to Observing Vesatot](https://www.yoatzot.org/547/) describe day 31 and the full 24-hour day as additional customs.
 
+### Fixed yom-hachodesh state machine
+
+The simple fixed yom-hachodesh profile is now active after three consecutive flows on the same Hebrew day and same known onah:
+
+- With no deviations, the calendar observes only the fixed yom-hachodesh onah; onah beinonit and other non-fixed onot are suppressed.
+- After one or two missed fixed onot, the fixed onah remains in force and the non-fixed yom hachodesh / haflagah based on the latest onset are also observed; onah beinonit remains suppressed.
+- After three consecutive expected fixed onot pass without the onset, the fixed pattern is uprooted and the regular three non-fixed onot resume.
+- A later onset on the original fixed date and onah reinstates the pattern if no newer fixed pattern has replaced it.
+- A newer established fixed pattern supersedes the previous pattern.
+- Day-30 month rollover preserves the fixed day number when moving from a 29-day month to the first of the following month.
+
+Fixed haflagah patterns remain review-only; the full active fixed-haflagah state machine and its deviation edge cases are not yet enabled.
+
+Source:
+- [Veset Kavua](https://www.yoatzot.org/676/) – establishment, deviation, uprooting, and reinstatement of fixed patterns.
+
 ### Chabad haflagah onot-count implementation
 
 The Chabad profile now uses the distinct onot-count method rather than the standard day-interval formula:
