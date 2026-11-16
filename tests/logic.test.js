@@ -210,6 +210,20 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     eq(status.canHefsek, true, 'the calendar does not treat the after-sunset record as a completed hefsek');
 })();
 
+(function testUnknownHefsekTimeDoesNotUseLaterCitySetting() {
+    const state = {
+        periods: [{ date: '2026-11-10', type: 'veset', sunsetRelation: 'before', isSunset: false, id: 'before' }],
+        hefseks: { '2026-11-15': true },
+        hefsekMeta: { '2026-11-15': { eventTime: '16:30', cityId: null } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    };
+    const { HalachaLogic, Utils } = loadApp(state);
+    const status = HalachaLogic.getStatus(Utils.newDate('2026-11-16'));
+    eq(status.type, 'nidda',
+       'a later selected city must not retroactively classify a hefsek recorded without a city');
+    eq(status.canHefsek, true, 'an unknown-time-relation hefsek remains pending review');
+})();
+
 (function testHalachaSepharad() {
     const state = {
         periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],
