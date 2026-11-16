@@ -106,7 +106,7 @@
                 const relation = p.lastRelations;
                 if (!relation || typeof relation !== 'object' || Array.isArray(relation) ||
                     !isValidDateString(relation.date) ||
-                    typeof relation.eventTime !== 'string' || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(relation.eventTime) ||
+                    typeof relation.eventTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(relation.eventTime) ||
                     typeof relation.cityId !== 'string' || !cityIds.includes(relation.cityId)) {
                     throw new Error('נתוני יחסי אישות אחרונים לא תקינים');
                 }
