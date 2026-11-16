@@ -166,6 +166,61 @@ class StateManager {
 const State = new StateManager();
 
 const HalachaLogic = {
+    getFixedVesetCandidates() {
+        const state = State.get();
+        const cityId = state.settings.cityId;
+        const periods = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+            .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)))
+            .map(period => {
+                const date = Utils.halachicDate(period, cityId);
+                const info = CalendarServices && CalendarServices.getEventDateInfo
+                    ? CalendarServices.getEventDateInfo(period, cityId)
+                    : null;
+                const hebrew = CalendarServices && CalendarServices.getHebrewDateParts
+                    ? CalendarServices.getHebrewDateParts(date)
+                    : null;
+                return { period, date, onah: info ? info.estimatedOnah : 'unknown', hebrew };
+            });
+        const candidates = [];
+        for (let i = 2; i < periods.length; i++) {
+            const group = periods.slice(i - 2, i + 1);
+            const days = group.map(item => item.hebrew && item.hebrew.day);
+            const onot = group.map(item => item.onah);
+            const months = group.map(item => item.hebrew ? `${item.hebrew.year}:${item.hebrew.month}` : '');
+            if (days.every(day => Number.isInteger(day) && day === days[0]) &&
+                onot[0] !== 'unknown' && onot.every(onah => onah === onot[0]) &&
+                new Set(months).size === 3) {
+                candidates.push({
+                    type: 'hachodesh', day: days[0], onah: onot[0],
+                    establishedAt: group[2].date, establishedIndex: i,
+                    evidenceDates: group.map(item => item.date)
+                });
+            }
+        }
+        if (state.settings.minhag !== 'chabad') {
+            for (let i = 3; i < periods.length; i++) {
+                const group = periods.slice(i - 3, i + 1);
+                const intervals = [
+                    Utils.diffDays(Utils.newDate(group[1].date), Utils.newDate(group[0].date)),
+                    Utils.diffDays(Utils.newDate(group[2].date), Utils.newDate(group[1].date)),
+                    Utils.diffDays(Utils.newDate(group[3].date), Utils.newDate(group[2].date))
+                ];
+                const onot = group.slice(1).map(item => item.onah);
+                if (intervals[0] > 0 && intervals.every(value => value === intervals[0]) &&
+                    onot[0] !== 'unknown' && onot.every(onah => onah === onot[0])) {
+                    candidates.push({
+                        type: 'haflagah', intervalDays: intervals[0], onah: onot[0],
+                        establishedAt: group[3].date, establishedIndex: i,
+                        evidenceDates: group.map(item => item.date)
+                    });
+                }
+            }
+        }
+        if (!candidates.length) return [];
+        const latestIndex = Math.max(...candidates.map(candidate => candidate.establishedIndex));
+        return candidates.filter(candidate => candidate.establishedIndex === latestIndex);
+    },
     getStatus(date) {
         const state = State.get();
         const dStr = Utils.fmt(date);
