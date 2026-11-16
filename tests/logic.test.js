@@ -83,7 +83,7 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
         settings: { ...baseSettings }
     });
     const before = JSON.stringify(State.get());
-    window.localStorage.setItem = () => { throw new window.DOMException('quota exceeded', 'QuotaExceededError'); };
+    Object.defineProperty(window.Storage.prototype, 'setItem', { configurable: true, value() { throw new window.DOMException('quota exceeded', 'QuotaExceededError'); } });
     const saved = State.update(s => { s.settings.theme = 'light'; });
     eq(saved, false, 'failed persistence returns false');
     eq(JSON.stringify(State.get()), before, 'failed persistence rolls back in-memory state');
