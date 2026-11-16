@@ -44,7 +44,7 @@ const doctor = tools.buildDoctorSummary({
     { date: '2026-10-27', type: 'veset' },
     { date: '2026-10-10', type: 'spotting' }
   ],
-  ovulationObservations: [{ date: '2026-10-20', type: 'opk_positive', note: 'תוצאה חיובית' }],
+  ovulationObservations: [{ date: '2026-10-20', type: 'opk_positive', immersionDate: '2026-10-18', note: 'תוצאה חיובית' }],
   tevilot: { '2026-10-18': true },
   stainReports: [{ date: '2026-10-10', color: 'pink', size: 'small', surface: 'tissue', source: 'unknown' }]
 }, '2026-10-01', '2026-10-31', { includeStains: true });
