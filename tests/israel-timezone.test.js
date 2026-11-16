@@ -24,8 +24,8 @@ if (calendar.addCivilDays('2024-02-28', 1) !== '2024-02-29' ||
   throw new Error('Civil day arithmetic changed with device timezone');
 }
 const solarTimes = calendar.getSolarTimes('2026-11-16', 'beit-shemesh');
-if (!solarTimes || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(solarTimes.sunrise) ||
-    !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(solarTimes.sunset)) {
+if (!solarTimes || !/^([01]\d|2[0-3]):[0-5]\d$/.test(solarTimes.sunrise) ||
+    !/^([01]\d|2[0-3]):[0-5]\d$/.test(solarTimes.sunset)) {
   throw new Error('Solar times must be valid Israel-local clock values');
 }
 process.stdout.write(JSON.stringify({ sunrise: solarTimes.sunrise, sunset: solarTimes.sunset }));
