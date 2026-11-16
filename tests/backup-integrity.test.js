@@ -34,7 +34,7 @@ const { TextEncoder, TextDecoder } = require('util');
     manualReminders: [{ id: 'r1', date: '2026-06-20', time: '18:30', title: 'תזכורת', notes: '' }],
     stainReports: [{ id: 's1', date: '2026-06-21', time: null, color: 'brown', size: 'small', surface: 'tissue', source: 'unknown', note: '' }],
     mikvehChecklist: { '2026-06-22': ['hair', 'nails'] },
-    symptomObservations: [{ id: 'symptom-1', date: '2026-06-19', time: '08:15', endDate: '2026-06-19', endTime: '10:00', type: 'back_pain', distinctive: 'yes', occursOutsideFlow: 'no', relatedFlowDate: '2026-06-20', note: '' }],
+    symptomObservations: [{ id: 'symptom-1', date: '2026-06-19', time: '08:15', endDate: '2026-06-19', endTime: '10:00', type: 'back_pain', distinctive: 'yes', occursOutsideFlow: 'no', flowWithoutSymptom: 'no', relatedFlowDate: '2026-06-20', note: '' }],
     ovulationObservations: [{ id: 'o1', date: '2026-06-23', time: '08:00', type: 'opk_positive', immersionDate: '2026-06-26', note: '' }],
     tevilot: { '2026-06-15': true },
     calculationSnapshots: [{
