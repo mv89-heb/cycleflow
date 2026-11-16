@@ -91,6 +91,25 @@ assert.equal(calendar.resolveEventRelation({ date: '2026-11-16', isSunset: false
   'an explicit unchecked after-sunset flag preserves the recorded before-sunset choice');
 assert.equal(calendar.resolveEventRelation({ date: '2026-11-16', isSunset: null }), 'unknown',
   'missing sunset relation remains unknown');
+const timedBeforeSunset = {
+  date: '2026-11-16',
+  eventTime: shiftTime(calendar.getSunset('2026-11-16', 'beit-shemesh').time, -1),
+  cityId: 'beit-shemesh'
+};
+const estimatedRelationInfo = calendar.getEventDateInfo(timedBeforeSunset);
+assert.equal(estimatedRelationInfo.dateConfidence, 'astronomical-estimate',
+  'an event date inferred by comparing its time to approximate sunset is not labeled as manually recorded');
+assert.equal(estimatedRelationInfo.relationSource, 'event-time-compared-with-approximate-sunset',
+  'the source of a sunset relation inferred from a time is explicit');
+const manuallyRecordedRelationInfo = calendar.getEventDateInfo({
+  date: '2026-11-16', sunsetRelation: 'after'
+});
+assert.equal(manuallyRecordedRelationInfo.dateConfidence, 'recorded',
+  'an explicitly recorded sunset relation is distinguished from an astronomical estimate');
+assert.equal(manuallyRecordedRelationInfo.relationSource, 'explicit-recorded-sunset-relation',
+  'explicitly recorded relation provenance is retained');
+assert.equal(calendar.getEventDateInfo(null), null,
+  'invalid event records return no date information instead of throwing');
 assert.equal(calendar.getEventDateInfo({
   date: '2026-11-16', sunsetRelation: 'after'
 }).effectiveDate, '2026-11-17', 'after-sunset event belongs to the next Hebrew-date civil label');
