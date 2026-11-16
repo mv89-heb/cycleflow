@@ -1,38 +1,43 @@
 # Halachic rule research matrix — CycleFlow
 
-Status: research completed for the core rule families; implementation is intentionally gated. This document records what public sources say, where customs differ, and what the software must not infer. It is not a psak halacha.
+Status: the common rule families are implemented from a documented public-source baseline. The selected reference for standard non-Chabad rules is Nishmat–Yoatzot Halacha; Chabad haflagah uses its separate onot-count sources. This is a traceable educational/calendar implementation, not an individualized psak. The document records remaining exceptions and what the software must not infer.
 
 ## Executive finding
 
-A two-value setting ("Ashkenaz" / "Sephard") is not a sufficient rule model. Sources describe different practices within Sephardi communities, additional stringencies among some Ashkenazi communities, and a distinct Chabad approach to veset haflagah. A future engine must use explicit, reviewable rule profiles rather than infer every rule from one community label.
+A two-value setting ("Ashkenaz" / "Sephard") is not a sufficient rule model. CycleFlow therefore uses explicit choices for the minimum-wait method and onah-beinonit custom, and keeps Chabad haflagah separate from the standard interval method. The baseline for common non-Chabad rules follows the published Nishmat–Yoatzot Halacha guides cited below; Sephardi practice is not inferred from the community label alone.
 
 ## Rule matrix
 
-| Rule family | What the sources establish | Software implication | Approval still required |
+| Rule family | What the sources establish | Software implication | Remaining exception / automation boundary |
 |---|---|---|---|
-| Minimum wait | Nishmat describes a five-day wait for Ashkenazi and some Sephardi communities. Some Sephardi communities use a four-day method with a different starting point (last intercourse rather than onset of niddah). Stain cases and special circumstances have additional details. | Do not implement as simply Ashkenaz=5, Sephard=4. Store onset type/time and, only where appropriate, the last-intercourse reference. | Exact family/community profile, starting point, count convention, stain/flow cases, and exceptions. |
-| Seven clean days | The clean days are counted by the Jewish calendar, each day beginning at sunset. A valid hefsek before sunset permits the first clean day to begin that night; immersion is after nightfall following completion. | Keep sunset and nightfall (tzeit) as distinct astronomical/halachic inputs. Do not equate sunset with immersion time. | Exact local zmanim convention and all exceptional cases. |
-| Hefsek taharah | Nishmat describes a hefsek before sunset, ideally in the late afternoon; after-sunset attempts require a question and cannot automatically start the next day's count. A prior valid examination may sometimes be relied on. | Save the actual time and date; never silently convert an after-sunset hefsek into a before-sunset one. | Rules for exact-boundary timestamps, early backup checks, and profile-specific practices. |
-| Onah day/night | Nishmat's onah guide describes day onot as sunrise-to-sunset and night onot as sunset-to-sunrise. | A sunset-only calculation is insufficient for assigning day/night onah. The service also needs sunrise, and the rule engine must store the source onah. | Exact boundary convention and handling of uncertain event times. |
-| Onah beinonit | The common view is day 30 from the beginning of the last flow. Other authorities/customs observe day 31, and some observe the full 24-hour Hebrew date on day 30. | Make day 30, day 31, and full 24-hour day separate profile settings; never hard-code both days for everyone. | Which position/custom is selected and how it interacts with other vesatot. |
-| Yom hachodesh | Calculated by Hebrew day-of-month and the onah of the original onset. If the original onset was on day 30 and the next month has no day 30, sources describe multiple approaches: skip, observe day 29, or observe the first day of the next month. | Use a Hebrew calendar engine and an explicit missing-day policy per profile. | Chosen policy for each approved community profile and the carry-over/uprooting rules. |
-| Veset haflagah | The common method counts the interval from one onset to the next and observes the matching day/night onah. The Chabad source describing Shulchan Aruch HaRav counts from the end of bleeding (usually represented by hefsek taharah) to the next onset. It also details what to do when the exact end of bleeding was not recorded. | The event model must distinguish flow onset from bleeding cessation/hefsek and must support multiple calculation methods. | Which Chabad authority/custom is intended, fallback rules for missing cessation data, and how non-Chabad profiles treat the alternative. |
+| Minimum wait | Nishmat describes a five-day baseline for many communities and a four-day method in some Sephardi communities, counted from the last intercourse rather than onset of niddah. | Implemented as an explicit setting: five days from onset by default; the four-day route requires an explicit choice plus the last-relations date/time and onset time. It is never inferred from "Sepharad". | Qualifying stains, special circumstances, and cases where the four-day route does not apply remain manual review. |
+| Seven clean days | The clean days are counted by the Jewish calendar, each day beginning at sunset. A valid hefsek before sunset permits the first clean day to begin that night; immersion is after nightfall following completion. | The app counts clean days from a recorded hefsek that passes the before-sunset check. Tzeit is not calculated, so immersion time is not derived from sunset. | Exact local zmanim/tzeit convention, backup-check reliance, and exceptional cases remain outside automation. |
+| Hefsek taharah | Nishmat describes a hefsek before sunset; an after-sunset attempt cannot automatically start the clean-day count. | The app records date, time, and selected city; it accepts only a known before-sunset hefsek for automatic counting. Unknown or after-sunset records remain review-only. | Exact-boundary timestamps and reliance on earlier backup checks remain manual review. |
+| Onah day/night | Nishmat's onah guide describes day onot as sunrise-to-sunset and night onot as sunset-to-sunrise. | Implemented using selected city plus astronomical sunrise/sunset estimates; unknown city/time remains unknown. The result is explicitly labeled as an estimate, not a zman. | Local horizon/elevation differences and exact halachic boundary conventions remain outside this approximation. |
+| Onah beinonit | The common view is day 30 from the beginning of the last flow. Other authorities/customs observe day 31, and some observe the full 24-hour Hebrew date on day 30. | Implemented as explicit settings for day 30 in the same onah, day 30 full day, optional day 31, or combined custom. Day 30 same-onah is the default. | The user must select the practice they actually follow; individual exceptions remain manual review. |
+| Yom hachodesh | Calculated by Hebrew day-of-month and the onah of the original onset. Sources differ when day 30 is absent from the next month. | Implemented on Hebrew-date labels, with the documented Nishmat approach of moving a fixed day 30 to the first of the following month when the intervening month has 29 days; fixed-pattern deviations, uprooting, and reinstatement are covered. | Unusual patterns and other community-specific day-30 approaches remain manual review. |
+| Veset haflagah | The standard method counts equal intervals between onsets; Chabad uses a separate count of onot from the first night after a successful hefsek, including the onset onah. | Standard fixed haflagah (four flows / three equal intervals) and its deviation state machine are implemented for non-Chabad profiles. Chabad has a separate onot-count calculation and is excluded from the standard day-interval detector. | Missing/uncertain hefsek data and unusual interval patterns remain review-only. |
 | Or Zarua | An additional onah before a primary veset is a custom/stringency, not a universal base rule. The scope can differ by veset type; some sources distinguish whether the veset is kavua. | Make Or Zarua an explicit optional rule with scope per veset type; do not turn it on automatically for all Ashkenazi users. | Which preceding onot are observed for each profile and what happens when it overlaps mikveh night. |
 | Stain vs. flow | Sources distinguish a flow from a stain and explain that the minimum wait begins when niddah status is incurred, which can also occur through a qualifying stain. Not every stain automatically has that status. | A questionnaire can collect size, color, surface, source, and context; it must not decide niddah status or reset a count automatically. | Which questions to ask and how to route uncertainty to a qualified authority. |
 | Fertility / early ovulation | Nishmat and PUAH describe cases where documented ovulation, hormonal treatment, and fertility concerns affect how some authorities approach veset observance. Their answers differ by authority and circumstance. | Store ovulation tests/medical data as user-entered observations and produce a clinician/halachic-consultation summary. Never automatically waive a veset or change immersion dates. | Medical thresholds, evidence requirements, and authority-specific decision rules. |
 
-## Required data model before implementing the rule engine
+## Current implementation and remaining data-model work
 
-The current PR adds optional civil event time, city ID, and sunset relation. The following are future requirements, not yet implemented:
+Implemented in the current main branch:
 
-- Distinguish flow_start, stain, medical_bleeding, and other event categories. A user-selected event type must not itself establish niddah status.
-- Preserve both the civil date/time and the recorded local city/time-zone context.
-- Store actual or unknown bleeding_stopped_at / hefsek time separately from the start of flow.
-- Store the onah of onset (day, night, unknown) as a recorded fact where known; do not reconstruct it from a changed city setting.
-- Store the selected halachic profile and its version with each calculation, so changing settings does not rewrite historical calculations.
-- Store rule outputs as explainable results: source event IDs, rule ID/version, assumptions, uncertainty, and whether a user/authority confirmed the result.
-- Keep sunset, sunrise, and tzeit as separate values. Tzeit is not a fixed universal offset from sunset; the selected calculation convention must be explicit.
-- Preserve an unknown / needs review state. Missing times, ambiguous stains, or missing hefsek data must never be converted into a confident date.
+- Flow onset and spotting are separate record types; a stain questionnaire stores observations only and never decides niddah status.
+- Period and hefsek records preserve civil date, event time when known, and the manually selected city. Historical records are not reclassified from a later city selection.
+- The app uses the Israel timezone for its own current clock and preserves an explicit unknown state when the event time or city is missing.
+- Sunrise and sunset are computed locally as astronomical estimates. They are not certified zmanim; tzeit is not calculated.
+- The selected source practice is represented through explicit minimum-wait and onah-beinonit settings rather than inferring every rule from the Ashkenaz/Sephard/Chabad label.
+- Standard fixed yom hachodesh and fixed haflagah patterns have state machines for establishment, deviations, uprooting, and reinstatement. Chabad haflagah uses its separate onot-count method.
+
+Remaining engineering work:
+
+- Persist a versioned rule-profile identifier and the exact rule/source version used for each calculation, so later rule updates can be audited without rewriting history.
+- Store calculation explanations (source event IDs, rule ID/version, assumptions, confidence, and review state) alongside each displayed result.
+- Add a configurable, sourced tzeit/zmanim convention before showing any immersion-time estimate. Until then, no sunset-to-tzeit offset is inferred.
+- Keep unknown / needs-review states for ambiguous stains, missing event times, and missing hefsek context; do not infer a confident date.
 
 ## Solar-time engineering note
 
