@@ -243,6 +243,60 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'direct hefsek uses the Israel civil date after midnight in Israel');
     eq(recorded?.eventTime, '00:30',
        'direct hefsek records Israel-local time rather than the device timezone');
+    eq(recorded?.ruleContext?.rulesetId, 'cycleflow-yoatzot-standard',
+       'new hefsek records preserve the source rule-set identifier');
+    eq(recorded?.ruleContext?.rulesetVersion, '1.0.0',
+       'new hefsek records preserve the rule-set version');
+    eq(recorded?.ruleContext?.timeZone, 'Asia/Jerusalem',
+       'new hefsek records preserve the calculation timezone');
+})();
+
+(function testPeriodAndLastRelationsSnapshotSelectedRuleContext() {
+    const { UI, State, document } = loadApp({
+        periods: [], hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: {
+            ...baseSettings, minhag: 'sepharad', cityId: 'beit-shemesh',
+            minimumWaitMode: 'four_from_last_relations',
+            onahBeinonitMode: 'day30_full_day'
+        }
+    });
+    UI.toast = () => {};
+    UI.switchTab = () => {};
+    document.getElementById('report_date').value = '2026-06-01';
+    document.getElementById('report_time').value = '10:00';
+    document.getElementById('last_relations_date').value = '2026-05-30';
+    document.getElementById('last_relations_time').value = '15:00';
+    UI.actions.reportPeriod.call(UI);
+    const period = State.get().periods[0];
+    eq(period?.ruleContext?.rulesetId, 'cycleflow-yoatzot-standard',
+       'period records preserve the standard source profile');
+    eq(period?.ruleContext?.community, 'sepharad',
+       'period records preserve the selected community label without inferring the wait method');
+    eq(period?.ruleContext?.minimumWaitMode, 'four_from_last_relations',
+       'period records preserve the explicit four-day method');
+    eq(period?.ruleContext?.onahBeinonitMode, 'day30_full_day',
+       'period records preserve the selected onah-beinonit custom');
+    eq(period?.lastRelations?.ruleContext?.rulesetVersion, '1.0.0',
+       'last-relations reference preserves the same rule-set version');
+    assert(Boolean(Date.parse(period?.ruleContext?.recordedAt)),
+       'rule context records when the user entered the event');
+})();
+
+(function testChabadRuleContextUsesSeparateSourceSet() {
+    const { UI, State, document } = loadApp({
+        periods: [], hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, minhag: 'chabad', cityId: 'beit-shemesh' }
+    });
+    UI.toast = () => {};
+    UI.switchTab = () => {};
+    document.getElementById('report_date').value = '2026-06-01';
+    document.getElementById('report_time').value = '10:00';
+    UI.actions.reportPeriod.call(UI);
+    const context = State.get().periods[0]?.ruleContext;
+    eq(context?.rulesetId, 'cycleflow-chabad-onot-count',
+       'Chabad event records identify the separate onot-count ruleset');
+    assert(context?.sourceIds?.includes('chabad-onot-count-sources'),
+       'Chabad event records retain the dedicated source family');
 })();
 
 (function testOnahStatusUsesEstimatedDayNightFromOnset() {

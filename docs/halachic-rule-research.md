@@ -32,10 +32,16 @@ Implemented in the current main branch:
 - The selected source practice is represented through explicit minimum-wait and onah-beinonit settings rather than inferring every rule from the Ashkenaz/Sephard/Chabad label.
 - Standard fixed yom hachodesh and fixed haflagah patterns have state machines for establishment, deviations, uprooting, and reinstatement. Chabad haflagah uses its separate onot-count method.
 
+Versioned event context now stored on new records:
+
+- `ruleContext` is attached to newly recorded period/spotting events, last-relations references, and hefsek metadata.
+- The snapshot includes schema version, ruleset ID/version, source IDs, community label, explicit minimum-wait mode, onah-beinonit mode, city ID, Israel timezone, solar-time method, and record-entry timestamp.
+- Standard records use `cycleflow-yoatzot-standard@1.0.0`; Chabad records use `cycleflow-chabad-onot-count@1.0.0` plus the common-source rules.
+- Historical records are not backfilled from today's settings. If an old record has no `ruleContext`, its original profile is unknown and remains unknown.
+
 Remaining engineering work:
 
-- Persist a versioned rule-profile identifier and the exact rule/source version used for each calculation, so later rule updates can be audited without rewriting history.
-- Store calculation explanations (source event IDs, rule ID/version, assumptions, confidence, and review state) alongside each displayed result.
+- Persist per-calculation output provenance (source event IDs, rule ID/version, assumptions, confidence, and review state) alongside each displayed result; event snapshots are not a substitute for a calculation audit trail.
 - Add a configurable, sourced tzeit/zmanim convention before showing any immersion-time estimate. Until then, no sunset-to-tzeit offset is inferred.
 - Keep unknown / needs-review states for ambiguous stains, missing event times, and missing hefsek context; do not infer a confident date.
 
