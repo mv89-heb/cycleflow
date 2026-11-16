@@ -330,3 +330,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
 .b-pending { background-color: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px dashed rgba(245, 158, 11, 0.5); }
 
 .status-hero.pending .status-badge { background-color: rgba(245, 158, 11, 0.12); color: var(--warning); border-color: var(--warning); }
+
+
+/* Hebrew calendar metadata and compact settings guidance */
+.day-hebrew{font-size:.58rem;line-height:1.25;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-top:2px}
+.small-note{font-size:.76rem;line-height:1.5;margin:7px 0 12px;color:var(--text-muted)}
+.chart-container svg{display:block;max-width:100%;overflow:visible}
