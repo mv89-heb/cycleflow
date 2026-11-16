@@ -77,6 +77,24 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-30')).type, 'nidda', 'day 30 without hefsek stays nidda');
 })();
 
+(function testHalachaUsesVesetChronology() {
+    const state = {
+        periods: [
+            { date: '2026-06-01', type: 'veset', isSunset: false, id: 'v1' },
+            { date: '2026-06-04', type: 'spotting', isSunset: false, id: 's1' },
+            { date: '2026-06-20', type: 'veset', isSunset: false, id: 'v2' }
+        ],
+        hefseks: { '2026-06-06': true }, daily: {}, settings: baseSettings
+    };
+    const { HalachaLogic, Utils } = loadApp(state);
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-05')).type, 'nidda',
+       'spotting does not replace the latest veset for an earlier date');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-07')).type, 'naki',
+       'clean-day calculation uses the hefsek after the preceding veset');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-21')).type, 'nidda',
+       'a later veset starts a new status period');
+})();
+
 (function testHalachaSepharad() {
     const state = {
         periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],
