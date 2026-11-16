@@ -530,6 +530,38 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'after three consecutive 32-day-or-longer intervals, day 30 and yom hachodesh are exempt in this source profile');
 })();
 
+(function testFixedHachodeshCarriesAcrossAdarIAndAdarII() {
+    const base = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
+    const calendar = base.window.CycleFlowCalendar;
+    let adarOneDay15 = null;
+    for (let cursor = '2023-09-01'; cursor <= '2024-10-15'; cursor = calendar.addCivilDays(cursor, 1)) {
+        const parts = calendar.getHebrewDateParts(cursor);
+        if (parts && parts.month === 'Adar I' && parts.day === 15) {
+            adarOneDay15 = cursor;
+            break;
+        }
+    }
+    assert(adarOneDay15, 'the leap-year fixed pattern test finds 15 Adar I');
+    const adarTwoDay15 = calendar.getNextYomHachodeshDate(adarOneDay15);
+    const nisanDay15 = calendar.getNextYomHachodeshDate(adarTwoDay15);
+    const nextExpected = calendar.getNextYomHachodeshDate(nisanDay15);
+    eq(calendar.getHebrewDateParts(adarTwoDay15)?.month, 'Adar II',
+       'the second monthly occurrence is in Adar II');
+    eq(calendar.getHebrewDateParts(nisanDay15)?.month, 'Nisan',
+       'the third monthly occurrence is in Nisan');
+    const periods = [adarOneDay15, adarTwoDay15, nisanDay15].map((date, index) => ({
+        date, type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh',
+        isSunset: false, id: `leap-fixed-${index}`
+    }));
+    const api = loadApp({
+        periods, hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const fixed = api.HalachaLogic.getFixedHachodeshStatus(nextExpected);
+    assert(fixed && fixed.active && fixed.expectedDate === nextExpected,
+       'the fixed yom-hachodesh state machine remains stable across Adar I, Adar II, and Nisan');
+})();
+
 (function testFixedHachodeshSuppressesNonfixedOnotWhenNoDeviation() {
     const base = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
     const calendar = base.window.CycleFlowCalendar;
