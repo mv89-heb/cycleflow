@@ -796,6 +796,23 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'one later matching onset reinstates the prior fixed haflagah if no newer fixed pattern replaced it');
 })();
 
+(function testDashboardShowsCollapsedSourceAndAssumptionDetails() {
+    const api = loadApp({
+        periods: [], hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    api.UI.renderDashboard();
+    const details = api.document.getElementById('status_provenance_details');
+    const summary = api.document.getElementById('status_provenance_summary');
+    const sources = api.document.getElementById('status_provenance_sources');
+    assert(details && !details.hidden,
+       'the dashboard exposes a collapsed provenance section');
+    assert(summary?.textContent.includes('cycleflow-yoatzot-standard'),
+       'the dashboard identifies the selected source ruleset');
+    assert(sources?.querySelector('a[href="https://hebrew.yoatzot.org/6118-2/"]'),
+       'the dashboard links to the Hebrew fixed-veset source');
+})();
+
 (function testUnknownEventProducesNeedsReviewProvenance() {
     const api = loadApp({
         periods: [{ date: '2026-11-16', type: 'veset', id: 'unknown-onset' }],
