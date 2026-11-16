@@ -60,7 +60,7 @@
 
         const checklistIds = ['body-prep', 'hair', 'nails', 'barriers', 'clothing', 'towel', 'schedule', 'personal'];
         const toolTypes = ['opk_positive', 'bbt_shift', 'ultrasound', 'estimate', 'other'];
-        const validTime = time => typeof time === 'string' && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(time);
+        const validTime = time => typeof time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
         if (value.manualReminders !== undefined) {
             if (!Array.isArray(value.manualReminders) || value.manualReminders.length > 500) return false;
             const ids = new Set();
