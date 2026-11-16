@@ -695,6 +695,11 @@ HalachaLogic.getStatus = function(date) {
         ? CalendarServices.getEventDateInfo(lastPeriod, cityId)
         : null;
     const ruleContext = captureRuleContext(state.settings);
+    const sourceEventRuleContext = lastPeriod && lastPeriod.ruleContext ? lastPeriod.ruleContext : null;
+    const sourceEventProfileMatchesCurrent = sourceEventRuleContext
+        ? ['rulesetId', 'rulesetVersion', 'community', 'minimumWaitMode', 'onahBeinonitMode']
+            .every(key => sourceEventRuleContext[key] === ruleContext[key])
+        : null;
     const summarizeRuleContext = context => context ? {
         rulesetId: context.rulesetId || null,
         rulesetVersion: context.rulesetVersion || null,
@@ -779,8 +784,9 @@ HalachaLogic.getStatus = function(date) {
             rulesetVersion: ruleContext.rulesetVersion,
             sourceIds: ruleContext.sourceIds,
             calculationProfile: summarizeRuleContext(ruleContext),
-            sourceEventProfileState: lastPeriod && lastPeriod.ruleContext ? 'recorded' : (lastPeriod ? 'unknown-historical' : 'no-source-event'),
-            sourceEventProfile: summarizeRuleContext(lastPeriod && lastPeriod.ruleContext),
+            sourceEventProfileState: sourceEventRuleContext ? 'recorded' : (lastPeriod ? 'unknown-historical' : 'no-source-event'),
+            sourceEventProfile: summarizeRuleContext(sourceEventRuleContext),
+            sourceEventProfileMatchesCurrent,
             evaluatedDate: dateLabel,
             evaluatedAt: new Date().toISOString(),
             ruleIds: [...new Set(ruleIds)],
