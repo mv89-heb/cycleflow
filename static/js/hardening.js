@@ -109,6 +109,27 @@
                 if (!isValidDateString(date) || !Array.isArray(checked) || checked.some(id => !checklistIds.includes(id)) || new Set(checked).size !== checked.length) return false;
             }
         }
+        if (value.symptomObservations !== undefined) {
+            if (!Array.isArray(value.symptomObservations) || value.symptomObservations.length > 500) return false;
+            const ids = new Set();
+            const symptomTypes = ['cramps', 'back_pain', 'breast_soreness', 'bloating', 'sneezing_yawning', 'other'];
+            const answers = ['yes', 'no', 'unknown'];
+            for (const item of value.symptomObservations) {
+                if (!isPlainObject(item) || typeof item.id !== 'string' || item.id.length > 80 || ids.has(item.id) ||
+                    !isValidDateString(item.date) || !symptomTypes.includes(item.type) ||
+                    !answers.includes(item.distinctive) || !answers.includes(item.occursOutsideFlow) ||
+                    !answers.includes(item.flowWithoutSymptom)) return false;
+                ids.add(item.id);
+                if (item.time !== undefined && item.time !== null && !validTime(item.time)) return false;
+                if (item.endDate !== undefined && item.endDate !== null &&
+                    (!isValidDateString(item.endDate) || item.endDate < item.date)) return false;
+                if (item.endTime !== undefined && item.endTime !== null && !validTime(item.endTime)) return false;
+                if (item.relatedFlowDate !== undefined && item.relatedFlowDate !== null && !isValidDateString(item.relatedFlowDate)) return false;
+                if (item.type === 'other' && (typeof item.customDescription !== 'string' || !item.customDescription.trim())) return false;
+                if (item.customDescription !== undefined && (typeof item.customDescription !== 'string' || item.customDescription.length > 120)) return false;
+                if (item.note !== undefined && (typeof item.note !== 'string' || item.note.length > 500)) return false;
+            }
+        }
         if (value.ovulationObservations !== undefined) {
             if (!Array.isArray(value.ovulationObservations) || value.ovulationObservations.length > 500) return false;
             const ids = new Set();

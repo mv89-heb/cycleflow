@@ -53,6 +53,21 @@ checklistDate.value = '2026-11-18';
 checklistDate.dispatchEvent(new window.Event('change', { bubbles: true }));
 assert.equal(document.querySelector('[data-action="toggleMikvehChecklist"]').dataset.date, '2026-11-18');
 
+document.getElementById('symptom_date').value = '2026-11-14';
+document.getElementById('symptom_time').value = '08:15';
+document.getElementById('symptom_type').value = 'back_pain';
+document.getElementById('symptom_distinctive').value = 'yes';
+document.getElementById('symptom_outside_flow').value = 'no';
+document.getElementById('symptom_flow_without').value = 'no';
+document.getElementById('symptom_flow_date').value = '2026-11-16';
+document.getElementById('symptom_note').value = 'תיאור עובדתי';
+UI.actions.addSymptomObservation.call(UI);
+assert.equal(State.get().symptomObservations.length, 1);
+assert.equal(State.get().symptomObservations[0].relatedFlowDate, '2026-11-16');
+assert.equal(State.get().symptomObservations[0].flowWithoutSymptom, 'no');
+UI.actions.deleteSymptomObservation.call(UI, { dataset: { id: State.get().symptomObservations[0].id } });
+assert.equal(State.get().symptomObservations.length, 0, 'symptom observation can be deleted locally');
+
 document.getElementById('ovulation_date').value = '2026-11-15';
 document.getElementById('ovulation_type').value = 'opk_positive';
 document.getElementById('ovulation_immersion_date').value = '2026-11-18';

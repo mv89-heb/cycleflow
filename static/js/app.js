@@ -172,7 +172,7 @@ const StorageService = {
     clear() { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem('cycleflow_recovery_v1'); }
 };
 
-const defaultState = { periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {}, manualReminders: [], stainReports: [], mikvehChecklist: {}, ovulationObservations: [], settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: null, minimumWaitMode: 'five_from_onset', onahBeinonitMode: 'day30_onah' } };
+const defaultState = { periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {}, manualReminders: [], stainReports: [], symptomObservations: [], mikvehChecklist: {}, ovulationObservations: [], settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: null, minimumWaitMode: 'five_from_onset', onahBeinonitMode: 'day30_onah' } };
 
 class StateManager {
     constructor() { this.state = StorageService.load() || defaultState; this.listeners = []; }
@@ -1192,7 +1192,7 @@ const UI = {
             const input = document.getElementById(id);
             if (input && !input.value) input.value = value;
         };
-        ['reminder_date', 'stain_date', 'mikveh_checklist_date', 'ovulation_date'].forEach(id => setDefault(id, today));
+        ['reminder_date', 'stain_date', 'symptom_date', 'mikveh_checklist_date', 'ovulation_date'].forEach(id => setDefault(id, today));
         setDefault('doctor_to', today);
         setDefault('doctor_from', Utils.fmt(Utils.addDays(new Date(), -180)));
 
@@ -1209,6 +1209,14 @@ const UI = {
             return `<div class="tool-list-row"><div><strong>${item.date} · ${escapeHTML(color)}</strong><div class="text-muted small-note">${escapeHTML(size)} · ${escapeHTML(LocalTools.STAIN_LABELS.surface[item.surface] || 'לא ידוע')}</div></div>
             <div class="flex gap-10"><button class="btn btn-outline" data-action="copyStainSummary" data-id="${escapeHTML(item.id)}">העתקה</button><button class="btn btn-outline" data-action="downloadStainSummary" data-id="${escapeHTML(item.id)}">הורדה</button><button class="btn btn-outline" data-action="deleteStainReport" data-id="${escapeHTML(item.id)}">מחיקה</button></div></div>`;
         }).join('') : '<p class="text-muted small-note">אין עדיין תיאורי כתמים שמורים.</p>';
+
+        const symptoms = [...(state.symptomObservations || [])].sort((x, y) => y.date.localeCompare(x.date));
+        document.getElementById('symptom_observations_list').innerHTML = symptoms.length ? symptoms.map(item => {
+            const label = item.type === 'other' ? item.customDescription : (LocalTools.SYMPTOM_LABELS[item.type] || 'תסמין');
+            const end = item.endDate || item.endTime ? ' · סיום ' + (item.endDate || item.date) + (item.endTime ? ' ' + item.endTime : '') : '';
+            const related = item.relatedFlowDate ? ' · דימום שסומן: ' + item.relatedFlowDate : '';
+            return `<div class="tool-list-row"><div><strong>${escapeHTML(item.date)}${item.time ? ' · ' + escapeHTML(item.time) : ''} · ${escapeHTML(label)}</strong><div class="text-muted small-note">${escapeHTML(end)}${escapeHTML(related)} · תיעוד בלבד</div></div><div class="flex gap-10"><button class="btn btn-outline" data-action="copySymptomSummary" data-id="${escapeHTML(item.id)}">סיכום</button><button class="btn btn-outline" data-action="deleteSymptomObservation" data-id="${escapeHTML(item.id)}">מחיקה</button></div></div>`;
+        }).join('') : '<p class="text-muted small-note">אין עדיין תיעודי תסמינים.</p>';
 
         const checklistDate = document.getElementById('mikveh_checklist_date').value || today;
         const checked = (state.mikvehChecklist || {})[checklistDate] || [];
@@ -1868,6 +1876,48 @@ const UI = {
             State.update(state => { state.stainReports = (state.stainReports || []).filter(item => item.id !== btn.dataset.id); });
             this.toast('תיאור הכתם נמחק');
         },
+        addSymptomObservation() {
+            if (!LocalTools) return;
+            const item = {
+                id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7),
+                date: document.getElementById('symptom_date').value,
+                time: document.getElementById('symptom_time').value || null,
+                endDate: document.getElementById('symptom_end_date').value || null,
+                endTime: document.getElementById('symptom_end_time').value || null,
+                type: document.getElementById('symptom_type').value,
+                customDescription: document.getElementById('symptom_custom').value.trim(),
+                distinctive: document.getElementById('symptom_distinctive').value,
+                occursOutsideFlow: document.getElementById('symptom_outside_flow').value,
+                flowWithoutSymptom: document.getElementById('symptom_flow_without').value,
+                relatedFlowDate: document.getElementById('symptom_flow_date').value || null,
+                note: document.getElementById('symptom_note').value.trim()
+            };
+            try { LocalTools.buildSymptomSummary(item); } catch (error) { this.toast(error.message, true); return; }
+            const saved = State.update(state => { if (!state.symptomObservations) state.symptomObservations = []; state.symptomObservations.push(item); });
+            if (!saved) { this.toast('שמירת תיעוד התסמין נכשלה', true); return; }
+            ['symptom_time', 'symptom_end_date', 'symptom_end_time', 'symptom_custom', 'symptom_flow_date', 'symptom_note'].forEach(id => {
+                const input = document.getElementById(id); if (input) input.value = '';
+            });
+            this.toast('התיעוד נשמר במכשיר בלבד');
+        },
+        async copySymptomSummary(btn) {
+            const item = (State.get().symptomObservations || []).find(record => record.id === btn.dataset.id);
+            if (!item) { this.toast('לא נמצא תיעוד תסמין', true); return; }
+            const summary = LocalTools.buildSymptomSummary(item);
+            try {
+                if (!navigator.clipboard?.writeText) throw new Error('clipboard unavailable');
+                await navigator.clipboard.writeText(summary);
+                this.toast('סיכום התסמין הועתק');
+            } catch (_) {
+                downloadLocalFile(summary, 'cycleflow-symptom-summary.txt', 'text/plain;charset=utf-8');
+                this.toast('סיכום התסמין הורד למכשיר');
+            }
+        },
+        deleteSymptomObservation(btn) {
+            if (!confirm('למחוק את תיעוד התסמין?')) return;
+            State.update(state => { state.symptomObservations = (state.symptomObservations || []).filter(item => item.id !== btn.dataset.id); });
+            this.toast('תיעוד התסמין נמחק');
+        },
         downloadStainSummary(btn) {
             const item = (State.get().stainReports || []).find(record => record.id === btn.dataset.id);
             if (!item) { this.toast('לא נמצא תיאור כתם', true); return; }
@@ -1920,7 +1970,8 @@ const UI = {
             const to = document.getElementById('doctor_to').value;
             try {
                 const summary = LocalTools.buildDoctorSummary(State.get(), from, to, {
-                    includeStains: document.getElementById('doctor_include_stains').checked
+                    includeStains: document.getElementById('doctor_include_stains').checked,
+                    includeSymptoms: document.getElementById('doctor_include_symptoms').checked
                 });
                 downloadLocalFile(summary, 'cycleflow-doctor-summary.txt', 'text/plain;charset=utf-8');
                 this.toast('הסיכום הרפואי הורד למכשיר');

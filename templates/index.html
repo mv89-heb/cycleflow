@@ -129,6 +129,20 @@
                 <div id="stain_reports_list" class="tool-list"></div>
             </div>
             <div class="card glass">
+                <h3><i class="fas fa-heartbeat"></i> יומן סימנים גופניים</h3>
+                <p class="text-muted small-note">תיעוד עובדתי בלבד: מתי התחיל הסימן, מתי הסתיים, והאם הוא מופיע גם בזמנים אחרים. המערכת אינה מזהה וסת הגוף, אינה מחשבת עונת פרישה ואינה קובעת מעמד הלכתי או רפואי. <a href="https://hebrew.yoatzot.org/6118-2/" target="_blank" rel="noopener noreferrer">מקור והסבר של יועצות הלכה</a>.</p>
+                <div class="tool-form-grid"><div><label for="symptom_date">תאריך תחילת הסימן</label><input type="date" id="symptom_date"></div><div><label for="symptom_time">שעת התחלה (אופציונלי)</label><input type="time" id="symptom_time"></div></div>
+                <div class="tool-form-grid"><div><label for="symptom_end_date">תאריך סיום (אופציונלי)</label><input type="date" id="symptom_end_date"></div><div><label for="symptom_end_time">שעת סיום (אופציונלי)</label><input type="time" id="symptom_end_time"></div></div>
+                <label for="symptom_type">סוג הסימן</label><select id="symptom_type"><option value="cramps">כאבים או התכווצויות</option><option value="back_pain">כאב גב</option><option value="breast_soreness">רגישות בשדיים</option><option value="bloating">נפיחות</option><option value="sneezing_yawning">התעטשויות או פיהוקים</option><option value="other">אחר</option></select>
+                <label for="symptom_custom">תיאור הסימן (אם נבחר "אחר")</label><input id="symptom_custom" maxlength="120" placeholder="תיאור קצר ועובדתי">
+                <div class="tool-form-grid"><div><label for="symptom_distinctive">האם הסימן ייחודי מבחינתך?</label><select id="symptom_distinctive"><option value="unknown">לא ידוע</option><option value="yes">כן</option><option value="no">לא</option></select></div><div><label for="symptom_outside_flow">האם הוא מופיע גם בזמנים אחרים?</label><select id="symptom_outside_flow"><option value="unknown">לא ידוע</option><option value="yes">כן</option><option value="no">לא</option></select></div></div>
+                <label for="symptom_flow_without">האם הופיע דימום גם בלי שהסימן הופיע?</label><select id="symptom_flow_without"><option value="unknown">לא ידוע</option><option value="yes">כן</option><option value="no">לא</option></select>
+                <label for="symptom_flow_date">תאריך תחילת דימום סמוך (אם ידוע, דיווח בלבד)</label><input type="date" id="symptom_flow_date">
+                <label for="symptom_note">הערה עובדתית (אופציונלי)</label><textarea id="symptom_note" maxlength="500" rows="2" placeholder="פרטים נוספים ללא פרטים מזהים"></textarea>
+                <button class="btn btn-primary mt-15" data-action="addSymptomObservation">שמירת תיעוד</button>
+                <div id="symptom_observations_list" class="tool-list"></div>
+            </div>
+            <div class="card glass">
                 <h3><i class="fas fa-clipboard-check"></i> רשימת הכנות למקווה</h3>
                 <p class="text-muted small-note">רשימה ארגונית כללית בלבד. התאימי אותה למנהגך ולהנחיות המקווה או היועצת.</p>
                 <label for="mikveh_checklist_date">תאריך</label><input type="date" id="mikveh_checklist_date">
@@ -151,6 +165,7 @@
                 <p class="text-muted small-note">ייצוא מקומי של נתונים שתועדו בלבד, ללא שדות שם או פרטי חשבון. הערות חופשיות עשויות לכלול פרטים מזהים — בדקי את הקובץ לפני שיתוף. בחרי אם לכלול גם תיאורי כתמים.</p>
                 <div class="tool-form-grid"><div><label for="doctor_from">מתאריך</label><input type="date" id="doctor_from"></div><div><label for="doctor_to">עד תאריך</label><input type="date" id="doctor_to"></div></div>
                 <label class="checkbox-label"><input type="checkbox" id="doctor_include_stains"> לכלול תיאורי כתמים</label>
+                <label class="checkbox-label"><input type="checkbox" id="doctor_include_symptoms"> לכלול תיעודי סימנים גופניים</label>
                 <button class="btn btn-outline mt-15" data-action="exportDoctorSummary">הורדת סיכום רפואי ‎.txt</button>
             </div>
         </section>
