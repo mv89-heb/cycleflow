@@ -374,8 +374,9 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const { HalachaLogic, Utils } = loadApp(state);
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-30')).type, 'onah',
        'day 30 is the baseline onah beinonit');
-    eq(HalachaLogic.getStatus(Utils.newDate('2026-07-01')).type, 'pending-tevila',
-       'day 31 is not silently enabled in the default profile');
+    const day31Status = HalachaLogic.getStatus(Utils.newDate('2026-07-01'));
+    assert(!day31Status.text.includes('עונה בינונית (31)'),
+       'day 31 is not silently enabled in the default profile, even if another onah falls on the same date');
 
     const customState = {
         ...state,
