@@ -183,9 +183,18 @@ class StateManager {
         return true;
     }
     get() { return this.state; }
+    captureCurrentCalculation() {
+        const history = window.CycleFlowCalculationHistory;
+        if (!history || typeof HalachaLogic === 'undefined') return false;
+        const evaluatedDate = todayCivilDate();
+        const status = HalachaLogic.getStatus(Utils.newDate(evaluatedDate));
+        const snapshot = history.createSnapshot(this.state, evaluatedDate, status);
+        return history.append(this.state, snapshot);
+    }
     update(updater) {
         const previous = JSON.parse(JSON.stringify(this.state));
         updater(this.state);
+        this.captureCurrentCalculation();
         if (!this.notify()) {
             this.state = previous;
             this.listeners.forEach(listener => listener(this.state));
@@ -1313,6 +1322,28 @@ const UI = {
             }
         }
 
+        const historyList = document.getElementById('calculation_history_list');
+        if (historyList) {
+            historyList.replaceChildren();
+            const snapshots = Array.isArray(state.calculationSnapshots) ? state.calculationSnapshots.slice(-12).reverse() : [];
+            if (!snapshots.length) {
+                const empty = document.createElement('li');
+                empty.textContent = 'עדיין לא נשמר חישוב היסטורי. החישוב הראשון יישמר עם שינוי נתונים או בטעינה.';
+                historyList.appendChild(empty);
+            } else {
+                snapshots.forEach(snapshot => {
+                    const item = document.createElement('li');
+                    const captured = new Date(snapshot.capturedAt);
+                    const capturedLabel = Number.isNaN(captured.getTime()) ? '' : captured.toLocaleString('he-IL');
+                    const review = snapshot.provenance && snapshot.provenance.reviewState === 'needs-review'
+                        ? ' · נדרש בירור'
+                        : '';
+                    item.textContent = `${snapshot.evaluatedDate} · ${snapshot.result.text}${review} · נשמר: ${capturedLabel}`;
+                    historyList.appendChild(item);
+                });
+            }
+        }
+
         const cdContainer = document.getElementById('clean_days_container');
         if (st.type === 'naki' || st.type === 'hefsek' || st.type === 'tevila' || st.type === 'tevila-done') {
             cdContainer.classList.remove('hidden');
@@ -1951,6 +1982,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     try {
         UI.init();
+        if (State.captureCurrentCalculation()) State.notify();
     } catch (err) {
         console.error('Init failed:', err);
         document.body.insertAdjacentHTML('afterbegin',
