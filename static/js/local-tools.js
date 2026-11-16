@@ -44,6 +44,22 @@
       .replace(/;/g, '\\;');
   }
 
+  function foldIcsLine(line) {
+    const encoder = new TextEncoder();
+    const output = [];
+    let current = '';
+    for (const character of String(line)) {
+      if (encoder.encode(current + character).length > 75) {
+        output.push(current);
+        current = ' ' + character;
+      } else {
+        current += character;
+      }
+    }
+    output.push(current);
+    return output.join('\\r\\n');
+  }
+
   function icsDate(value) {
     if (!validDate(value)) throw new Error('תאריך תזכורת לא תקין');
     return value.replace(/-/g, '');
@@ -189,7 +205,7 @@
   }
 
   globalThis.CycleFlowTools = Object.freeze({
-    CHECKLIST_ITEMS, STAIN_LABELS, OVULATION_LABELS, escapeIcsText, buildIcs,
+    CHECKLIST_ITEMS, STAIN_LABELS, OVULATION_LABELS, escapeIcsText, foldIcsLine, buildIcs,
     buildStainSummary, buildDoctorSummary, earlyOvulationIndicator,
     zonedLocalToUtc, validDate
   });
