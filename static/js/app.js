@@ -187,7 +187,10 @@ const HalachaLogic = {
                 : 'unknown';
             // A hefsek explicitly recorded after sunset is not silently accepted as a
             // before-sunset hefsek. It remains in history for review.
-            if (state.hefseks[key] && relation !== 'after') hefsekDate = new Date(temp.getTime());
+            const hasRecordedMeta = Object.prototype.hasOwnProperty.call(state.hefsekMeta || {}, key);
+            if (state.hefseks[key] && relation !== 'after' && (relation !== 'unknown' || !hasRecordedMeta)) {
+                hefsekDate = new Date(temp.getTime());
+            }
             temp.setDate(temp.getDate() + 1);
         }
 
