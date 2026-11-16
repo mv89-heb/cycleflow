@@ -724,8 +724,11 @@ const UI = {
                     type: document.getElementById('chk_spotting_report').checked ? 'spotting' : 'veset' 
                 }); 
                 const cutoff = Utils.newDate(d); 
-                Object.keys(state.hefseks).forEach(k => { 
-                    if (Utils.newDate(k) >= cutoff) delete state.hefseks[k]; 
+                Object.keys(state.hefseks).forEach(k => {
+                    if (Utils.newDate(k) >= cutoff) {
+                        delete state.hefseks[k];
+                        if (state.hefsekMeta) delete state.hefsekMeta[k];
+                    }
                 }); 
             });
             this.toast('וסת דווחה בהצלחה'); 
