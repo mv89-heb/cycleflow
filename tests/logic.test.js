@@ -653,7 +653,12 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
         date, type: 'veset', eventTime: index === 0 ? '20:30' : '10:00',
         cityId: 'beit-shemesh', isSunset: false, id: `interval-${index}`
     }));
-    const base = loadApp({ periods, hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
+    const initialHefsek = '2026-08-30';
+    const base = loadApp({
+        periods, hefseks: { [initialHefsek]: true },
+        hefsekMeta: { [initialHefsek]: { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
     const fixed = base.HalachaLogic.getFixedHaflagahStatus('2026-09-22');
     assert(fixed && fixed.active && fixed.intervalDays === 28 && fixed.expectedDate === '2026-09-22',
        'a standard fixed haflagah activates for the next equal interval');
@@ -669,8 +674,10 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
         cityId: 'beit-shemesh', isSunset: false, id: 'deviation-one'
     }];
     const deviated = loadApp({
-        periods: deviatedPeriods, hefseks: {}, daily: {},
-        settings: { ...baseSettings, cityId: 'beit-shemesh' }
+        periods: deviatedPeriods,
+        hefseks: { '2026-09-25': true },
+        hefsekMeta: { '2026-09-25': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
     });
     const deviationStatus = deviated.HalachaLogic.getFixedHaflagahStatus('2026-09-23');
     assert(deviationStatus && deviationStatus.active && deviationStatus.deviated && deviationStatus.missedCount === 1,
