@@ -1119,6 +1119,11 @@ const UI = {
         },
         doHefsekPanel() {
             if (!this.selectedDate) return;
+            const status = HalachaLogic.getStatus(this.selectedDate);
+            if (!status.canHefsek) {
+                this.toast('לא ניתן לבצע הפסק בתאריך שנבחר', true);
+                return;
+            }
             const date = Utils.fmt(this.selectedDate);
             const eventTime = document.getElementById('hefsek_time')?.value || '';
             const cityId = State.get().settings.cityId || null;
