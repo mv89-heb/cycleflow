@@ -176,6 +176,13 @@ const HalachaLogic = {
         if (!lastP) return { ...res, text: 'אין מספיק נתונים' };
 
         const pDate = Utils.newDate(eventCalculationDate(lastP));
+        const onsetInfo = CalendarServices && CalendarServices.getEventDateInfo
+            ? CalendarServices.getEventDateInfo(lastP, state.settings.cityId)
+            : null;
+        const onsetOnah = onsetInfo ? onsetInfo.estimatedOnah : 'unknown';
+        const onahSuffix = onsetOnah === 'day'
+            ? ' · עונת יום (אומדן)'
+            : (onsetOnah === 'night' ? ' · עונת לילה (אומדן)' : ' · עונה לא ידועה');
         const daysDiff = Utils.diffDays(date, pDate);
         if (dStr === eventCalculationDate(lastP)) return { type: 'nidda', text: 'וסת (יום 1)', color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: false };
 
@@ -226,7 +233,7 @@ const HalachaLogic = {
                     const dayNumber = onah30 ? 30 : 31;
                     return {
                         type: 'onah',
-                        text: `עונה בינונית (${dayNumber}) · טרם סומנה טבילה`,
+                        text: `עונה בינונית (${dayNumber}) · טרם סומנה טבילה${onahSuffix}`,
                         color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)',
                         expectedTevilaDate, reportedTevilaDate, canHefsek: false
                     };
@@ -241,8 +248,8 @@ const HalachaLogic = {
 
         const beinonit30 = Utils.addDays(pDate, 29);
         const beinonit31 = Utils.addDays(pDate, 30);
-        if (dStr === Utils.fmt(beinonit30)) return { type: 'onah', text: 'עונה בינונית (30)', color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
-        if (dStr === Utils.fmt(beinonit31)) return { type: 'onah', text: 'עונה בינונית (31)', color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
+        if (dStr === Utils.fmt(beinonit30)) return { type: 'onah', text: `עונה בינונית (30)${onahSuffix}`, color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
+        if (dStr === Utils.fmt(beinonit31)) return { type: 'onah', text: `עונה בינונית (31)${onahSuffix}`, color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
         return res;
     }
 };
@@ -664,11 +671,14 @@ const UI = {
             row.style.cssText = 'padding:16px 0; border-bottom: 1px solid var(--border-light)';
             const eventInfo = CalendarServices ? CalendarServices.getEventDateInfo(p, State.get().settings.cityId) : { hebrewDate: '', relation: 'unknown', sunsetTime: null };
             const relationLabel = eventInfo.relation === 'after' ? 'אחרי שקיעה' : (eventInfo.relation === 'before' ? 'לפני שקיעה' : 'זמן ביחס לשקיעה לא ידוע');
+            const onahLabel = eventInfo.estimatedOnah === 'day'
+                ? 'עונת יום משוערת'
+                : (eventInfo.estimatedOnah === 'night' ? 'עונת לילה משוערת' : 'עונה לא ידועה');
             row.innerHTML = `
                 <div>
                     <div class="font-bold text-main">${Utils.prettyDate(Utils.newDate(p.date))}</div>
                     ${eventInfo.hebrewDate ? `<div class="text-sm text-muted">${eventInfo.hebrewDate}</div>` : ''}
-                    <div class="text-sm text-muted" style="font-size:0.85rem">${p.eventTime ? `שעה ${p.eventTime} · ` : ''}${relationLabel}${eventInfo.sunsetTime ? ` · שקיעה משוערת ${eventInfo.sunsetTime}` : ''}</div>
+                    <div class="text-sm text-muted" style="font-size:0.85rem">${p.eventTime ? `שעה ${p.eventTime} · ` : ''}${relationLabel} · ${onahLabel}${eventInfo.sunriseTime ? ` · זריחה משוערת ${eventInfo.sunriseTime}` : ''}${eventInfo.sunsetTime ? ` · שקיעה משוערת ${eventInfo.sunsetTime}` : ''}</div>
                 </div>
                 <div class="flex" style="align-items:center; gap:12px;">
                     <div class="text-danger font-bold">${p.type === 'veset' ? 'וסת' : 'כתם'}</div>

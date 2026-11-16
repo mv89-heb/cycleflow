@@ -224,6 +224,30 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     eq(status.canHefsek, true, 'an unknown-time-relation hefsek remains pending review');
 })();
 
+(function testOnahStatusUsesEstimatedDayNightFromOnset() {
+    const dayState = {
+        periods: [{ date: '2026-11-16', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', id: 'day-onset' }],
+        hefseks: { '2026-11-22': true },
+        hefsekMeta: { '2026-11-22': { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    };
+    const dayApi = loadApp(dayState);
+    const dayStatus = dayApi.HalachaLogic.getStatus(dayApi.Utils.newDate('2026-12-15'));
+    assert(dayStatus.text.includes('עונת יום (אומדן)'),
+       'onah beinonit uses the estimated daytime onah of the original onset');
+
+    const nightState = {
+        periods: [{ date: '2026-11-16', type: 'veset', eventTime: '18:00', cityId: 'beit-shemesh', id: 'night-onset' }],
+        hefseks: { '2026-11-23': true },
+        hefsekMeta: { '2026-11-23': { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    };
+    const nightApi = loadApp(nightState);
+    const nightStatus = nightApi.HalachaLogic.getStatus(nightApi.Utils.newDate('2026-12-16'));
+    assert(nightStatus.text.includes('עונת לילה (אומדן)'),
+       'after-sunset onset shifts to the next Hebrew date and uses the estimated night onah');
+})();
+
 (function testHalachaSepharad() {
     const state = {
         periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],

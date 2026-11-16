@@ -36,12 +36,12 @@
   const toRadians = value => value * Math.PI / 180;
   const toDegrees = value => value * 180 / Math.PI;
 
-  function sunsetUtc(date, city) {
+  function solarEventUtc(date, city, isSunrise = false) {
     if (!validDate(date) || !city || !Number.isFinite(city.lat) || !Number.isFinite(city.lon)) return null;
     const { year, month, day } = dateParts(date);
     const n = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 0)) / 86400000);
     const longitudeHour = city.lon / 15;
-    const t = n + ((18 - longitudeHour) / 24);
+    const t = n + (((isSunrise ? 6 : 18) - longitudeHour) / 24);
     const meanAnomaly = 0.9856 * t - 3.289;
     const trueLongitude = normalizeDegrees(meanAnomaly + 1.916 * Math.sin(toRadians(meanAnomaly)) +
       0.020 * Math.sin(2 * toRadians(meanAnomaly)) + 282.634);
@@ -53,7 +53,8 @@
     const cosHourAngle = (Math.cos(toRadians(90.833)) - sinDeclination * Math.sin(toRadians(city.lat))) /
       (cosDeclination * Math.cos(toRadians(city.lat)));
     if (cosHourAngle < -1 || cosHourAngle > 1) return null;
-    const hourAngle = toDegrees(Math.acos(cosHourAngle)) / 15;
+    const hourAngleDegrees = toDegrees(Math.acos(cosHourAngle));
+    const hourAngle = (isSunrise ? 360 - hourAngleDegrees : hourAngleDegrees) / 15;
     const localMeanTime = hourAngle + rightAscension - 0.06571 * t - 6.622;
     const utcHour = ((localMeanTime - longitudeHour) % 24 + 24) % 24;
     const utcMinutes = Math.round(utcHour * 60);
@@ -68,9 +69,23 @@
 
   function getSunset(date, cityId) {
     const city = cityById(cityId);
-    const instant = sunsetUtc(date, city);
+    const instant = solarEventUtc(date, city, false);
     if (!instant) return null;
     return { time: formatTimeInZone(instant), timeZone: TIME_ZONE, approximate: true, cityId };
+  }
+
+  function getSunrise(date, cityId) {
+    const city = cityById(cityId);
+    const instant = solarEventUtc(date, city, true);
+    if (!instant) return null;
+    return { time: formatTimeInZone(instant), timeZone: TIME_ZONE, approximate: true, cityId };
+  }
+
+  function getSolarTimes(date, cityId) {
+    const sunrise = getSunrise(date, cityId);
+    const sunset = getSunset(date, cityId);
+    if (!sunrise || !sunset) return null;
+    return { sunrise: sunrise.time, sunset: sunset.time, timeZone: TIME_ZONE, approximate: true, cityId };
   }
 
   function addCivilDays(value, amount) {
@@ -122,17 +137,36 @@
     return 'unknown';
   }
 
+  function resolveEventOnah(record, fallbackCityId) {
+    if (!record || !validDate(record.date) ||
+        typeof record.eventTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(record.eventTime)) {
+      return 'unknown';
+    }
+    const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId')
+      ? record.cityId
+      : fallbackCityId;
+    const solarTimes = getSolarTimes(record.date, cityId);
+    if (!solarTimes) return 'unknown';
+    return record.eventTime >= solarTimes.sunrise && record.eventTime < solarTimes.sunset
+      ? 'day'
+      : 'night';
+  }
+
   function getEventDateInfo(record, fallbackCityId) {
     const relation = resolveEventRelation(record, fallbackCityId);
     const cityId = record && (Object.prototype.hasOwnProperty.call(record, 'cityId') ? record.cityId : fallbackCityId);
     const effectiveDate = relation === 'after' ? addCivilDays(record.date, 1) : record.date;
     const hebrewDate = formatHebrewDate(record.date, { afterSunset: relation === 'after' });
     const sunset = getSunset(record.date, cityId);
+    const sunrise = getSunrise(record.date, cityId);
+    const estimatedOnah = resolveEventOnah(record, fallbackCityId);
     return {
-      hebrewDate, relation, effectiveDate,
+      hebrewDate, relation, effectiveDate, estimatedOnah,
+      sunriseTime: sunrise ? sunrise.time : null,
       sunsetTime: sunset ? sunset.time : null,
-      approximate: Boolean(sunset),
-      dateConfidence: relation === 'unknown' ? 'unknown' : 'recorded'
+      approximate: Boolean(sunset && sunrise),
+      dateConfidence: relation === 'unknown' ? 'unknown' : 'recorded',
+      onahConfidence: estimatedOnah === 'unknown' ? 'unknown' : 'astronomical-estimate'
     };
   }
 
@@ -154,7 +188,8 @@
   }
 
   globalThis.CycleFlowCalendar = Object.freeze({
-    CITIES, cityById, getSunset, formatHebrewDate, formatHebrewMonth, getEventDateInfo,
-    resolveEventRelation, getCurrentHebrewDate, getIsraelCivilDate, addCivilDays, TIME_ZONE
+    CITIES, cityById, getSunrise, getSunset, getSolarTimes,
+    formatHebrewDate, formatHebrewMonth, getEventDateInfo,
+    resolveEventRelation, resolveEventOnah, getCurrentHebrewDate, getIsraelCivilDate, addCivilDays, TIME_ZONE
   });
 })();
