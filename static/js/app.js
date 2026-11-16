@@ -114,8 +114,11 @@ const HalachaLogic = {
     getStatus(date) {
         const state = State.get();
         const dStr = Utils.fmt(date);
-        const periods = Utils.chronologicalPeriods(state.periods);
-        const lastP = periods[periods.length-1];
+        // Status for a selected date must be based on the latest actual veset
+        // on or before that date. Spotting is not a cycle boundary, and a later
+        // veset must not rewrite the status of an earlier calendar date.
+        const periods = Utils.chronologicalVesets(state.periods).filter(p => p.date <= dStr);
+        const lastP = periods[periods.length - 1];
         
         let res = { type: 'regular', text: 'טהורה', color: 'var(--st-naki)', bg: 'rgba(16, 185, 129, 0.1)', canHefsek: false };
         if (!lastP) return res;
