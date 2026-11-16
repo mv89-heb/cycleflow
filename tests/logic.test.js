@@ -28,7 +28,7 @@ function loadApp(state) {
     delete window.navigator.serviceWorker;
     const code = fs.readFileSync(APP_PATH, 'utf8');
     window.eval(code + `
-        window.__api = { Utils, HalachaLogic, FertilityLogic, State };
+        window.__api = { Utils, HalachaLogic, FertilityLogic, State, UI, document: window.document };
     `);
     return window.__api;
 }
@@ -75,6 +75,19 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const beinonit = api2.HalachaLogic.getStatus(api2.Utils.newDate('2026-06-30'));
     eq(beinonit.type, 'onah', 'day 30 is onah after tahara completed');
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-30')).type, 'nidda', 'day 30 without hefsek stays nidda');
+})();
+
+(function testCalendarHandlesLegacyDailyNotesWithoutChecks() {
+    const { UI, Utils, document } = loadApp({
+        periods: [], hefseks: {},
+        daily: { '2026-06-10': { note: 'הערה היסטורית ללא שדות בדיקה' } },
+        settings: baseSettings
+    });
+    UI.navDate = Utils.newDate('2026-06-01');
+    let renderError = null;
+    try { UI.renderCalendar(); } catch (error) { renderError = error; }
+    assert(renderError === null, 'calendar must render legacy daily notes without a checks object');
+    assert(document.querySelector('#cal_grid .cal-day'), 'calendar days should render for legacy daily notes');
 })();
 
 (function testHalachaUsesVesetChronology() {
