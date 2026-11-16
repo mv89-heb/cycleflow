@@ -280,6 +280,15 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'last-relations reference preserves the same rule-set version');
     assert(Boolean(Date.parse(period?.ruleContext?.recordedAt)),
        'rule context records when the user entered the event');
+    eq(State.get().periods[0]?.ruleContext?.rulesetId, 'cycleflow-yoatzot-standard',
+       'the period keeps its original source profile after entry');
+    State.update(current => { current.settings.onahBeinonitMode = 'day30_onah'; });
+    const recalculated = loadApp({
+        ...State.get(), settings: State.get().settings
+    });
+    const recalculatedStatus = recalculated.HalachaLogic.getStatus(recalculated.Utils.newDate('2026-06-07'));
+    eq(recalculatedStatus.provenance?.sourceEventProfileMatchesCurrent, false,
+       'provenance flags when current calculation settings differ from the event-entry snapshot');
 })();
 
 (function testChabadRuleContextUsesSeparateSourceSet() {
