@@ -28,7 +28,7 @@ function loadApp(state) {
     delete window.navigator.serviceWorker;
     const code = fs.readFileSync(APP_PATH, 'utf8');
     window.eval(code + `
-        window.__api = { Utils, HalachaLogic, FertilityLogic, State, UI, document: window.document };
+        window.__api = { Utils, HalachaLogic, FertilityLogic, State, UI, document: window.document, window };
     `);
     return window.__api;
 }
@@ -75,6 +75,18 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const beinonit = api2.HalachaLogic.getStatus(api2.Utils.newDate('2026-06-30'));
     eq(beinonit.type, 'onah', 'day 30 is onah after tahara completed');
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-30')).type, 'nidda', 'day 30 without hefsek stays nidda');
+})();
+
+(function testFailedPersistenceRollsBackInMemoryState() {
+    const { State, window } = loadApp({
+        periods: [], hefseks: {}, daily: {},
+        settings: { ...baseSettings }
+    });
+    const before = JSON.stringify(State.get());
+    window.localStorage.setItem = () => { throw new window.DOMException('quota exceeded', 'QuotaExceededError'); };
+    const saved = State.update(s => { s.settings.theme = 'light'; });
+    eq(saved, false, 'failed persistence returns false');
+    eq(JSON.stringify(State.get()), before, 'failed persistence rolls back in-memory state');
 })();
 
 (function testHistoryDoesNotInterpretStoredIdsAsHtml() {
