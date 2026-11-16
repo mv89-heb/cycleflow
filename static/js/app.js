@@ -1169,7 +1169,8 @@ const UI = {
                             ['וסת קבוע – מקור בעברית', 'https://hebrew.yoatzot.org/6118-2/'],
                             ['מדריך עונות', 'https://www.yoatzot.org/547/'],
                             ['מינימום המתנה', 'https://www.yoatzot.org/526/'],
-                            ['עונה בינונית', 'https://www.yoatzot.org/672/']
+                            ['עונה בינונית', 'https://www.yoatzot.org/672/'],
+                            ['תזמון טבילה וצאת הכוכבים', 'https://www.yoatzot.org/542/']
                         ],
                         'chabad-onot-count-sources': [
                             ['מקור לחישוב עונות חב״ד', 'https://www.mikvah.org/images/cheshbon%20calendar%20outline.pdf']
