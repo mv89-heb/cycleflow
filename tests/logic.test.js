@@ -77,6 +77,20 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-30')).type, 'nidda', 'day 30 without hefsek stays nidda');
 })();
 
+(function testHistoryDoesNotInterpretStoredIdsAsHtml() {
+    const maliciousId = 'x"><img src=x onerror=alert(1)>';
+    const { UI, document } = loadApp({
+        periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: maliciousId }],
+        hefseks: {}, daily: {}, settings: baseSettings
+    });
+    UI.renderHistory();
+    assert(document.querySelector('#history_list img') === null,
+       'stored record IDs must never be parsed as HTML');
+    const deleteButton = document.querySelector('#history_list button[data-action="deletePeriod"]');
+    assert(deleteButton && deleteButton.dataset.id === maliciousId,
+       'delete action must retain the exact stored identifier safely');
+})();
+
 (function testCalendarHandlesLegacyDailyNotesWithoutChecks() {
     const { UI, Utils, document } = loadApp({
         periods: [], hefseks: {},

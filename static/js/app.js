@@ -468,36 +468,40 @@ const UI = {
     
     renderHistory() {
         const list = document.getElementById('history_list');
-        list.innerHTML = '';
+        list.replaceChildren();
         const periods = Utils.chronologicalPeriods(State.get().periods).reverse();
-        
-        periods.forEach(p => { 
+
+        periods.forEach(p => {
             const pid = p.id || p.date;
-            list.innerHTML += `
-                <div class="flex-between" style="padding:16px 0; border-bottom: 1px solid var(--border-light)">
-                    <div>
-                        <div class="font-bold text-main">${Utils.prettyDate(Utils.newDate(p.date))}</div>
-                        <div class="text-sm text-muted" style="font-size:0.85rem">${p.isSunset ? 'אחרי שקיעה' : 'לפני שקיעה'}</div>
-                    </div>
-                    <div class="flex" style="align-items:center; gap:12px;">
-                        <div class="text-danger font-bold">${p.type === 'veset' ? 'וסת' : 'כתם'}</div>
-                        <button data-action="deletePeriod" data-id="${pid}" title="מחיקת רישום" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1rem;"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                </div>`; 
+            const row = document.createElement('div');
+            row.className = 'flex-between';
+            row.style.cssText = 'padding:16px 0; border-bottom: 1px solid var(--border-light)';
+            row.innerHTML = `
+                <div>
+                    <div class="font-bold text-main">${Utils.prettyDate(Utils.newDate(p.date))}</div>
+                    <div class="text-sm text-muted" style="font-size:0.85rem">${p.isSunset ? 'אחרי שקיעה' : 'לפני שקיעה'}</div>
+                </div>
+                <div class="flex" style="align-items:center; gap:12px;">
+                    <div class="text-danger font-bold">${p.type === 'veset' ? 'וסת' : 'כתם'}</div>
+                    <button data-action="deletePeriod" title="מחיקת רישום" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1rem;"><i class="fas fa-trash-alt"></i></button>
+                </div>`;
+            // Assign untrusted persisted identifiers through the DOM API, never HTML interpolation.
+            row.querySelector('button[data-action="deletePeriod"]').dataset.id = String(pid);
+            list.appendChild(row);
         });
-        
+
         const vesets = Utils.chronologicalVesets(State.get().periods);
         if (vesets.length >= 2) {
             let sum = 0, min = 999, max = 0, count = 0;
             const chartData = [];
-            
+
             for(let i=0; i<vesets.length-1; i++) {
                 const diff = Utils.diffDays(Utils.newDate(vesets[i+1].date), Utils.newDate(vesets[i].date));
-                if (diff > 0 && diff < 100) { 
-                    sum += diff; 
-                    if(diff < min) min = diff; 
-                    if(diff > max) max = diff; 
-                    count++; 
+                if (diff > 0 && diff < 100) {
+                    sum += diff;
+                    if(diff < min) min = diff;
+                    if(diff > max) max = diff;
+                    count++;
                     chartData.push(diff);
                 }
             }
@@ -506,7 +510,7 @@ const UI = {
                 document.getElementById('stat_avg').innerText = avg;
                 document.getElementById('stat_min').innerText = min;
                 document.getElementById('stat_max').innerText = max;
-                
+
                 if (typeof Chart !== 'undefined') {
                     this.renderChart(chartData);
                 } else {
@@ -515,7 +519,7 @@ const UI = {
             }
         }
     },
-    
+
     renderChart(dataPoints) {
         const canvas = document.getElementById('cycleChart');
         if (!canvas) return;
