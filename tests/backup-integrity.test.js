@@ -57,6 +57,22 @@ const { TextEncoder, TextDecoder } = require('util');
   assert.strictEqual(envelope.version, 2);
   assert.strictEqual(envelope.iterations, 600000);
 
+  // Legacy backup format: Base64(salt || IV || AES-GCM ciphertext), PBKDF2-SHA256/100000.
+  const legacySalt = Uint8Array.from({ length: 16 }, (_, i) => i + 1);
+  const legacyIv = Uint8Array.from({ length: 12 }, (_, i) => i + 21);
+  const legacyBase = await webcrypto.subtle.importKey('raw', new TextEncoder().encode('correct horse battery'), 'PBKDF2', false, ['deriveKey']);
+  const legacyKey = await webcrypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: legacySalt, iterations: 100000, hash: 'SHA-256' },
+    legacyBase, { name: 'AES-GCM', length: 256 }, false, ['encrypt']
+  );
+  const legacyCipher = new Uint8Array(await webcrypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: legacyIv }, legacyKey, new TextEncoder().encode(JSON.stringify(state))
+  ));
+  const legacyBackup = Buffer.concat([Buffer.from(legacySalt), Buffer.from(legacyIv), Buffer.from(legacyCipher)]).toString('base64');
+  const legacyRestored = await api.decrypt(legacyBackup, 'correct horse battery');
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(legacyRestored)), state,
+    'pre-envelope encrypted backups remain decryptable without changing their data');
+
   const decrypted = await api.decrypt(encrypted, 'correct horse battery');
   assert.deepStrictEqual(JSON.parse(JSON.stringify(decrypted)), state);
 
