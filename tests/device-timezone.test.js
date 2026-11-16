@@ -17,6 +17,8 @@ if (process.argv[2] !== '--run-in-timezone') {
   }
   console.log('Device timezone and daylight-saving civil-day regression tests passed (4 timezones).');
 } else {
+  const fs = require('node:fs');
+  const { JSDOM } = require('jsdom');
   const html = fs.readFileSync(path.join(__dirname, '..', 'templates', 'index.html'), 'utf8');
   const dom = new JSDOM(html, { runScripts: 'outside-only', url: 'https://cycleflow-timezone.test/' });
   const { window } = dom;
