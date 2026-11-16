@@ -190,8 +190,9 @@ class StateManager {
             const evaluatedDate = todayCivilDate();
             const status = HalachaLogic.getStatus(Utils.newDate(evaluatedDate));
             const snapshot = history.createSnapshot(this.state, evaluatedDate, status);
-            if (Array.isArray(this.state.calculationSnapshots) &&
-                this.state.calculationSnapshots.length >= history.MAX_SNAPSHOTS) {
+            const snapshots = Array.isArray(this.state.calculationSnapshots) ? this.state.calculationSnapshots : [];
+            if (snapshot && snapshots.some(item => item && item.snapshotId === snapshot.snapshotId)) return false;
+            if (snapshots.length >= history.MAX_SNAPSHOTS) {
                 window.dispatchEvent(new CustomEvent('cycleflow:calculation-history-full'));
                 return false;
             }
@@ -1024,6 +1025,12 @@ const UI = {
         window.addEventListener('cycleflow:persistence-error', () => {
             // Let action handlers finish before displaying the failure toast.
             setTimeout(() => this.toast('השמירה נכשלה. אין לרענן לפני בדיקת שטח האחסון.', true), 0);
+        });
+        window.addEventListener('cycleflow:calculation-history-full', () => {
+            this.toast('היסטוריית החישובים מלאה. הרשומות הקיימות נשמרו; יש לייצא גיבוי לפני המשך צבירה.', true);
+        });
+        window.addEventListener('cycleflow:calculation-history-error', () => {
+            this.toast('לא ניתן היה לשמור צילום מצב של החישוב. הנתונים השוטפים לא שונו.', true);
         });
         this.applyTheme(State.get().settings.theme || 'dark');
         document.getElementById('report_date').value = todayCivilDate();
