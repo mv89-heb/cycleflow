@@ -107,11 +107,29 @@ The following Hebrew-language pages were opened and checked against the rule mat
 - Yoatzot Halacha, [Guide to Observing Vesatot](https://www.yoatzot.org/547/), updated 10 June 2026.
 - Yoatzot Halacha, [Onah Beinonit](https://www.yoatzot.org/672/).
 - Yoatzot Halacha, [Minimum Wait](https://www.yoatzot.org/526/).
+- Yoatzot Halacha, [Minimum wait: Sephardi and Ashkenazi practice](https://www.yoatzot.org/faq/sephardi-practice/).
+- Yoatzot Halacha, [Keeping days 30 & 31 as onah beinonit](https://www.yoatzot.org/faq/keeping-days-30-31-as-onah-beinonit/).
 - Yoatzot Halacha, [Shivah Neki'im](https://www.yoatzot.org/529/).
 - Yoatzot Halacha, [Laws of Stains](https://www.yoatzot.org/522/).
 - Din Online, [זמני הפרישה בעונה בינונית](https://din.org.il/2010/11/25/זמני-הפרישה-בעונה-בינונית/), presenting a 24-hour practice and additional stringencies.
 - Din Online, [עונה בינונית](https://din.org.il/2024/09/12/עונה-בינונית/), explaining the distinction between day 30, day 31 and whether a missed check must be completed.
 - Peninei Halacha, [הפרישה לווסת שאינו קבוע](https://ph.yhb.org.il/18-06-05/), overview of the three basic onot.
+
+### Source-backed profile defaults implemented in CycleFlow
+
+The current application profile is deliberately explicit rather than inferred from the broad Ashkenazi/Sephardi/Chabad selector:
+
+- **Minimum wait default:** five halachic days from the onset of niddah. The hefsek eligibility boundary is the fifth halachic day (counting the onset day as day one), not the sixth civil-date label.
+- **Optional four-day practice:** available only as a separate selected mode for communities that follow it. The start is the halachic day of the most recent marital relations, not automatically the onset of bleeding. CycleFlow requires the user to record the date, time, and selected city; if that context is missing or inconsistent, the engine returns "needs review" and does not calculate an early hefsek.
+- **Onah beinonit default:** day 30, on the same day/night onah as the onset of the most recent flow.
+- **Optional customs:** day 31 and a full 24-hour day 30 are separate selectable modes. Neither is enabled by default.
+- These are source-derived application defaults and options, not a claim that one profile fits every family or a personal ruling. Exceptions (including stains, special circumstances, long cycles, and hormonal regimens) remain outside automatic calculation.
+
+The implementation is based on the following specific guidance:
+- [Minimum Wait](https://www.yoatzot.org/526/) describes the five-day-from-onset practice and the four-day-from-last-relations practice, including the halachic-day start reference.
+- [Minimum wait: Sephardi and Ashkenazi practice](https://www.yoatzot.org/faq/sephardi-practice/) explicitly states that Sephardi community practice varies.
+- [Onah Beinonit](https://www.yoatzot.org/672/) describes day 30 as the baseline and day 31 as a view held by some authorities.
+- [Keeping days 30 & 31 as onah beinonit](https://www.yoatzot.org/faq/keeping-days-30-31-as-onah-beinonit/) and [Guide to Observing Vesatot](https://www.yoatzot.org/547/) describe day 31 and the full 24-hour day as additional customs.
 
 ### Review outcome
 
