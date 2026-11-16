@@ -33,7 +33,7 @@
   }
 
   function isValidDate(value) {
-    if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
     const date = new Date(value + 'T12:00:00Z');
     return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
   }
@@ -78,7 +78,7 @@
     return Boolean(snapshot && typeof snapshot === 'object' && !Array.isArray(snapshot) &&
       snapshot.schemaVersion === 1 &&
       typeof snapshot.snapshotId === 'string' && snapshot.snapshotId.length <= 100 &&
-      /^cf-calc-v1:\\d{4}-\\d{2}-\\d{2}:[a-f0-9]{16}$/.test(snapshot.snapshotId) &&
+      /^cf-calc-v1:\d{4}-\d{2}-\d{2}:[a-f0-9]{16}$/.test(snapshot.snapshotId) &&
       isValidDate(snapshot.evaluatedDate) &&
       typeof snapshot.capturedAt === 'string' && !Number.isNaN(Date.parse(snapshot.capturedAt)) &&
       typeof snapshot.inputFingerprint === 'string' && /^[a-f0-9]{16}$/.test(snapshot.inputFingerprint) &&
