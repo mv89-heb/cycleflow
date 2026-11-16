@@ -15,6 +15,8 @@
     { id: 'personal', label: 'השלמת הכנות אישיות נוספות' }
   ]);
 
+  const OVULATION_LABELS = Object.freeze({ opk_positive: 'בדיקת LH חיובית', bbt_shift: 'עליית חום בסיסי', ultrasound: 'מעקב אולטרסאונד', estimate: 'הערכה אישית', other: 'אחר' });
+
   const STAIN_LABELS = Object.freeze({
     color: { red: 'אדום', pink: 'ורוד', brown: 'חום', yellow: 'צהוב', clear: 'שקוף', other: 'אחר', unknown: 'לא ידוע' },
     size: { small: 'קטן', medium: 'בינוני', large: 'גדול', multiple: 'מספר כתמים', unknown: 'לא ידוע' },
@@ -137,6 +139,7 @@
     const inRange = date => typeof date === 'string' && date >= from && date <= to;
     const periods = (state.periods || []).filter(p => inRange(p.date)).sort((a, b) => a.date.localeCompare(b.date));
     const starts = (state.periods || []).filter(p => p.type === 'veset').sort((a, b) => a.date.localeCompare(b.date));
+    const periodLines = periods.filter(p => p.type === 'veset').map(p => `- ${p.date}${p.eventTime ? ' ' + p.eventTime : ''}`);
     const intervals = [];
     for (let i = 1; i < starts.length; i++) {
       const days = Math.round((new Date(starts[i].date + 'T12:00:00Z') - new Date(starts[i - 1].date + 'T12:00:00Z')) / 86400000);
@@ -150,13 +153,13 @@
       'המסמך מבוסס על דיווחים אישיים בלבד; אינו אבחון או המלצה רפואית.',
       '',
       'תחילות וסת שדווחו:',
-      ...(periods.filter(p => p.type === 'veset').map(p => `- ${p.date}${p.eventTime ? ' ' + p.eventTime : ''}`) || ['- אין דיווחים בטווח']),
+      ...(periodLines.length ? periodLines : ['- אין דיווחים בטווח']),
       '',
       'מרווחים בין תחילות וסת:',
       ...(intervals.length ? intervals.map(item => `- ${item}`) : ['- אין מספיק נתונים בטווח']),
       '',
       'תיעודי ביוץ:',
-      ...(ovulation.length ? ovulation.map(item => `- ${item.date}${item.time ? ' ' + item.time : ''}: ${item.typeLabel || item.type}${item.note ? ' — ' + item.note : ''}`) : ['- אין תיעוד בטווח']),
+      ...(ovulation.length ? ovulation.map(item => `- ${item.date}${item.time ? ' ' + item.time : ''}: ${OVULATION_LABELS[item.type] || item.type}${item.note ? ' — ' + item.note : ''}`) : ['- אין תיעוד בטווח']),
       '',
       'מועדי טבילה שסומנו:',
       ...(immersion.length ? immersion.map(date => `- ${date}`) : ['- אין מועדים שסומנו בטווח'])
@@ -182,7 +185,7 @@
   }
 
   globalThis.CycleFlowTools = Object.freeze({
-    CHECKLIST_ITEMS, STAIN_LABELS, escapeIcsText, buildIcs,
+    CHECKLIST_ITEMS, STAIN_LABELS, OVULATION_LABELS, escapeIcsText, buildIcs,
     buildStainSummary, buildDoctorSummary, earlyOvulationIndicator,
     zonedLocalToUtc, validDate
   });
