@@ -277,6 +277,62 @@ const HalachaLogic = {
             active: missedCount < 3
         };
     },
+    getFixedHaflagahStatus(asOfDate) {
+        if (State.get().settings.minhag === 'chabad') return null;
+        const candidates = this.getFixedVesetCandidates(asOfDate);
+        if (candidates.length !== 1 || candidates[0].type !== 'haflagah') return null;
+        const candidate = candidates[0];
+        let expectedDate = CalendarServices.addCivilDays(candidate.establishedAt, candidate.intervalDays);
+        if (!expectedDate) return null;
+        const state = State.get();
+        const cityId = state.settings.cityId;
+        const periods = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+            .filter(period => Utils.halachicDate(period, cityId) <= asOfDate)
+            .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)));
+        let missedCount = 0;
+        let deviationCount = 0;
+        let windowStart = CalendarServices.addCivilDays(candidate.establishedAt, 1);
+        let guard = 0;
+        while (expectedDate && expectedDate <= asOfDate && guard < 600) {
+            const windowPeriods = periods.filter(period => {
+                const periodDate = Utils.halachicDate(period, cityId);
+                return periodDate >= windowStart && periodDate <= expectedDate;
+            });
+            const matchingPeriod = windowPeriods.some(period => {
+                const periodDate = Utils.halachicDate(period, cityId);
+                if (periodDate !== expectedDate) return false;
+                const info = CalendarServices.getEventDateInfo(period, cityId);
+                return Boolean(info && info.estimatedOnah === candidate.onah);
+            });
+            if (matchingPeriod) {
+                missedCount = 0;
+                deviationCount = 0;
+            } else {
+                deviationCount = Math.min(3, deviationCount + windowPeriods.length);
+                if (expectedDate < asOfDate) missedCount += 1;
+                else break;
+            }
+            windowStart = CalendarServices.addCivilDays(expectedDate, 1);
+            const nextDate = CalendarServices.addCivilDays(expectedDate, candidate.intervalDays);
+            if (!nextDate || nextDate <= expectedDate) return null;
+            expectedDate = nextDate;
+            guard += 1;
+        }
+        if (expectedDate > asOfDate) {
+            const pendingPeriods = periods.filter(period => {
+                const periodDate = Utils.halachicDate(period, cityId);
+                return periodDate >= windowStart && periodDate <= asOfDate;
+            });
+            if (pendingPeriods.length) deviationCount = Math.min(3, deviationCount + pendingPeriods.length);
+        }
+        return {
+            type: 'haflagah', intervalDays: candidate.intervalDays, onah: candidate.onah,
+            establishedAt: candidate.establishedAt, expectedDate,
+            missedCount, deviationCount, deviated: missedCount > 0 || deviationCount > 0,
+            active: missedCount < 3
+        };
+    },
     getSuccessfulHefsekDates(state = State.get()) {
         if (!CalendarServices || !CalendarServices.getEventDateInfo) return [];
         const cityId = state.settings.cityId;
@@ -380,6 +436,11 @@ const HalachaLogic = {
         const fixedHachodeshStatus = HalachaLogic.getFixedHachodeshStatus(dStr);
         const fixedHachodeshActive = Boolean(fixedHachodeshStatus && fixedHachodeshStatus.active);
         const fixedHachodeshDeviated = fixedHachodeshActive && Boolean(fixedHachodeshStatus.deviated);
+        const fixedHaflagahStatus = HalachaLogic.getFixedHaflagahStatus(dStr);
+        const fixedHaflagahActive = Boolean(fixedHaflagahStatus && fixedHaflagahStatus.active);
+        const fixedHaflagahDeviated = fixedHaflagahActive && Boolean(fixedHaflagahStatus.deviated);
+        const fixedVesetActive = fixedHachodeshActive || fixedHaflagahActive;
+        const fixedVesetDeviated = fixedHachodeshDeviated || fixedHaflagahDeviated;
         const onsetOnah = onsetInfo ? onsetInfo.estimatedOnah : 'unknown';
         const onahSuffix = onsetOnah === 'day'
             ? ' · עונת יום (אומדן)'
@@ -456,7 +517,13 @@ const HalachaLogic = {
                     suffix: ''
                 });
             }
-            if (!fixedHachodeshActive) {
+            if (fixedHaflagahActive && fixedHaflagahStatus.expectedDate === dStr) {
+                labels.push({
+                    label: `וסת קבוע – וסת הפלגה (${fixedHaflagahStatus.intervalDays}) · עונת ${fixedHaflagahStatus.onah === 'day' ? 'יום' : 'לילה'}`,
+                    suffix: ''
+                });
+            }
+            if (!fixedVesetActive) {
                 if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && dStr === Utils.fmt(Utils.addDays(pDate, 29))) {
                     labels.push({ label: 'עונה בינונית (30)', suffix: onahSuffixFor(30) });
                 }
@@ -464,15 +531,15 @@ const HalachaLogic = {
                     labels.push({ label: 'עונה בינונית (31)', suffix: onahSuffix });
                 }
             }
-            if ((!fixedHachodeshActive || fixedHachodeshDeviated) &&
+            if ((!fixedVesetActive || fixedVesetDeviated) &&
                 (fixedHachodeshDeviated ? rawHachodeshDate : hachodeshDate) &&
                 dStr === (fixedHachodeshDeviated ? rawHachodeshDate : hachodeshDate)) {
                 labels.push({ label: 'וסת החודש', suffix: onahSuffix });
             }
-            if ((!fixedHachodeshActive || fixedHachodeshDeviated) && haflagahDate && dStr === haflagahDate) {
+            if ((!fixedVesetActive || fixedVesetDeviated) && haflagahDate && dStr === haflagahDate) {
                 labels.push({ label: isChabadProfile ? 'וסת הפלגה חב״ד' : `וסת הפלגה (${intervalDays})`, suffix: isChabadProfile ? '' : onahSuffix });
             }
-            if (isChabadProfile && (!fixedHachodeshActive || fixedHachodeshDeviated)) {
+            if (isChabadProfile && (!fixedVesetActive || fixedVesetDeviated)) {
                 HalachaLogic.getChabadHaflagahTargets(dStr).forEach(target => {
                     labels.push({
                         label: `וסת הפלגה חב״ד (${target.number}) · עונת ${target.onah === 'night' ? 'לילה' : 'יום'}`,
