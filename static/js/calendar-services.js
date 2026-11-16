@@ -118,8 +118,7 @@
     }
     if (record.sunsetRelation === 'before' || record.sunsetRelation === 'after') return record.sunsetRelation;
     if (record.isSunset === true) return 'after';
-    // Legacy false values often meant only that the user did not tick "after sunset".
-    // Treat them as unknown unless a before-sunset relation was explicitly recorded.
+    if (record.isSunset === false) return 'before';
     return 'unknown';
   }
 
