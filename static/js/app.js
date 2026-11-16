@@ -1163,8 +1163,9 @@ const UI = {
                     sources.replaceChildren();
                     const catalog = {
                         'nishmat-yoatzot-common': [
+                            ['חלוקת עונות – מקור בעברית', 'https://hebrew.yoatzot.org/5075-2/'],
+                            ['וסת קבוע – מקור בעברית', 'https://hebrew.yoatzot.org/6118-2/'],
                             ['מדריך עונות', 'https://www.yoatzot.org/547/'],
-                            ['וסת קבוע', 'https://www.yoatzot.org/676/'],
                             ['מינימום המתנה', 'https://www.yoatzot.org/526/'],
                             ['עונה בינונית', 'https://www.yoatzot.org/672/']
                         ],
