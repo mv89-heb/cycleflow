@@ -3,6 +3,7 @@
  */
 
 const STORAGE_KEY = 'cycleflow_v61_python_pro';
+const CalendarServices = window.CycleFlowCalendar || null;
 
 const Utils = {
     fmt: (d) => {
@@ -109,7 +110,7 @@ const StorageService = {
     clear() { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem('cycleflow_recovery_v1'); }
 };
 
-const defaultState = { periods: [], hefseks: {}, tevilot: {}, daily: {}, settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark' } };
+const defaultState = { periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {}, settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: null } };
 
 class StateManager {
     constructor() { this.state = StorageService.load() || defaultState; this.listeners = []; }
@@ -339,8 +340,19 @@ const UI = {
         document.body.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
+            if (btn.matches('select[data-action], input[type="checkbox"][data-action]')) return;
             const action = btn.dataset.action;
             if (typeof this.actions[action] === 'function') this.actions[action].call(this, btn, e);
+        });
+        document.body.addEventListener('change', (e) => {
+            const control = e.target.closest('[data-action]');
+            if (!control) return;
+            const action = control.dataset.action;
+            if (action === 'saveSettings' && control.tagName === 'SELECT') {
+                this.actions.saveSettings.call(this, control, e);
+            } else if (action === 'saveDaily' && control.matches('input[type="checkbox"]')) {
+                this.actions.saveDaily.call(this, control, e);
+            }
         });
         
         const acBtn = document.getElementById('calc_ac');
@@ -420,6 +432,13 @@ const UI = {
         const s = State.get().settings;
         document.getElementById('set_minhag').value = s.minhag;
         document.getElementById('set_cycle_len').value = s.cycle;
+        const citySelect = document.getElementById('set_city');
+        if (citySelect) citySelect.value = s.cityId || '';
+        const sunsetHint = document.getElementById('sunset_hint');
+        if (sunsetHint) {
+            const sunset = CalendarServices && s.cityId ? CalendarServices.getSunset(Utils.fmt(new Date()), s.cityId) : null;
+            sunsetHint.textContent = sunset ? `שקיעה משוערת היום: ${sunset.time} (${sunset.timeZone}). החישוב אסטרונומי משוער בלבד.` : 'בחרי יישוב כדי להציג שעת שקיעה משוערת. אין שימוש במיקום GPS.';
+        }
     },
     
     renderDashboard() {
@@ -493,7 +512,8 @@ const UI = {
         const m = this.navDate.getMonth();
         
         document.getElementById('cal_month_title').innerText = this.navDate.toLocaleDateString('he-IL', { month: 'long' });
-        document.getElementById('cal_year_subtitle').innerText = y;
+        const hebrewMonth = CalendarServices ? CalendarServices.formatHebrewMonth(new Date(y, m, 15)) : '';
+        document.getElementById('cal_year_subtitle').innerText = hebrewMonth ? `${y} · ${hebrewMonth}` : y;
         
         const firstDay = new Date(y, m, 1).getDay();
         const daysInMonth = new Date(y, m + 1, 0).getDate();
@@ -529,7 +549,8 @@ const UI = {
             if (fert.isFertile) {
                 dots += `<div style="position:absolute; top:6px; right:6px; width:6px; height:6px; background-color:#f472b6; border-radius:50%" title="ימי פוריות משוערים"></div>`;
             }
-            div.innerHTML = `${dots}<div class="day-num">${i}</div>${badgeHtml}`;
+            const hebrewDate = CalendarServices ? CalendarServices.formatHebrewDate(d) : '';
+            div.innerHTML = `${dots}<div class="day-num">${i}</div><div class="day-hebrew">${hebrewDate}</div>${badgeHtml}`;
             grid.appendChild(div);
         }
     },
@@ -544,10 +565,13 @@ const UI = {
             const row = document.createElement('div');
             row.className = 'flex-between';
             row.style.cssText = 'padding:16px 0; border-bottom: 1px solid var(--border-light)';
+            const eventInfo = CalendarServices ? CalendarServices.getEventDateInfo(p, State.get().settings.cityId) : { hebrewDate: '', relation: 'unknown', sunsetTime: null };
+            const relationLabel = eventInfo.relation === 'after' ? 'אחרי שקיעה' : (eventInfo.relation === 'before' ? 'לפני שקיעה' : 'זמן ביחס לשקיעה לא ידוע');
             row.innerHTML = `
                 <div>
                     <div class="font-bold text-main">${Utils.prettyDate(Utils.newDate(p.date))}</div>
-                    <div class="text-sm text-muted" style="font-size:0.85rem">${p.isSunset ? 'אחרי שקיעה' : 'לפני שקיעה'}</div>
+                    ${eventInfo.hebrewDate ? `<div class="text-sm text-muted">${eventInfo.hebrewDate}</div>` : ''}
+                    <div class="text-sm text-muted" style="font-size:0.85rem">${p.eventTime ? `שעה ${p.eventTime} · ` : ''}${relationLabel}${eventInfo.sunsetTime ? ` · שקיעה משוערת ${eventInfo.sunsetTime}` : ''}</div>
                 </div>
                 <div class="flex" style="align-items:center; gap:12px;">
                     <div class="text-danger font-bold">${p.type === 'veset' ? 'וסת' : 'כתם'}</div>
@@ -579,52 +603,28 @@ const UI = {
                 document.getElementById('stat_min').innerText = min;
                 document.getElementById('stat_max').innerText = max;
 
-                if (typeof Chart !== 'undefined') {
-                    this.renderChart(chartData);
-                } else {
-                    document.querySelector('.chart-container').innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-muted)">הגרף לא זמין</div>';
-                }
+                this.renderChart(chartData);
             }
         }
     },
 
     renderChart(dataPoints) {
-        const canvas = document.getElementById('cycleChart');
-        if (!canvas) return;
-        
-        const ctx = canvas.getContext('2d');
-        if (this.chartInstance) this.chartInstance.destroy();
-        
-        this.chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { 
-                labels: dataPoints.map((_, i) => `מחזור ${i+1}`), 
-                datasets: [{ 
-                    label: 'אורך', 
-                    data: dataPoints, 
-                    borderColor: '#6366f1', 
-                    backgroundColor: 'rgba(99, 102, 241, 0.1)', 
-                    fill: true, 
-                    tension: 0.3,
-                    borderWidth: 2,
-                    pointBackgroundColor: '#1e293b',
-                    pointBorderColor: '#6366f1',
-                    pointBorderWidth: 2,
-                    pointRadius: 4
-                }] 
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { legend: { display: false } }, 
-                scales: { 
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' }, beginAtZero: false }, 
-                    x: { grid: { display: false }, ticks: { display: false } } 
-                } 
-            }
+        const container = document.querySelector('.chart-container');
+        if (!container || !Array.isArray(dataPoints) || !dataPoints.length) return;
+        const width = 640, height = 220, pad = 28;
+        const min = Math.min(...dataPoints), max = Math.max(...dataPoints);
+        const range = Math.max(1, max - min);
+        const points = dataPoints.map((value, index) => {
+            const x = pad + (dataPoints.length === 1 ? 0 : index * (width - pad * 2) / (dataPoints.length - 1));
+            const y = height - pad - ((value - min) / range) * (height - pad * 2);
+            return { x, y, value };
         });
+        const polyline = points.map(point => `${point.x},${point.y}`).join(' ');
+        const circles = points.map(point => `<circle cx="${point.x}" cy="${point.y}" r="5" fill="#6366f1"><title>${point.value} ימים</title></circle>`).join('');
+        const labels = points.map((point, index) => `<text x="${point.x}" y="${height - 5}" text-anchor="middle" font-size="11" fill="currentColor">${index + 1}</text>`).join('');
+        container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="גרף אורכי מחזורים" style="width:100%;height:100%;overflow:visible"><line x1="${pad}" y1="${height-pad}" x2="${width-pad}" y2="${height-pad}" stroke="currentColor" opacity=".2"/><polyline points="${polyline}" fill="none" stroke="#6366f1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${circles}${labels}</svg>`;
     },
-    
+
     openDayPanel(date, st) {
         this.selectedDate = date;
         document.getElementById('day_panel').classList.add('open'); 
@@ -710,16 +710,26 @@ const UI = {
             const state = State.get();
             if (state.periods.some(p => p.date === d)) { this.toast('כבר קיים דיווח לתאריך זה', true); return; }
 
+            const eventTime = document.getElementById('report_time')?.value || null;
+            const cityId = state.settings.cityId || null;
+            const fallbackSunset = document.getElementById('chk_sunset_report').checked;
+            const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date: d, eventTime, cityId, isSunset: fallbackSunset }, cityId) : (fallbackSunset ? 'after' : 'before');
             State.update(state => { 
                 state.periods.push({ 
                     id: Date.now().toString(36),
-                    date: d, 
-                    isSunset: document.getElementById('chk_sunset_report').checked, 
+                    date: d,
+                    eventTime,
+                    cityId,
+                    sunsetRelation: relation,
+                    isSunset: relation === 'after' ? true : (relation === 'before' ? false : fallbackSunset),
                     type: document.getElementById('chk_spotting_report').checked ? 'spotting' : 'veset' 
                 }); 
                 const cutoff = Utils.newDate(d); 
-                Object.keys(state.hefseks).forEach(k => { 
-                    if (Utils.newDate(k) >= cutoff) delete state.hefseks[k]; 
+                Object.keys(state.hefseks).forEach(k => {
+                    if (Utils.newDate(k) >= cutoff) {
+                        delete state.hefseks[k];
+                        if (state.hefsekMeta) delete state.hefsekMeta[k];
+                    }
                 }); 
             });
             this.toast('וסת דווחה בהצלחה'); 
@@ -733,21 +743,30 @@ const UI = {
         },
         doHefsekDirect() { 
             const st = HalachaLogic.getStatus(new Date()); 
-            if (st.canHefsek) { 
-                State.update(s => s.hefseks[Utils.fmt(new Date())] = true); 
-                this.toast('הפסק טהרה בוצע!'); 
+            if (st.canHefsek) {
+                const now = new Date();
+                const date = Utils.fmt(now);
+                const eventTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+                const cityId = State.get().settings.cityId || null;
+                const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
+                State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
+                this.toast('הפסק טהרה נרשם'); 
             } else {
                 this.toast('לא ניתן לבצע הפסק כרגע', true); 
             }
         },
         doHefsekPanel() { 
             if (!this.selectedDate) return; 
-            State.update(s => s.hefseks[Utils.fmt(this.selectedDate)] = true); 
+            const date = Utils.fmt(this.selectedDate);
+            const eventTime = document.getElementById('hefsek_time')?.value || null;
+            const cityId = State.get().settings.cityId || null;
+            const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
+            State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
             this.actions.closePanel.call(this); 
         },
         undoHefsekPanel() {
             if (!this.selectedDate) return;
-            State.update(s => delete s.hefseks[Utils.fmt(this.selectedDate)]);
+            State.update(s => { const date = Utils.fmt(this.selectedDate); delete s.hefseks[date]; if (s.hefsekMeta) delete s.hefsekMeta[date]; });
             this.actions.closePanel.call(this);
         },
         toggleTevilaPanel() {
@@ -776,8 +795,8 @@ const UI = {
                 }; 
             }); 
         },
-        saveSettings() { 
-            State.update(s => { s.settings.minhag = document.getElementById('set_minhag').value; s.settings.cycle = document.getElementById('set_cycle_len').value; }); 
+        saveSettings() {
+            State.update(s => { s.settings.minhag = document.getElementById('set_minhag').value; s.settings.cycle = document.getElementById('set_cycle_len').value; s.settings.cityId = document.getElementById('set_city')?.value || null; }); 
             this.toast('הגדרות נשמרו'); 
         },
         async setNewPin() { 
