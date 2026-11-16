@@ -532,8 +532,8 @@ const HalachaLogic = {
                 }
             }
             if ((!fixedVesetActive || fixedVesetDeviated) &&
-                (fixedHachodeshDeviated ? rawHachodeshDate : hachodeshDate) &&
-                dStr === (fixedHachodeshDeviated ? rawHachodeshDate : hachodeshDate)) {
+                ((fixedHachodeshDeviated || fixedHaflagahDeviated) ? rawHachodeshDate : hachodeshDate) &&
+                dStr === ((fixedHachodeshDeviated || fixedHaflagahDeviated) ? rawHachodeshDate : hachodeshDate)) {
                 labels.push({ label: 'וסת החודש', suffix: onahSuffix });
             }
             if ((!fixedVesetActive || fixedVesetDeviated) && haflagahDate && dStr === haflagahDate) {
