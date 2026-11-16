@@ -117,7 +117,8 @@
             for (const item of value.symptomObservations) {
                 if (!isPlainObject(item) || typeof item.id !== 'string' || item.id.length > 80 || ids.has(item.id) ||
                     !isValidDateString(item.date) || !symptomTypes.includes(item.type) ||
-                    !answers.includes(item.distinctive) || !answers.includes(item.occursOutsideFlow) ||\n                    !answers.includes(item.flowWithoutSymptom)) return false;
+                    !answers.includes(item.distinctive) || !answers.includes(item.occursOutsideFlow) ||
+                    !answers.includes(item.flowWithoutSymptom)) return false;
                 ids.add(item.id);
                 if (item.time !== undefined && item.time !== null && !validTime(item.time)) return false;
                 if (item.endDate !== undefined && item.endDate !== null &&
