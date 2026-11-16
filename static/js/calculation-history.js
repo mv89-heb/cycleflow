@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const MAX_SNAPSHOTS = 5000;
+  const MAX_SNAPSHOTS = 1000;
   const RELEVANT_SETTINGS = ['minhag', 'cityId', 'minimumWaitMode', 'onahBeinonitMode'];
 
   function stableInputs(state, evaluatedDate) {
