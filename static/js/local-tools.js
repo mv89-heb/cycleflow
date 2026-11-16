@@ -178,7 +178,7 @@
       throw new Error('תיעוד התסמין אינו תקין');
     }
     const symptom = item.type === 'other' ? item.customDescription.trim() : SYMPTOM_LABELS[item.type];
-    const end = item.endDate ? ` · הסתיים: ${item.endDate}${item.endTime ? ' ' + item.endTime : ''}` : '';
+    const end = item.endDate || item.endTime ? ` · הסתיים: ${item.endDate || item.date}${item.endTime ? ' ' + item.endTime : ''}` : '';
     return [
       'סיכום עובדתי של תיעוד תסמין — CycleFlow',
       'המסמך מתאר דיווח אישי בלבד. הוא אינו מזהה וסת גוף ואינו קובע מועד פרישה או מעמד הלכתי/רפואי.',
