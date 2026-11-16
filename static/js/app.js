@@ -1665,7 +1665,7 @@ const UI = {
             this.applyTheme(next);
         },
         switchTab(btn) { this.switchTab(btn.dataset.tab, btn.classList.contains('nav-item') ? btn : null); },
-        navMonth(btn) { this.navDate.setMonth(this.navDate.getMonth() + parseInt(btn.dataset.dir)); this.renderCalendar(); },
+        navMonth(btn) { this.navDate.setDate(1); this.navDate.setMonth(this.navDate.getMonth() + parseInt(btn.dataset.dir)); this.renderCalendar(); },
         closePanel() {
             this.actions.saveDaily.call(this);
             document.getElementById('day_panel').classList.remove('open');
