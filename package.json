@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node tests/logic.test.js && node tests/data-integrity.test.js && node tests/pwa.test.js && node tests/state-recovery.test.js && node tests/backup-integrity.test.js"
+    "test": "node tests/calendar-services.test.js && node tests/logic.test.js && node tests/data-integrity.test.js && node tests/pwa.test.js && node tests/state-recovery.test.js && node tests/backup-integrity.test.js"
   },
   "devDependencies": {
     "jsdom": "^24.1.3"
