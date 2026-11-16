@@ -377,7 +377,7 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
 (function testFixedHaflagahPatternDetectionAndChabadGuard() {
     const dates = ['2026-06-01', '2026-06-30', '2026-07-28', '2026-08-25'];
     const periods = dates.map((date, index) => ({
-        date, type: 'veset', eventTime: index === 0 ? '18:00' : '10:00',
+        date, type: 'veset', eventTime: index === 0 ? '20:30' : '10:00',
         cityId: 'beit-shemesh', isSunset: false, id: `interval-${index}`
     }));
     const standardApi = loadApp({
