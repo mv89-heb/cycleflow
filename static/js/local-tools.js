@@ -30,6 +30,18 @@
     }
   });
 
+  const SYMPTOM_LABELS = Object.freeze({
+    cramps: 'כאבים או התכווצויות',
+    back_pain: 'כאב גב',
+    breast_soreness: 'רגישות בשדיים',
+    bloating: 'נפיחות',
+    sneezing_yawning: 'התעטשויות או פיהוקים',
+    other: 'תסמין אחר'
+  });
+  const SYMPTOM_ANSWER_LABELS = Object.freeze({
+    yes: 'כן', no: 'לא', unknown: 'לא ידוע'
+  });
+
   function validDate(value) {
     if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
     const date = new Date(value + 'T12:00:00Z');
@@ -150,6 +162,36 @@
     ].join('\n');
   }
 
+  function buildSymptomSummary(item) {
+    const validTime = value => typeof value === 'string' && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+    if (!item || !validDate(item.date) ||
+        !Object.prototype.hasOwnProperty.call(SYMPTOM_LABELS, item.type) ||
+        (item.time != null && !validTime(item.time)) ||
+        (item.endDate != null && (!validDate(item.endDate) || item.endDate < item.date)) ||
+        (item.endTime != null && !validTime(item.endTime)) ||
+        !['yes', 'no', 'unknown'].includes(item.distinctive) ||
+        !['yes', 'no', 'unknown'].includes(item.occursOutsideFlow) ||
+        (item.relatedFlowDate != null && !validDate(item.relatedFlowDate)) ||
+        (item.type === 'other' && (typeof item.customDescription !== 'string' || !item.customDescription.trim())) ||
+        (item.customDescription !== undefined && (typeof item.customDescription !== 'string' || item.customDescription.length > 120)) ||
+        (item.note !== undefined && (typeof item.note !== 'string' || item.note.length > 500))) {
+      throw new Error('תיעוד התסמין אינו תקין');
+    }
+    const symptom = item.type === 'other' ? item.customDescription.trim() : SYMPTOM_LABELS[item.type];
+    const end = item.endDate ? ` · הסתיים: ${item.endDate}${item.endTime ? ' ' + item.endTime : ''}` : '';
+    return [
+      'סיכום עובדתי של תיעוד תסמין — CycleFlow',
+      'המסמך מתאר דיווח אישי בלבד. הוא אינו מזהה וסת גוף ואינו קובע מועד פרישה או מעמד הלכתי/רפואי.',
+      `תסמין: ${symptom}`,
+      `תחילת התסמין: ${item.date}${item.time ? ' ' + item.time : ''}${end}`,
+      `האם נתפס כייחודי: ${SYMPTOM_ANSWER_LABELS[item.distinctive]}`,
+      `האם מופיע גם בזמנים אחרים: ${SYMPTOM_ANSWER_LABELS[item.occursOutsideFlow]}`,
+      `תאריך תחילת דימום שסומן כקשור: ${item.relatedFlowDate || 'לא צוין'}`,
+      `הערות: ${String(item.note || '').trim() || 'ללא'}`,
+      'הקישור לדימום הוא דיווח משתמש בלבד; לא בוצעה התאמה או מסקנה אוטומטית.'
+    ].join('\\n');
+  }
+
   function buildDoctorSummary(state, from, to, options = {}) {
     if (!state || !validDate(from) || !validDate(to) || from > to) throw new Error('טווח התאריכים אינו תקין');
     const inRange = date => typeof date === 'string' && date >= from && date <= to;
@@ -184,6 +226,12 @@
       'מועדי טבילה שסומנו:',
       ...(immersion.length ? immersion.map(date => `- ${date}`) : ['- אין מועדים שסומנו בטווח'])
     ];
+    if (options.includeSymptoms) {
+      const symptoms = (state.symptomObservations || []).filter(item => inRange(item.date)).sort((a, b) => a.date.localeCompare(b.date));
+      lines.push('', 'תיעודי סימנים גופניים (דיווח בלבד):');
+      if (symptoms.length) symptoms.forEach(item => lines.push('- ' + buildSymptomSummary(item).replace(/\\n/g, ' | ')));
+      else lines.push('- אין תיעוד בטווח');
+    }
     if (options.includeStains) {
       const stains = (state.stainReports || []).filter(item => inRange(item.date));
       lines.push('', 'תיאורי כתמים שנרשמו:');
@@ -206,7 +254,7 @@
 
   globalThis.CycleFlowTools = Object.freeze({
     CHECKLIST_ITEMS, STAIN_LABELS, OVULATION_LABELS, escapeIcsText, foldIcsLine, buildIcs,
-    buildStainSummary, buildDoctorSummary, earlyOvulationIndicator,
+    buildStainSummary, buildSymptomSummary, buildDoctorSummary, earlyOvulationIndicator, SYMPTOM_LABELS, SYMPTOM_ANSWER_LABELS,
     zonedLocalToUtc, validDate
   });
 })();
