@@ -12,7 +12,15 @@ const Utils = {
         return (new Date(d - offset)).toISOString().split('T')[0];
     },
     newDate: (s) => new Date(s + 'T00:00:00'),
-    diffDays: (d1, d2) => Math.floor((d1.getTime() - d2.getTime()) / 86400000),
+    // Date-only values must count civil days, not elapsed 24-hour blocks.
+    // Elapsed milliseconds lose an hour at DST transitions and can undercount a day.
+    diffDays: (d1, d2) => {
+        const dayNumber = value => {
+            const [year, month, day] = Utils.fmt(value).split('-').map(Number);
+            return Math.floor(Date.UTC(year, month - 1, day) / 86400000);
+        };
+        return dayNumber(d1) - dayNumber(d2);
+    },
     addDays: (d, n) => { 
         const r = new Date(d.getTime()); 
         r.setDate(r.getDate() + n); 
