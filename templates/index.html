@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0f172a">
     <meta name="referrer" content="no-referrer">
     <meta name="robots" content="noindex,nofollow,noarchive">
@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="/static/css/main.css?v={{ asset_version('css/main.css') }}">
 </head>
 <body>
+    <a class="skip-link" href="#main_content">דלג לתוכן הראשי</a>
     <div id="toast" role="status" aria-live="polite"><i class="fas fa-check-circle"></i> <span id="toast_msg">הודעה</span></div>
 
     <div id="lock_screen" class="hidden" aria-modal="true" role="dialog">
@@ -46,7 +47,7 @@
         </div>
     </header>
 
-    <main id="main_content" class="blur-target">
+    <main id="main_content" class="blur-target" tabindex="-1">
         <section id="view_dashboard" class="app-view">
             <div class="card glass status-hero" id="status_card">
                 <div id="status_badge" class="status-badge">טוען נתונים...</div>
