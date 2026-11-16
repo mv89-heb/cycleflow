@@ -16,8 +16,8 @@ assert.equal(calendar.addCivilDays('2024-02-28', 1), '2024-02-29', 'leap day ari
 assert.equal(calendar.addCivilDays('2024-02-29', 1), '2024-03-01', 'leap day rollover');
 
 const solarTimes = calendar.getSolarTimes('2026-11-16', 'beit-shemesh');
-assert(solarTimes && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(solarTimes.sunrise), 'sunrise estimate is a local HH:mm time');
-assert(solarTimes && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(solarTimes.sunset), 'solar times include sunset');
+assert(solarTimes && /^([01]\d|2[0-3]):[0-5]\d$/.test(solarTimes.sunrise), 'sunrise estimate is a local HH:mm time');
+assert(solarTimes && /^([01]\d|2[0-3]):[0-5]\d$/.test(solarTimes.sunset), 'solar times include sunset');
 const shiftTime = (value, delta) => {
   const [hour, minute] = value.split(':').map(Number);
   const total = hour * 60 + minute + delta;
