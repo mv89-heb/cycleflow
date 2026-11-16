@@ -185,7 +185,7 @@ const HalachaLogic = {
         const beinonit30 = Utils.addDays(pDate, 29);
         const beinonit31 = Utils.addDays(pDate, 30);
         if (dStr === Utils.fmt(beinonit30)) return { type: 'onah', text: 'עונה בינונית (30)', color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
-        if (dStr === Utils.fmt(beinonit31)) return { type: 'onah', text: 'עונה בינונית (31)', color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate };
+        if (dStr === Utils.fmt(beinonit31)) return { type: 'onah', text: 'עונה בינונית (31)', color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
         return res;
     }
 };
@@ -444,6 +444,7 @@ const UI = {
             card.className = "card status-hero";
             if (st.type === 'nidda') card.classList.add('nidda');
             if (st.type === 'naki' || st.type === 'tevila' || st.type === 'tevila-done') card.classList.add('pure');
+            if (st.type === 'pending-tevila') card.classList.add('pending');
             
             const lastDate = Utils.newDate(last.date);
             const fert = FertilityLogic.getEstimate();
