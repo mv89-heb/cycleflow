@@ -49,7 +49,8 @@ const symptom = {
 const symptomSummary = tools.buildSymptomSummary(symptom);
 assert(symptomSummary.includes('כאב גב'));
 assert(symptomSummary.includes('האם נתפס כייחודי: כן'));
-assert(symptomSummary.includes('האם מופיע גם בזמנים אחרים: לא'));\nassert(symptomSummary.includes('האם דווח דימום ללא הסימן: לא'));
+assert(symptomSummary.includes('האם מופיע גם בזמנים אחרים: לא'));
+assert(symptomSummary.includes('האם דווח דימום ללא הסימן: לא'));
 assert(symptomSummary.includes('לא בוצעה התאמה או מסקנה אוטומטית'));
 assert.throws(() => tools.buildSymptomSummary({ ...symptom, endDate: '2026-10-18' }), /תיעוד התסמין אינו תקין/);
 assert.throws(() => tools.buildSymptomSummary({ ...symptom, distinctive: 'certain' }), /תיעוד התסמין אינו תקין/);
