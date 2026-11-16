@@ -179,6 +179,9 @@ const HalachaLogic = {
         const onsetInfo = CalendarServices && CalendarServices.getEventDateInfo
             ? CalendarServices.getEventDateInfo(lastP, state.settings.cityId)
             : null;
+        if (onsetInfo && onsetInfo.relation === 'unknown') {
+            return { type: 'needs-review', text: 'לא ידוע אם תחילת הווסת הייתה לפני או אחרי שקיעה; חישובי התאריך והעונות דורשים בדיקה', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', canHefsek: false };
+        }
         const onsetOnah = onsetInfo ? onsetInfo.estimatedOnah : 'unknown';
         const onahSuffix = onsetOnah === 'day'
             ? ' · עונת יום (אומדן)'
@@ -190,7 +193,12 @@ const HalachaLogic = {
             ? ' · כל היממה (לפי ההגדרה)'
             : onahSuffix;
         const previousPeriod = periods.length > 1 ? periods[periods.length - 2] : null;
-        const previousEffectiveDate = previousPeriod ? eventCalculationDate(previousPeriod) : null;
+        const previousInfo = previousPeriod && CalendarServices && CalendarServices.getEventDateInfo
+            ? CalendarServices.getEventDateInfo(previousPeriod, state.settings.cityId)
+            : null;
+        const previousEffectiveDate = previousInfo && previousInfo.relation !== 'unknown'
+            ? previousInfo.effectiveDate
+            : null;
         const intervalDays = previousEffectiveDate
             ? Utils.diffDays(pDate, Utils.newDate(previousEffectiveDate))
             : null;
@@ -231,14 +239,20 @@ const HalachaLogic = {
                 longStreak = 0;
             }
         }
-        const longCycleExempt = !isChabadProfile && longMode === 'exempt';
-        const hachodeshDate = longCycleExempt || !CalendarServices || !CalendarServices.getNextYomHachodeshDate
-            ? null
-            : CalendarServices.getNextYomHachodeshDate(eventCalculationDate(lastP));
+        const allPeriodDatesKnown = periods.every(period => {
+            const info = CalendarServices && CalendarServices.getEventDateInfo
+                ? CalendarServices.getEventDateInfo(period, state.settings.cityId)
+                : null;
+            return Boolean(info && info.relation !== 'unknown' && info.effectiveDate);
+        });
+        const longCycleExempt = !isChabadProfile && allPeriodDatesKnown && longMode === 'exempt';
+        const hachodeshDate = !longCycleExempt && CalendarServices && CalendarServices.getNextYomHachodeshDate
+            ? CalendarServices.getNextYomHachodeshDate(eventCalculationDate(lastP))
+            : null;
         const getOnahLabels = () => {
             const labels = [];
-            if (!longCycleExempt && dStr === Utils.fmt(Utils.addDays(pDate, 29))) labels.push({ label: 'עונה בינונית (30)', day: 30 });
-            if (!longCycleExempt && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) labels.push({ label: 'עונה בינונית (31)', day: 31 });
+            if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && dStr === Utils.fmt(Utils.addDays(pDate, 29))) labels.push({ label: 'עונה בינונית (30)', day: 30 });
+            if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) labels.push({ label: 'עונה בינונית (31)', day: 31 });
             if (hachodeshDate && dStr === hachodeshDate) labels.push({ label: 'וסת החודש', day: null });
             if (haflagahDate && dStr === haflagahDate) labels.push({ label: `וסת הפלגה (${intervalDays})`, day: null });
             return labels;
