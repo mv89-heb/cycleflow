@@ -1,9 +1,11 @@
 /* CycleFlow Service Worker - versioned offline-first cache */
-const CACHE_NAME = 'cycleflow-v2-2026-08';
+const CACHE_NAME = 'cycleflow-v3-hebrew-calendar';
 const CORE_ASSETS = [
     '/',
     '/static/css/main.css',
     '/static/js/hardening.js',
+    '/static/js/calendar-services.js',
+    '/static/css/local-icons.css',
     '/static/js/app.js',
     '/static/js/backup-integrity.js',
     '/static/manifest.json'
