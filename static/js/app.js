@@ -185,8 +185,11 @@ const HalachaLogic = {
         while (temp <= date) {
             const key = Utils.fmt(temp);
             const meta = (state.hefsekMeta || {})[key] || {};
+            const recordedCityId = Object.prototype.hasOwnProperty.call(meta, 'cityId')
+                ? meta.cityId
+                : state.settings.cityId;
             const relation = CalendarServices && CalendarServices.resolveEventRelation
-                ? CalendarServices.resolveEventRelation({ date: key, ...meta }, meta.cityId || state.settings.cityId)
+                ? CalendarServices.resolveEventRelation({ date: key, ...meta }, recordedCityId)
                 : 'unknown';
             // A hefsek explicitly recorded after sunset is not silently accepted as a
             // before-sunset hefsek. It remains in history for review.
