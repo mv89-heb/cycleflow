@@ -25,7 +25,7 @@ UI.renderTools();
 document.getElementById('reminder_date').value = '2026-11-16';
 document.getElementById('reminder_title').value = 'תזכורת פרטית';
 document.getElementById('reminder_time').value = '18:30';
-UI.actions.addReminder();
+UI.actions.addReminder.call(UI);
 assert.equal(State.get().manualReminders.length, 1);
 assert.equal(State.get().manualReminders[0].title, 'תזכורת פרטית');
 
@@ -35,10 +35,10 @@ document.getElementById('stain_size').value = 'small';
 document.getElementById('stain_surface').value = 'tissue';
 document.getElementById('stain_source').value = 'unknown';
 document.getElementById('stain_note').value = 'תיאור עובדתי';
-UI.actions.addStainReport();
+UI.actions.addStainReport.call(UI);
 assert.equal(State.get().stainReports.length, 1);
 assert.equal(State.get().stainReports[0].note, 'תיאור עובדתי');
-UI.actions.deleteStainReport({ dataset: { id: State.get().stainReports[0].id } });
+UI.actions.deleteStainReport.call(UI, { dataset: { id: State.get().stainReports[0].id } });
 assert.equal(State.get().stainReports.length, 0, 'stain report can be deleted locally');
 
 const checklist = document.querySelector('[data-action="toggleMikvehChecklist"][data-item="hair"]');
@@ -54,10 +54,10 @@ assert.equal(document.querySelector('[data-action="toggleMikvehChecklist"]').dat
 document.getElementById('ovulation_date').value = '2026-11-15';
 document.getElementById('ovulation_type').value = 'opk_positive';
 document.getElementById('ovulation_immersion_date').value = '2026-11-18';
-UI.actions.addOvulationObservation();
+UI.actions.addOvulationObservation.call(UI);
 assert.equal(State.get().ovulationObservations.length, 1);
 assert.equal(State.get().ovulationObservations[0].immersionDate, '2026-11-18');
-UI.actions.deleteOvulationObservation({ dataset: { id: State.get().ovulationObservations[0].id } });
+UI.actions.deleteOvulationObservation.call(UI, { dataset: { id: State.get().ovulationObservations[0].id } });
 assert.equal(State.get().ovulationObservations.length, 0, 'ovulation observation can be deleted locally');
 
 console.log('Local tools UI persistence tests passed.');
