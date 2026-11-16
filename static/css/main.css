@@ -324,3 +324,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
     to { opacity: 1; transform: translateY(0); } 
 }
 .app-view:not(.hidden) { animation: fadeInUp 0.3s ease-out forwards; }
+
+
+/* Status shown when immersion has not been explicitly reported. */
+.b-pending { background-color: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px dashed rgba(245, 158, 11, 0.5); }
