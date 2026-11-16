@@ -3,6 +3,7 @@
     'use strict';
 
     const STORAGE_KEY = 'cycleflow_v61_python_pro';
+    const RECOVERY_KEY = 'cycleflow_recovery_v1';
     const MAX_PIN_ATTEMPTS = 5;
     const LOCKOUT_MS = 30_000;
 
@@ -58,22 +59,39 @@
         return true;
     }
 
+    let recoveryRequired = false;
     const originalGetItem = Storage.prototype.getItem;
     const originalSetItem = Storage.prototype.setItem;
+    const originalRemoveItem = Storage.prototype.removeItem;
 
     Storage.prototype.getItem = function(key) {
         const raw = originalGetItem.call(this, key);
         if (key !== STORAGE_KEY || raw === null) return raw;
         try {
             const parsed = JSON.parse(raw);
-            return validateState(parsed) ? raw : null;
+            if (validateState(parsed)) return raw;
         } catch (_) {
-            return null;
+            // Preserve malformed data below instead of silently treating it as empty.
         }
+        recoveryRequired = true;
+        window.__cycleflowRecoveryRequired = true;
+        try {
+            if (originalGetItem.call(this, RECOVERY_KEY) === null) {
+                originalSetItem.call(this, RECOVERY_KEY, raw);
+            }
+            window.dispatchEvent(new CustomEvent('cycleflow:state-recovery-needed'));
+        } catch (recoveryError) {
+            console.error('CycleFlow could not preserve an invalid local state.', recoveryError);
+        }
+        return null;
     };
 
     Storage.prototype.setItem = function(key, value) {
         if (key === STORAGE_KEY) {
+            if (recoveryRequired || originalGetItem.call(this, RECOVERY_KEY) !== null) {
+                window.dispatchEvent(new CustomEvent('cycleflow:state-write-blocked'));
+                throw new Error('Existing CycleFlow data requires recovery before overwrite');
+            }
             try {
                 const parsed = JSON.parse(value);
                 if (!validateState(parsed)) {
@@ -86,6 +104,15 @@
             }
         }
         return originalSetItem.call(this, key, value);
+    };
+
+    Storage.prototype.removeItem = function(key) {
+        const result = originalRemoveItem.call(this, key);
+        if (key === RECOVERY_KEY) {
+            recoveryRequired = false;
+            window.__cycleflowRecoveryRequired = false;
+        }
+        return result;
     };
 
     let pinAttempts = 0;
