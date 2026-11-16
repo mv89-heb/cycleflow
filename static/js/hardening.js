@@ -176,6 +176,23 @@
         return result;
     };
 
+    // A validated backup is the only path allowed to replace data while recovery is pending.
+    // Keep the recovery copy until the new state has been written and read back successfully.
+    window.__cycleflowRestoreValidatedState = function(raw) {
+        if (typeof raw !== 'string' || !raw) throw new Error('Invalid recovery payload');
+        let parsed;
+        try { parsed = JSON.parse(raw); } catch (_) { throw new Error('Invalid recovery payload'); }
+        if (!validateState(parsed)) throw new Error('Invalid CycleFlow state');
+        originalSetItem.call(localStorage, STORAGE_KEY, raw);
+        if (originalGetItem.call(localStorage, STORAGE_KEY) !== raw) {
+            throw new Error('CycleFlow recovery write could not be verified');
+        }
+        originalRemoveItem.call(localStorage, RECOVERY_KEY);
+        recoveryRequired = false;
+        window.__cycleflowRecoveryRequired = false;
+        return true;
+    };
+
     let pinAttempts = 0;
     let lockedUntil = 0;
     let pinHandlerInstalled = false;
