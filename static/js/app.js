@@ -290,7 +290,7 @@ const UI = {
     },
     
     showRecoveryNotice() {
-        if (localStorage.getItem('cycleflow_recovery_v1') === null) return;
+        if (localStorage.getItem('cycleflow_recovery_v1') === null && !window.__cycleflowRecoveryRequired) return;
         const notice = document.createElement('section');
         notice.className = 'card';
         notice.setAttribute('role', 'alert');
