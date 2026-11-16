@@ -43,7 +43,7 @@
         if (value.tevilot !== undefined && (!isPlainObject(value.tevilot) || !Object.entries(value.tevilot).every(([date, enabled]) => isValidDateString(date) && enabled === true))) return false;
         if (!isPlainObject(value.settings)) return false;
         if (value.calculationSnapshots !== undefined) {
-            if (!Array.isArray(value.calculationSnapshots) || value.calculationSnapshots.length > 5000) return false;
+            if (!Array.isArray(value.calculationSnapshots) || value.calculationSnapshots.length > 1000) return false;
             for (const snapshot of value.calculationSnapshots) {
                 if (!isPlainObject(snapshot) || snapshot.schemaVersion !== 1 ||
                     typeof snapshot.snapshotId !== 'string' ||
