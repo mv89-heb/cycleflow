@@ -163,7 +163,7 @@
       ...(intervals.length ? intervals.map(item => `- ${item}`) : ['- אין מספיק נתונים בטווח']),
       '',
       'תיעודי ביוץ:',
-      ...(ovulation.length ? ovulation.map(item => `- ${item.date}${item.time ? ' ' + item.time : ''}: ${OVULATION_LABELS[item.type] || item.type}${item.note ? ' — ' + item.note : ''}`) : ['- אין תיעוד בטווח']),
+      ...(ovulation.length ? ovulation.map(item => `- ${item.date}${item.time ? ' ' + item.time : ''}: ${OVULATION_LABELS[item.type] || item.type}${item.immersionDate ? ' · טבילה להשוואה ' + item.immersionDate + ' · ' + earlyOvulationIndicator(item) : ''}${item.note ? ' — ' + item.note : ''}`) : ['- אין תיעוד בטווח']),
       '',
       'מועדי טבילה שסומנו:',
       ...(immersion.length ? immersion.map(date => `- ${date}`) : ['- אין מועדים שסומנו בטווח'])
