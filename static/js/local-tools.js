@@ -109,7 +109,7 @@
       }
       const uid = String(item.id || `cycleflow-${index}-${icsDate(item.date)}`).replace(/[^a-zA-Z0-9-]/g, '-');
       const stamp = utcStamp(new Date());
-      const description = item.notes ? `${item.notes}\\nתזכורת אישית שנוצרה במכשיר. אינה קביעה הלכתית או רפואית.` : 'תזכורת אישית שנוצרה במכשיר. אינה קביעה הלכתית או רפואית.';
+      const description = item.notes ? `${item.notes}\nתזכורת אישית שנוצרה במכשיר. אינה קביעה הלכתית או רפואית.` : 'תזכורת אישית שנוצרה במכשיר. אינה קביעה הלכתית או רפואית.';
       const lines = [
         'BEGIN:VEVENT',
         `UID:${uid}@cycleflow.local`,
