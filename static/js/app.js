@@ -23,9 +23,9 @@ const Utils = {
     chronologicalVesets: (periods) => [...periods].filter(p => p.type === 'veset').sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || '')))
 };
 
-const todayCivilDate = () => CalendarServices && CalendarServices.getIsraelCivilDate
-    ? CalendarServices.getIsraelCivilDate(new Date())
-    : Utils.fmt(new Date());
+const todayCivilDate = (now = new Date()) => CalendarServices && CalendarServices.getIsraelCivilDate
+    ? CalendarServices.getIsraelCivilDate(now)
+    : Utils.fmt(now);
 
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
