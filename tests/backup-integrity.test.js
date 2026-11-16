@@ -60,6 +60,7 @@ const { TextEncoder, TextDecoder } = require('util');
   assert.throws(() => api.validateState({ ...state, periods: [{ ...state.periods[0], eventTime: '25:99' }] }), /שעת אירוע לא תקינה/);
   assert.throws(() => api.validateState({ ...state, settings: { ...state.settings, cityId: 'not-a-city' } }), /יישוב לא תקין/);
   assert.throws(() => api.validateState({ ...state, manualReminders: [{ ...state.manualReminders[0], time: '29:99' }] }), /שעת תזכורת לא תקינה/);
+  assert.throws(() => api.validateState({ ...state, manualReminders: [{ ...state.manualReminders[0], date: '2026-02-30' }] }), /תזכורת לא תקינה/);
   assert.throws(() => api.validateState({ ...state, stainReports: [{ ...state.stainReports[0], color: 'invalid' }] }), /צבע כתם לא תקין/);
   assert.throws(() => api.validateState({ ...state, mikvehChecklist: { '2026-06-22': ['not-a-check'] } }), /סימון הכנה למקווה אינו תקין/);
   assert.throws(() => api.validateState({ ...state, ovulationObservations: [{ ...state.ovulationObservations[0], type: 'diagnosis' }] }), /תיעוד ביוץ לא תקין/);
