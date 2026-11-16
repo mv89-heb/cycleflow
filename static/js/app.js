@@ -857,12 +857,17 @@ const UI = {
             State.update(s => { s.periods = s.periods.filter(p => (p.id || p.date) !== id); });
             this.toast('הרישום נמחק');
         },
-        doHefsekDirect() { 
-            const st = HalachaLogic.getStatus(new Date()); 
+        doHefsekDirect() {
+            const now = new Date();
+            const israelParts = new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'Asia/Jerusalem', year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+            }).formatToParts(now);
+            const israelValues = Object.fromEntries(israelParts.map(part => [part.type, part.value]));
+            const date = `${israelValues.year}-${israelValues.month}-${israelValues.day}`;
+            const eventTime = `${israelValues.hour}:${israelValues.minute}`;
+            const st = HalachaLogic.getStatus(Utils.newDate(date));
             if (st.canHefsek) {
-                const now = new Date();
-                const date = Utils.fmt(now);
-                const eventTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
                 const cityId = State.get().settings.cityId || null;
                 const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date, eventTime, cityId }, cityId) : 'unknown';
                 State.update(s => { s.hefseks[date] = true; if (!s.hefsekMeta) s.hefsekMeta = {}; s.hefsekMeta[date] = { eventTime, cityId, sunsetRelation: relation }; });
