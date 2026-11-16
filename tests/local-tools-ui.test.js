@@ -18,6 +18,7 @@ const sources = ['calendar-services.js', 'local-tools.js', 'app.js'].map(file =>
 window.eval(sources.join('\n') + '\nwindow.__api = { UI, State, document: window.document, window };');
 const { UI, State, document } = window.__api;
 UI.cacheDOM();
+UI.toast = () => {};
 UI.bindEvents();
 UI.switchTab('tools');
 document.getElementById('mikveh_checklist_date').value = '2026-11-16';
