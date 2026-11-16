@@ -189,6 +189,65 @@ const HalachaLogic = {
         const onahSuffixFor = dayNumber => dayNumber === 30 && onahDay30FullDay
             ? ' · כל היממה (לפי ההגדרה)'
             : onahSuffix;
+        const previousPeriod = periods.length > 1 ? periods[periods.length - 2] : null;
+        const previousEffectiveDate = previousPeriod ? eventCalculationDate(previousPeriod) : null;
+        const intervalDays = previousEffectiveDate
+            ? Utils.diffDays(pDate, Utils.newDate(previousEffectiveDate))
+            : null;
+        const isChabadProfile = state.settings.minhag === 'chabad';
+        const haflagahDate = !isChabadProfile && Number.isInteger(intervalDays) && intervalDays > 0
+            ? Utils.fmt(Utils.addDays(pDate, intervalDays))
+            : null;
+        let longMode = 'normal';
+        let longStreak = 0;
+        let shortAfterExemption = 0;
+        for (let i = 1; i < periods.length; i++) {
+            const currentInterval = Utils.diffDays(
+                Utils.newDate(eventCalculationDate(periods[i])),
+                Utils.newDate(eventCalculationDate(periods[i - 1]))
+            );
+            if (longMode === 'exempt') {
+                if (currentInterval < 32) {
+                    longMode = 'short-after-exemption';
+                    shortAfterExemption = 1;
+                }
+            } else if (longMode === 'short-after-exemption') {
+                if (currentInterval >= 32) {
+                    longMode = 'exempt';
+                    shortAfterExemption = 0;
+                    longStreak = 0;
+                } else {
+                    shortAfterExemption += 1;
+                    if (shortAfterExemption >= 3) {
+                        longMode = 'normal';
+                        shortAfterExemption = 0;
+                        longStreak = 0;
+                    }
+                }
+            } else if (currentInterval >= 32) {
+                longStreak += 1;
+                if (longStreak >= 3) longMode = 'exempt';
+            } else {
+                longStreak = 0;
+            }
+        }
+        const longCycleExempt = !isChabadProfile && longMode === 'exempt';
+        const hachodeshDate = longCycleExempt || !CalendarServices || !CalendarServices.getNextYomHachodeshDate
+            ? null
+            : CalendarServices.getNextYomHachodeshDate(eventCalculationDate(lastP));
+        const getOnahLabels = () => {
+            const labels = [];
+            if (!longCycleExempt && dStr === Utils.fmt(Utils.addDays(pDate, 29))) labels.push({ label: 'עונה בינונית (30)', day: 30 });
+            if (!longCycleExempt && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) labels.push({ label: 'עונה בינונית (31)', day: 31 });
+            if (hachodeshDate && dStr === hachodeshDate) labels.push({ label: 'וסת החודש', day: null });
+            if (haflagahDate && dStr === haflagahDate) labels.push({ label: `וסת הפלגה (${intervalDays})`, day: null });
+            return labels;
+        };
+        const onahText = labels => {
+            const day30 = labels.some(item => item.day === 30);
+            const dayNumber = day30 ? 30 : (labels.find(item => item.day === 31)?.day || null);
+            return `${labels.map(item => item.label).join(' + ')}${dayNumber ? onahSuffixFor(dayNumber) : onahSuffix}`;
+        };
         const daysDiff = Utils.diffDays(date, pDate);
         const minimumWaitMode = state.settings.minimumWaitMode || 'five_from_onset';
         let minimumWaitStartDate = pDate;
@@ -259,13 +318,11 @@ const HalachaLogic = {
                 };
             }
             if (cleanDay > 8 && !tevilaReported) {
-                const onah30 = dStr === Utils.fmt(Utils.addDays(pDate, 29));
-                const onah31 = onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30));
-                if (onah30 || onah31) {
-                    const dayNumber = onah30 ? 30 : 31;
+                const todayOnot = getOnahLabels();
+                if (todayOnot.length) {
                     return {
                         type: 'onah',
-                        text: `עונה בינונית (${dayNumber}) · טרם סומנה טבילה${onahSuffixFor(dayNumber)}`,
+                        text: `${onahText(todayOnot)} · טרם סומנה טבילה`,
                         color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)',
                         expectedTevilaDate, reportedTevilaDate, canHefsek: false
                     };
@@ -278,10 +335,13 @@ const HalachaLogic = {
             return { type: 'nidda', text: 'נידה - ממתינה להפסק', color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: true };
         }
 
-        const beinonit30 = Utils.addDays(pDate, 29);
-        const beinonit31 = Utils.addDays(pDate, 30);
-        if (dStr === Utils.fmt(beinonit30)) return { type: 'onah', text: `עונה בינונית (30)${onahSuffixFor(30)}`, color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
-        if (onahDay31Enabled && dStr === Utils.fmt(beinonit31)) return { type: 'onah', text: `עונה בינונית (31)${onahSuffixFor(31)}`, color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
+        const todayOnot = getOnahLabels();
+        if (todayOnot.length) return {
+            type: 'onah', text: onahText(todayOnot),
+            color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)',
+            canHefsek: false, expectedTevilaDate: res.expectedTevilaDate,
+            reportedTevilaDate: res.reportedTevilaDate
+        };
         return res;
     }
 };
