@@ -11,11 +11,10 @@ window.localStorage.setItem('cycleflow_v61_python_pro', JSON.stringify({
   periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {},
   settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: null }
 }));
-for (const file of ['calendar-services.js', 'local-tools.js', 'app.js']) {
-  const source = fs.readFileSync(path.join(__dirname, '..', 'static', 'js', file), 'utf8');
-  window.eval(source);
-}
-window.eval('window.__api = { UI, State, document: window.document, window };');
+const sources = ['calendar-services.js', 'local-tools.js', 'app.js'].map(file =>
+  fs.readFileSync(path.join(__dirname, '..', 'static', 'js', file), 'utf8')
+);
+window.eval(sources.join('\\n') + '\\nwindow.__api = { UI, State, document: window.document, window };');
 const { UI, State, document } = window.__api;
 UI.cacheDOM();
 UI.bindEvents();
