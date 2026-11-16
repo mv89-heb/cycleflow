@@ -89,6 +89,7 @@
     function validateState(state) {
         if (!state || typeof state !== 'object' || !Array.isArray(state.periods)) throw new Error('מבנה הגיבוי אינו תקין');
         if (state.periods.length > 10000) throw new Error('הגיבוי מכיל יותר מדי רשומות');
+        const cityIds = ["beit-shemesh","jerusalem","bnei-brak","tel-aviv","haifa","ashdod","ashkelon","netanya","petah-tikva","modiin","other"];
         for (const p of state.periods) {
             if (!p || typeof p !== 'object' || typeof p.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(p.date)) throw new Error('רשומת וסת לא תקינה');
             if (!['veset', 'spotting'].includes(p.type)) throw new Error('סוג רשומה לא תקין');
@@ -100,7 +101,6 @@
         if (state.tevilot !== undefined && (state.tevilot === null || typeof state.tevilot !== 'object' || Array.isArray(state.tevilot) || Object.entries(state.tevilot).some(([date, enabled]) => !/^\d{4}-\d{2}-\d{2}$/.test(date) || enabled !== true))) throw new Error('נתוני טבילה לא תקינים');
         if (state.daily !== undefined && (typeof state.daily !== 'object' || Array.isArray(state.daily))) throw new Error('נתוני דיווח יומי לא תקינים');
         if (state.settings !== undefined && (typeof state.settings !== 'object' || Array.isArray(state.settings))) throw new Error('הגדרות לא תקינות');
-        const cityIds = ["beit-shemesh","jerusalem","bnei-brak","tel-aviv","haifa","ashdod","ashkelon","netanya","petah-tikva","modiin","other"];
         if (state.settings && state.settings.cityId !== undefined && state.settings.cityId !== null && !cityIds.includes(state.settings.cityId)) throw new Error('יישוב לא תקין');
         if (state.hefsekMeta !== undefined) {
             if (!state.hefsekMeta || typeof state.hefsekMeta !== 'object' || Array.isArray(state.hefsekMeta)) throw new Error('נתוני זמן הפסק לא תקינים');
