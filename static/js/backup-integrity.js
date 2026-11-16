@@ -111,7 +111,7 @@
         if (state.hefsekMeta !== undefined) {
             if (!state.hefsekMeta || typeof state.hefsekMeta !== 'object' || Array.isArray(state.hefsekMeta)) throw new Error('נתוני זמן הפסק לא תקינים');
             for (const [date, meta] of Object.entries(state.hefsekMeta)) {
-                if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !meta || typeof meta !== 'object' || Array.isArray(meta)) throw new Error('נתוני זמן הפסק לא תקינים');
+                if (!isValidDateString(date) || !meta || typeof meta !== 'object' || Array.isArray(meta)) throw new Error('נתוני זמן הפסק לא תקינים');
                 if (meta.eventTime !== undefined && meta.eventTime !== null && (typeof meta.eventTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(meta.eventTime))) throw new Error('שעת הפסק לא תקינה');
                 if (meta.cityId !== undefined && meta.cityId !== null && !cityIds.includes(meta.cityId)) throw new Error('יישוב הפסק לא תקין');
                 if (meta.sunsetRelation !== undefined && !['before', 'after', 'unknown'].includes(meta.sunsetRelation)) throw new Error('יחס שקיעה לא תקין');
@@ -135,7 +135,7 @@
             if (!Array.isArray(state.stainReports) || state.stainReports.length > 500) throw new Error('רישומי כתמים אינם תקינים');
             const ids = new Set();
             for (const item of state.stainReports) {
-                if (!item || typeof item !== 'object' || typeof item.id !== 'string' || ids.has(item.id) || !/^\d{4}-\d{2}-\d{2}$/.test(item.date)) throw new Error('רישום כתם לא תקין');
+                if (!item || typeof item !== 'object' || typeof item.id !== 'string' || ids.has(item.id) || !isValidDateString(item.date)) throw new Error('רישום כתם לא תקין');
                 ids.add(item.id);
                 if (item.time !== undefined && item.time !== null && !validTime(item.time)) throw new Error('שעת כתם לא תקינה');
                 if (!['red', 'pink', 'brown', 'yellow', 'clear', 'other', 'unknown'].includes(item.color)) throw new Error('צבע כתם לא תקין');
