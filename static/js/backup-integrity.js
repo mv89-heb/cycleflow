@@ -120,7 +120,7 @@
         if (state.daily !== undefined && (typeof state.daily !== 'object' || Array.isArray(state.daily))) throw new Error('נתוני דיווח יומי לא תקינים');
         if (state.settings !== undefined && (typeof state.settings !== 'object' || Array.isArray(state.settings))) throw new Error('הגדרות לא תקינות');
         if (state.calculationSnapshots !== undefined) {
-            if (!Array.isArray(state.calculationSnapshots) || state.calculationSnapshots.length > 5000) throw new Error('היסטוריית חישובים אינה תקינה');
+            if (!Array.isArray(state.calculationSnapshots) || state.calculationSnapshots.length > 1000) throw new Error('היסטוריית חישובים אינה תקינה');
             const snapshotIds = new Set();
             for (const snapshot of state.calculationSnapshots) {
                 if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot) ||
