@@ -131,6 +131,22 @@ The implementation is based on the following specific guidance:
 - [Onah Beinonit](https://www.yoatzot.org/672/) describes day 30 as the baseline and day 31 as a view held by some authorities.
 - [Keeping days 30 & 31 as onah beinonit](https://www.yoatzot.org/faq/keeping-days-30-31-as-onah-beinonit/) and [Guide to Observing Vesatot](https://www.yoatzot.org/547/) describe day 31 and the full 24-hour day as additional customs.
 
+### Chabad haflagah onot-count implementation
+
+The Chabad profile now uses the distinct onot-count method rather than the standard day-interval formula:
+
+- For each period after the first, find the latest successful hefsek taharah after the previous period and before the new onset.
+- Count from the first night onah immediately following that hefsek, including the onah on which the new period began. The count is 2 × complete Hebrew-date steps + 1 for a night onset, or 2 × complete Hebrew-date steps + 2 for a day onset.
+- A newly recorded number cancels lower carried numbers, while larger existing numbers remain active.
+- After the current period has a successful hefsek, project each active number from the first night following that hefsek: odd numbers map to night onot and even numbers to day onot.
+- Only hefsek records with a verified pre-sunset time, city, and applicable minimum-wait boundary are used. Without that context, no Chabad haflagah is calculated.
+
+Sources:
+- [Yoatzot Halacha FAQ: back-to-back onot](https://www.yoatzot.org/faq/bedikot-with-back-to-back-onot/) distinguishes the Chabad count from standard date-based haflagah.
+- [How to Keep Your Calendar](https://www.mikvah.org/images/cheshbon%20calendar%20outline.pdf) explains counting from the first night after hefsek, including the onset onah, and carrying higher numbers.
+- [Veses Haflagah](https://tieba.mikvah.org/images/slideshow/6.pdf) illustrates the inclusive onot count and carried numbers.
+- [Overview of Family Purity Laws](https://repo.mikvah.org/overview) explains the first-night start and odd/even night/day mapping.
+
 ### Basic calendar onot added
 
 For the selected Yoatzot Halacha source profile, CycleFlow now calculates the two remaining basic calendar onot for non-fixed patterns:
