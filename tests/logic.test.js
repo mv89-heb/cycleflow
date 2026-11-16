@@ -224,6 +224,25 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     eq(status.canHefsek, true, 'an unknown-time-relation hefsek remains pending review');
 })();
 
+(function testDirectHefsekUsesIsraelLocalDateAndTime() {
+    const { UI, State, window } = loadApp({
+        periods: [{ date: '2026-11-10', type: 'veset', sunsetRelation: 'before', isSunset: false, id: 'start' }],
+        hefseks: {}, hefsekMeta: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const RealDate = window.Date;
+    class FixedDate extends RealDate {
+        constructor(...args) { super(...(args.length ? args : ['2026-11-16T22:30:00.000Z'])); }
+        static now() { return RealDate.parse('2026-11-16T22:30:00.000Z'); }
+    }
+    window.Date = FixedDate;
+    UI.actions.doHefsekDirect.call(UI);
+    const recorded = State.get().hefsekMeta['2026-11-17'];
+    assert(Boolean(State.get().hefseks['2026-11-17']),
+       'direct hefsek uses the Israel civil date after midnight in Israel');
+    eq(recorded?.eventTime, '00:30',
+       'direct hefsek records Israel-local time rather than the device timezone');
+})();
+
 (function testOnahStatusUsesEstimatedDayNightFromOnset() {
     const dayState = {
         periods: [{ date: '2026-11-16', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', id: 'day-onset' }],
