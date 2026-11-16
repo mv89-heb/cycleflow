@@ -1149,11 +1149,13 @@ const UI = {
                     'insufficient-data': 'אין עדיין נתוני מקור מספיקים',
                     'source-based-advisory': 'חישוב לפי פרופיל מקורות – לא פסק אישי'
                 };
-                const profileMatchLabel = provenance.sourceEventProfileMatchesCurrent === false
-                    ? 'הגדרות החישוב שונות מפרופיל האירוע המקורי'
-                    : (provenance.sourceEventProfileMatchesCurrent === true
-                        ? 'הגדרות החישוב תואמות לפרופיל האירוע'
-                        : 'פרופיל האירוע ההיסטורי לא נשמר');
+                const profileMatchLabel = provenance.sourceEventProfileState === 'no-source-event'
+                    ? 'אין אירוע מקור'
+                    : (provenance.sourceEventProfileMatchesCurrent === false
+                        ? 'הגדרות החישוב שונות מפרופיל האירוע המקורי'
+                        : (provenance.sourceEventProfileMatchesCurrent === true
+                            ? 'הגדרות החישוב תואמות לפרופיל האירוע'
+                            : 'פרופיל האירוע ההיסטורי לא נשמר'));
                 const summary = document.getElementById('status_provenance_summary');
                 if (summary) summary.textContent =
                     `${provenance.rulesetId} v${provenance.rulesetVersion} · ${reviewLabels[provenance.reviewState] || 'סטטוס חישוב לא ידוע'} · ${profileMatchLabel}`;
