@@ -40,4 +40,20 @@ const backup = fs.readFileSync(path.join(__dirname, '..', 'static', 'js', 'backu
 assert(backup.includes("localStorage.removeItem('cycleflow_recovery_v1')"),
   'a validated backup import must be able to clear the recovery block');
 
+
+const noSpaceDom = new JSDOM('', { runScripts: 'outside-only', url: 'https://cycleflow-no-space.test/' });
+const noSpaceWindow = noSpaceDom.window;
+noSpaceWindow.localStorage.setItem(STORAGE_KEY, original);
+Object.defineProperty(noSpaceWindow.Storage.prototype, 'setItem', {
+  configurable: true,
+  value() { throw new noSpaceWindow.DOMException('quota exceeded', 'QuotaExceededError'); }
+});
+noSpaceWindow.eval(hardening);
+noSpaceWindow.localStorage.getItem(STORAGE_KEY);
+assert(noSpaceWindow.__cycleflowRecoveryRequired === true,
+  'writes must remain blocked even if there is not enough space to save a recovery copy');
+let noSpaceWriteBlocked = false;
+try { noSpaceWindow.localStorage.setItem(STORAGE_KEY, validState); } catch (_) { noSpaceWriteBlocked = true; }
+assert(noSpaceWriteBlocked, 'failed recovery-copy storage must not permit destructive writes');
+
 console.log('Local state recovery regression tests passed.');
