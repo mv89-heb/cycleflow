@@ -62,6 +62,21 @@ const israelClock = calendar.getIsraelClock(new Date('2026-11-16T20:00:00Z'));
 assert.deepEqual(israelClock, { date: '2026-11-16', time: '22:00' },
   'direct event recording uses Israel-local civil date and time independent of device timezone');
 
+let firstOfMonthWith30DayNextMonth = null;
+for (let cursor = '2026-01-01'; cursor <= '2027-01-01'; cursor = calendar.addCivilDays(cursor, 1)) {
+  const parts = calendar.getHebrewDateParts(cursor);
+  if (parts && parts.day === 1) {
+    const target = calendar.getNextYomHachodeshDate(cursor, 30);
+    const targetParts = target && calendar.getHebrewDateParts(target);
+    if (targetParts && targetParts.day === 30) {
+      firstOfMonthWith30DayNextMonth = { source: cursor, target };
+      break;
+    }
+  }
+}
+assert(firstOfMonthWith30DayNextMonth,
+  'a fixed day-30 pattern continues to day 30 of a following 30-day month instead of drifting to day 1');
+
 const sunset = calendar.getSunset('2026-11-16', 'beit-shemesh');
 assert(sunset && /^([01]\d|2[0-3]):[0-5]\d$/.test(sunset.time), 'sunset estimate is a local HH:mm time');
 const before = sunset.time === '00:00' ? '00:01' : '00:00';
