@@ -171,4 +171,30 @@ assert.equal(calendar.getIsraelCivilDate(new Date('invalid')), '', 'invalid curr
 assert.match(calendar.getCurrentHebrewDate(currentInstant, 'beit-shemesh'), /.+/,
   'current Hebrew date remains available for an instant near the Israel civil-day boundary');
 
+
+const elulEnd = calendar.getHebrewDateParts('2024-10-02');
+const roshHashanah = calendar.getHebrewDateParts('2024-10-03');
+assert.deepEqual(
+  { day: elulEnd.day, month: elulEnd.month, year: elulEnd.year },
+  { day: 29, month: 'Elul', year: '5784' },
+  'the last day of Elul 5784 is identified before the Hebrew year rollover'
+);
+assert.deepEqual(
+  { day: roshHashanah.day, month: roshHashanah.month, year: roshHashanah.year },
+  { day: 1, month: 'Tishri', year: '5785' },
+  'Rosh Hashanah advances the Hebrew year and starts Tishrei 5785'
+);
+const nextHebrewYear = calendar.getNextYomHachodeshDate('2024-10-02', 1);
+assert.deepEqual(
+  calendar.getHebrewDateParts(nextHebrewYear),
+  { day: 1, month: 'Tishri', year: '5785' },
+  'a fixed day-one monthly date advances correctly across the Hebrew year boundary'
+);
+const followingRoshHashanah = calendar.getHebrewDateParts('2025-09-23');
+assert.deepEqual(
+  { day: followingRoshHashanah.day, month: followingRoshHashanah.month, year: followingRoshHashanah.year },
+  { day: 1, month: 'Tishri', year: '5786' },
+  'the next Hebrew year boundary is also represented correctly'
+);
+
 console.log('Local Hebrew calendar and sunset regression tests passed.');
