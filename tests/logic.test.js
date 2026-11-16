@@ -236,6 +236,7 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
         static now() { return RealDate.parse('2026-11-16T22:30:00.000Z'); }
     }
     window.Date = FixedDate;
+    UI.toast = () => {};
     UI.actions.doHefsekDirect.call(UI);
     const recorded = State.get().hefsekMeta['2026-11-17'];
     assert(Boolean(State.get().hefseks['2026-11-17']),
