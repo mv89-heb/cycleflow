@@ -109,12 +109,13 @@
       }
       const uid = String(item.id || `cycleflow-${index}-${icsDate(item.date)}`).replace(/[^a-zA-Z0-9-]/g, '-');
       const stamp = utcStamp(new Date());
+      const description = item.notes ? `${item.notes}\\nתזכורת אישית שנוצרה במכשיר. אינה קביעה הלכתית או רפואית.` : 'תזכורת אישית שנוצרה במכשיר. אינה קביעה הלכתית או רפואית.';
       const lines = [
         'BEGIN:VEVENT',
         `UID:${uid}@cycleflow.local`,
         `DTSTAMP:${stamp}`,
         `SUMMARY:${escapeIcsText(item.title.trim())}`,
-        'DESCRIPTION:תזכורת אישית שנוצרה במכשיר. אינה קביעה הלכתית או רפואית.'
+        `DESCRIPTION:${escapeIcsText(description)}`
       ];
       if (item.time) {
         const start = zonedLocalToUtc(item.date, item.time);
@@ -123,7 +124,6 @@
       } else {
         lines.push(`DTSTART;VALUE=DATE:${icsDate(item.date)}`, `DTEND;VALUE=DATE:${icsDate(addDays(item.date, 1))}`);
       }
-      if (item.notes) lines.push(`X-ALT-DESC;FMTTYPE=text/plain:${escapeIcsText(item.notes)}`);
       lines.push('END:VEVENT');
       return lines.join('\r\n');
     });
