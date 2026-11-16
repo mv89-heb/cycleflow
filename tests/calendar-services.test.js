@@ -15,6 +15,30 @@ assert.notEqual(
 assert.equal(calendar.addCivilDays('2024-02-28', 1), '2024-02-29', 'leap day arithmetic');
 assert.equal(calendar.addCivilDays('2024-02-29', 1), '2024-03-01', 'leap day rollover');
 
+const solarTimes = calendar.getSolarTimes('2026-11-16', 'beit-shemesh');
+assert(solarTimes && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(solarTimes.sunrise), 'sunrise estimate is a local HH:mm time');
+assert(solarTimes && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(solarTimes.sunset), 'solar times include sunset');
+const shiftTime = (value, delta) => {
+  const [hour, minute] = value.split(':').map(Number);
+  const total = hour * 60 + minute + delta;
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+};
+assert.equal(calendar.resolveEventOnah({
+  date: '2026-11-16', eventTime: shiftTime(solarTimes.sunrise, -1), cityId: 'beit-shemesh'
+}), 'night', 'one minute before sunrise belongs to the estimated night onah');
+assert.equal(calendar.resolveEventOnah({
+  date: '2026-11-16', eventTime: solarTimes.sunrise, cityId: 'beit-shemesh'
+}), 'day', 'sunrise starts the estimated day onah');
+assert.equal(calendar.resolveEventOnah({
+  date: '2026-11-16', eventTime: shiftTime(solarTimes.sunset, -1), cityId: 'beit-shemesh'
+}), 'day', 'one minute before sunset remains in the estimated day onah');
+assert.equal(calendar.resolveEventOnah({
+  date: '2026-11-16', eventTime: solarTimes.sunset, cityId: 'beit-shemesh'
+}), 'night', 'sunset starts the estimated night onah');
+assert.equal(calendar.resolveEventOnah({
+  date: '2026-11-16', eventTime: '12:00', cityId: null
+}), 'unknown', 'onah remains unknown without the event city');
+
 const sunset = calendar.getSunset('2026-11-16', 'beit-shemesh');
 assert(sunset && /^([01]\d|2[0-3]):[0-5]\d$/.test(sunset.time), 'sunset estimate is a local HH:mm time');
 const before = sunset.time === '00:00' ? '00:01' : '00:00';
