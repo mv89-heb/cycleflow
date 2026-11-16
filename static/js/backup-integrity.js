@@ -198,7 +198,7 @@
                 if (!item || typeof item !== 'object' || Array.isArray(item) || typeof item.id !== 'string' ||
                     item.id.length > 80 || ids.has(item.id) || !isValidDateString(item.date) ||
                     !symptomTypes.includes(item.type) || !answers.includes(item.distinctive) ||
-                    !answers.includes(item.occursOutsideFlow)) throw new Error('תיעוד תסמין לא תקין');
+                    !answers.includes(item.occursOutsideFlow) || !answers.includes(item.flowWithoutSymptom)) throw new Error('תיעוד תסמין לא תקין');
                 ids.add(item.id);
                 if (item.time !== undefined && item.time !== null && !validTime(item.time)) throw new Error('שעת תסמין לא תקינה');
                 if (item.endDate !== undefined && item.endDate !== null &&
