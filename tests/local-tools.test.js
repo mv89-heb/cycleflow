@@ -23,6 +23,8 @@ assert.equal(winterUtc.toISOString().slice(11, 16), '16:30', 'Israel winter UTC 
 assert.equal(summerUtc.toISOString().slice(11, 16), '15:30', 'Israel summer UTC offset is applied');
 assert.throws(() => tools.zonedLocalToUtc('2026-03-27', '02:30'), /אינה קיימת באזור הזמן/,
   'nonexistent local times during DST transition are rejected');
+assert.throws(() => tools.zonedLocalToUtc('2026-10-25', '01:30'), /אינה חד-משמעית/,
+  'ambiguous local times during DST transition are rejected');
 assert.throws(() => tools.buildIcs([]), /אין תזכורות/);
 assert.throws(() => tools.buildIcs([{ date: '2026-02-30', title: 'invalid' }]), /תזכורת לא תקין/);
 
