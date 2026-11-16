@@ -50,7 +50,7 @@ const calendarState = {
   manualReminders: [{ id: 'r1', date: '2026-11-17', title: 'בדיקה', time: '18:00', notes: '' }],
   stainReports: [{ id: 's1', date: '2026-11-18', color: 'brown', size: 'small', surface: 'tissue', source: 'unknown', note: '' }],
   mikvehChecklist: { '2026-11-19': ['hair'] },
-  symptomObservations: [{ id: 'symptom-1', date: '2026-11-19', time: '08:15', type: 'back_pain', distinctive: 'yes', occursOutsideFlow: 'no', relatedFlowDate: '2026-11-20', note: '' }],
+  symptomObservations: [{ id: 'symptom-1', date: '2026-11-19', time: '08:15', type: 'back_pain', distinctive: 'yes', occursOutsideFlow: 'no', flowWithoutSymptom: 'no', relatedFlowDate: '2026-11-20', note: '' }],
   ovulationObservations: [{ id: 'o1', date: '2026-11-20', type: 'opk_positive', immersionDate: '2026-11-23', note: '' }],
   calculationSnapshots: [{
     schemaVersion: 1, snapshotId: 'cf-calc-v1:2026-11-20:0123456789abcdef',
