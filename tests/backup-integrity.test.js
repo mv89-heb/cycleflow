@@ -27,7 +27,8 @@ const { TextEncoder, TextDecoder } = require('util');
   assert(api, 'test-only backup API should be available when explicitly enabled');
 
   const state = {
-    periods: [{ id: 'p1', date: '2026-06-01', type: 'veset', isSunset: false, eventTime: '14:20', cityId: 'beit-shemesh', sunsetRelation: 'before' }],
+    periods: [{ id: 'p1', date: '2026-06-01', type: 'veset', isSunset: false, eventTime: '14:20', cityId: 'beit-shemesh', sunsetRelation: 'before',
+      lastRelations: { date: '2026-05-30', eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' } }],
     hefseks: { '2026-06-06': true },
     hefsekMeta: { '2026-06-06': { eventTime: '17:10', cityId: 'beit-shemesh', sunsetRelation: 'after' } },
     manualReminders: [{ id: 'r1', date: '2026-06-20', time: '18:30', title: 'תזכורת', notes: '' }],
@@ -36,7 +37,8 @@ const { TextEncoder, TextDecoder } = require('util');
     ovulationObservations: [{ id: 'o1', date: '2026-06-23', time: '08:00', type: 'opk_positive', immersionDate: '2026-06-26', note: '' }],
     tevilot: { '2026-06-15': true },
     daily: {},
-    settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: 'beit-shemesh' }
+    settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: 'beit-shemesh',
+      minimumWaitMode: 'four_from_last_relations', onahBeinonitMode: 'day30_plus31_onah' }
   };
 
   const encrypted = await api.encrypt(state, 'correct horse battery');
@@ -59,6 +61,10 @@ const { TextEncoder, TextDecoder } = require('util');
 
   assert.throws(() => api.validateState({ ...state, periods: [{ ...state.periods[0], eventTime: '25:99' }] }), /שעת אירוע לא תקינה/);
   assert.throws(() => api.validateState({ ...state, settings: { ...state.settings, cityId: 'not-a-city' } }), /יישוב לא תקין/);
+  assert.throws(() => api.validateState({ ...state, periods: [{ ...state.periods[0], lastRelations: { date: '2026-02-30', eventTime: '15:00', cityId: 'beit-shemesh' } }] }), /נתוני יחסי אישות אחרונים לא תקינים/);
+  assert.throws(() => api.validateState({ ...state, periods: [{ ...state.periods[0], lastRelations: { date: '2026-05-30', eventTime: '25:99', cityId: 'beit-shemesh' } }] }), /נתוני יחסי אישות אחרונים לא תקינים/);
+  assert.throws(() => api.validateState({ ...state, settings: { ...state.settings, minimumWaitMode: 'four-days-from-onset' } }), /שיטת מינימום המתנה לא תקינה/);
+  assert.throws(() => api.validateState({ ...state, settings: { ...state.settings, onahBeinonitMode: 'day32' } }), /שיטת עונה בינונית לא תקינה/);
   assert.throws(() => api.validateState({ ...state, manualReminders: [{ ...state.manualReminders[0], time: '29:99' }] }), /שעת תזכורת לא תקינה/);
   assert.throws(() => api.validateState({ ...state, manualReminders: [{ ...state.manualReminders[0], date: '2026-02-30' }] }), /תזכורת לא תקינה/);
   assert.throws(() => api.validateState({ ...state, stainReports: [{ ...state.stainReports[0], color: 'invalid' }] }), /צבע כתם לא תקין/);
