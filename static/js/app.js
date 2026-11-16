@@ -157,12 +157,22 @@ const HalachaLogic = {
     getStatus(date) {
         const state = State.get();
         const dStr = Utils.fmt(date);
+        const eventCalculationDate = record => {
+            const info = CalendarServices && CalendarServices.getEventDateInfo
+                ? CalendarServices.getEventDateInfo(record, state.settings.cityId)
+                : null;
+            return info && info.effectiveDate ? info.effectiveDate : record.date;
+        };
         let res = { type: 'regular', text: 'אין דיווח פעיל', color: 'var(--text-muted)', bg: 'rgba(148, 163, 184, 0.08)', canHefsek: false };
-        const periods = Utils.chronologicalVesets(state.periods).filter(p => p.date <= dStr);
+        // Calendar cells represent the Hebrew date associated with the civil date at daytime.
+        // An onset recorded after sunset belongs to the next Hebrew date.
+        const periods = Utils.chronologicalVesets(state.periods)
+            .filter(p => eventCalculationDate(p) <= dStr)
+            .sort((a, b) => eventCalculationDate(a).localeCompare(eventCalculationDate(b)) || String(a.id || '').localeCompare(String(b.id || '')));
         const lastP = periods[periods.length - 1];
         if (!lastP) return { ...res, text: 'אין מספיק נתונים' };
 
-        const pDate = Utils.newDate(lastP.date);
+        const pDate = Utils.newDate(eventCalculationDate(lastP));
         const daysDiff = Utils.diffDays(date, pDate);
         if (dStr === lastP.date) return { type: 'nidda', text: 'וסת (יום 1)', color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: false };
 
@@ -170,7 +180,14 @@ const HalachaLogic = {
         let hefsekDate = null;
         let temp = new Date(pDate.getTime());
         while (temp <= date) {
-            if (state.hefseks[Utils.fmt(temp)]) hefsekDate = new Date(temp.getTime());
+            const key = Utils.fmt(temp);
+            const meta = (state.hefsekMeta || {})[key] || {};
+            const relation = CalendarServices && CalendarServices.resolveEventRelation
+                ? CalendarServices.resolveEventRelation({ date: key, ...meta }, meta.cityId || state.settings.cityId)
+                : 'unknown';
+            // A hefsek explicitly recorded after sunset is not silently accepted as a
+            // before-sunset hefsek. It remains in history for review.
+            if (state.hefseks[key] && relation !== 'after') hefsekDate = new Date(temp.getTime());
             temp.setDate(temp.getDate() + 1);
         }
 
@@ -777,18 +794,22 @@ const UI = {
             const eventTime = document.getElementById('report_time')?.value || null;
             const cityId = state.settings.cityId || null;
             const fallbackSunset = document.getElementById('chk_sunset_report').checked;
-            const relation = CalendarServices ? CalendarServices.resolveEventRelation({ date: d, eventTime, cityId, isSunset: fallbackSunset }, cityId) : (fallbackSunset ? 'after' : 'before');
-            State.update(state => { 
-                state.periods.push({ 
+            const relationInput = { date: d, eventTime, cityId, isSunset: fallbackSunset ? true : undefined };
+            const relation = CalendarServices ? CalendarServices.resolveEventRelation(relationInput, cityId) : (fallbackSunset ? 'after' : 'unknown');
+            const effectiveDate = relation === 'after' && CalendarServices
+                ? CalendarServices.addCivilDays(d, 1)
+                : d;
+            State.update(state => {
+                state.periods.push({
                     id: Date.now().toString(36),
                     date: d,
                     eventTime,
                     cityId,
                     sunsetRelation: relation,
-                    isSunset: relation === 'after' ? true : (relation === 'before' ? false : fallbackSunset),
-                    type: document.getElementById('chk_spotting_report').checked ? 'spotting' : 'veset' 
-                }); 
-                const cutoff = Utils.newDate(d); 
+                    isSunset: relation === 'after' ? true : (relation === 'before' ? false : null),
+                    type: document.getElementById('chk_spotting_report').checked ? 'spotting' : 'veset'
+                });
+                const cutoff = Utils.newDate(effectiveDate); 
                 Object.keys(state.hefseks).forEach(k => {
                     if (Utils.newDate(k) >= cutoff) {
                         delete state.hefseks[k];
