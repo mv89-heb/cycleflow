@@ -50,7 +50,7 @@ const calendarState = {
   manualReminders: [{ id: 'r1', date: '2026-11-17', title: 'בדיקה', time: '18:00', notes: '' }],
   stainReports: [{ id: 's1', date: '2026-11-18', color: 'brown', size: 'small', surface: 'tissue', source: 'unknown', note: '' }],
   mikvehChecklist: { '2026-11-19': ['hair'] },
-  ovulationObservations: [{ id: 'o1', date: '2026-11-20', type: 'opk_positive', immersionDate: '2026-11-23', note: '' }],
+  symptomObservations: [{ id: 'symptom-1', date: '2026-11-19', time: '08:15', type: 'back_pain', distinctive: 'yes', occursOutsideFlow: 'no', relatedFlowDate: '2026-11-20', note: '' }],\n  ovulationObservations: [{ id: 'o1', date: '2026-11-20', type: 'opk_positive', immersionDate: '2026-11-23', note: '' }],
   calculationSnapshots: [{
     schemaVersion: 1, snapshotId: 'cf-calc-v1:2026-11-20:0123456789abcdef',
     evaluatedDate: '2026-11-20', capturedAt: '2026-11-20T12:00:00.000Z',
@@ -79,6 +79,14 @@ try {
   }));
 } catch (_) { invalidCityBlocked = true; }
 assert(invalidCityBlocked, 'unknown city identifiers must be rejected by local storage hardening');
+let invalidSymptomDataBlocked = false;
+try {
+  validCalendarWindow.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...calendarState, symptomObservations: [{ id: 'bad', date: '2026-11-20', type: 'unknown', distinctive: 'yes', occursOutsideFlow: 'no' }]
+  }));
+} catch (_) { invalidSymptomDataBlocked = true; }
+assert(invalidSymptomDataBlocked, 'unsupported symptom types must be rejected by storage hardening');
+
 let invalidToolDataBlocked = false;
 try {
   validCalendarWindow.localStorage.setItem(STORAGE_KEY, JSON.stringify({
