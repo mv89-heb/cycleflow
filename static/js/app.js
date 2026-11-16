@@ -1213,7 +1213,7 @@ const UI = {
         const symptoms = [...(state.symptomObservations || [])].sort((x, y) => y.date.localeCompare(x.date));
         document.getElementById('symptom_observations_list').innerHTML = symptoms.length ? symptoms.map(item => {
             const label = item.type === 'other' ? item.customDescription : (LocalTools.SYMPTOM_LABELS[item.type] || 'תסמין');
-            const end = item.endDate ? ' · סיום ' + item.endDate + (item.endTime ? ' ' + item.endTime : '') : '';
+            const end = item.endDate || item.endTime ? ' · סיום ' + (item.endDate || item.date) + (item.endTime ? ' ' + item.endTime : '') : '';
             const related = item.relatedFlowDate ? ' · דימום שסומן: ' + item.relatedFlowDate : '';
             return `<div class="tool-list-row"><div><strong>${escapeHTML(item.date)}${item.time ? ' · ' + escapeHTML(item.time) : ''} · ${escapeHTML(label)}</strong><div class="text-muted small-note">${escapeHTML(end)}${escapeHTML(related)} · תיעוד בלבד</div></div><div class="flex gap-10"><button class="btn btn-outline" data-action="copySymptomSummary" data-id="${escapeHTML(item.id)}">סיכום</button><button class="btn btn-outline" data-action="deleteSymptomObservation" data-id="${escapeHTML(item.id)}">מחיקה</button></div></div>`;
         }).join('') : '<p class="text-muted small-note">אין עדיין תיעודי תסמינים.</p>';
