@@ -870,6 +870,35 @@ const UI = {
         });
 
         const historyState = State.get();
+        const fixedSummary = document.getElementById('fixed_veset_summary');
+        if (fixedSummary) {
+            fixedSummary.replaceChildren();
+            const candidates = HalachaLogic.getFixedVesetCandidates();
+            const note = document.createElement('p');
+            note.className = 'text-muted small-note';
+            note.textContent = 'זיהוי דפוסים פשוטים בלבד. זה אינו קובע שהווסת הקבוע בתוקף, אינו מבצע עקירה/הותרה, ואינו מבטל התראות רגילות.';
+            fixedSummary.appendChild(note);
+            if (!candidates.length) {
+                const empty = document.createElement('p');
+                empty.className = 'text-sm text-muted';
+                empty.textContent = historyState.settings.minhag === 'chabad'
+                    ? 'לא זוהה דפוס פשוט של וסת החודש. חישוב הפלגה במנהג חב״ד אינו נבדק כאן.'
+                    : 'לא זוהה דפוס פשוט של וסת החודש או וסת הפלגה בנתונים הזמינים.';
+                fixedSummary.appendChild(empty);
+            } else {
+                candidates.forEach(candidate => {
+                    const row = document.createElement('div');
+                    row.className = 'status-card mb-10';
+                    const onahLabel = candidate.onah === 'day' ? 'עונת יום' : 'עונת לילה';
+                    const title = candidate.type === 'hachodesh'
+                        ? `דפוס אפשרי: וסת החודש – יום ${candidate.day} בחודש העברי, ${onahLabel}`
+                        : `דפוס אפשרי: וסת הפלגה – כל ${candidate.intervalDays} ימים, ${onahLabel}`;
+                    const evidence = candidate.evidenceDates.map(value => Utils.prettyDate(Utils.newDate(value))).join(' · ');
+                    row.textContent = `${title}. נצפה עד ${Utils.prettyDate(Utils.newDate(candidate.establishedAt))}. נתונים: ${evidence}.`;
+                    fixedSummary.appendChild(row);
+                });
+            }
+        }
         const vesets = Utils.chronologicalVesets(historyState.periods)
             .filter(period => Utils.hasKnownHalachicDate(period, historyState.settings.cityId))
             .sort((a, b) => Utils.halachicDate(a, historyState.settings.cityId).localeCompare(Utils.halachicDate(b, historyState.settings.cityId)));
