@@ -74,7 +74,17 @@ const CryptoService = {
 
 const StorageService = {
     load() { try { const data = localStorage.getItem(STORAGE_KEY); return data ? JSON.parse(data) : null; } catch (e) { return null; } },
-    save(state) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {} },
+    save(state) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            return true;
+        } catch (error) {
+            window.dispatchEvent(new CustomEvent('cycleflow:persistence-error', {
+                detail: { name: error && error.name ? error.name : 'StorageError' }
+            }));
+            return false;
+        }
+    },
     async export(state, passphrase) {
         const str = await CryptoService.encrypt(state, passphrase);
         const blob = new Blob([str], {type: 'text/plain'});
@@ -104,9 +114,22 @@ const defaultState = { periods: [], hefseks: {}, daily: {}, settings: { minhag: 
 class StateManager {
     constructor() { this.state = StorageService.load() || defaultState; this.listeners = []; }
     subscribe(listener) { this.listeners.push(listener); }
-    notify() { StorageService.save(this.state); this.listeners.forEach(listener => listener(this.state)); }
+    notify() {
+        if (!StorageService.save(this.state)) return false;
+        this.listeners.forEach(listener => listener(this.state));
+        return true;
+    }
     get() { return this.state; }
-    update(updater) { updater(this.state); this.notify(); }
+    update(updater) {
+        const previous = JSON.parse(JSON.stringify(this.state));
+        updater(this.state);
+        if (!this.notify()) {
+            this.state = previous;
+            this.listeners.forEach(listener => listener(this.state));
+            return false;
+        }
+        return true;
+    }
 }
 const State = new StateManager();
 
@@ -248,6 +271,10 @@ const UI = {
     init() {
         this.cacheDOM();
         this.bindEvents();
+        window.addEventListener('cycleflow:persistence-error', () => {
+            // Let action handlers finish before displaying the failure toast.
+            setTimeout(() => this.toast('השמירה נכשלה. אין לרענן לפני בדיקת שטח האחסון.', true), 0);
+        });
         this.applyTheme(State.get().settings.theme || 'dark');
         document.getElementById('report_date').value = Utils.fmt(new Date());
         State.subscribe(() => this.renderCurrentView());
