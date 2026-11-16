@@ -6,6 +6,7 @@ const { JSDOM } = require('jsdom');
 const html = fs.readFileSync(path.join(__dirname, '..', 'templates', 'index.html'), 'utf8');
 const dom = new JSDOM(html, { runScripts: 'outside-only', url: 'https://cycleflow-tools.test/' });
 const { window } = dom;
+window.confirm = () => true;
 window.localStorage.setItem('cycleflow_v61_python_pro', JSON.stringify({
   periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {},
   settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: null }
@@ -38,6 +39,8 @@ document.getElementById('stain_note').value = 'תיאור עובדתי';
 UI.actions.addStainReport();
 assert.equal(State.get().stainReports.length, 1);
 assert.equal(State.get().stainReports[0].note, 'תיאור עובדתי');
+UI.actions.deleteStainReport({ dataset: { id: State.get().stainReports[0].id } });
+assert.equal(State.get().stainReports.length, 0, 'stain report can be deleted locally');
 
 const checklist = document.querySelector('[data-action="toggleMikvehChecklist"][data-item="hair"]');
 checklist.checked = true;
@@ -55,5 +58,7 @@ document.getElementById('ovulation_immersion_date').value = '2026-11-18';
 UI.actions.addOvulationObservation();
 assert.equal(State.get().ovulationObservations.length, 1);
 assert.equal(State.get().ovulationObservations[0].immersionDate, '2026-11-18');
+UI.actions.deleteOvulationObservation({ dataset: { id: State.get().ovulationObservations[0].id } });
+assert.equal(State.get().ovulationObservations.length, 0, 'ovulation observation can be deleted locally');
 
 console.log('Local tools UI persistence tests passed.');
