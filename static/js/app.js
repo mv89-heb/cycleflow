@@ -235,9 +235,15 @@ const HalachaLogic = {
             .filter(period => Utils.halachicDate(period, cityId) <= asOfDate)
             .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)));
         let missedCount = 0;
+        let deviationCount = 0;
+        let windowStart = Utils.fmt(Utils.addDays(Utils.newDate(candidate.establishedAt), 1));
         let guard = 0;
         while (expectedDate && expectedDate <= asOfDate && guard < 600) {
-            const matchingPeriod = periods.some(period => {
+            const windowPeriods = periods.filter(period => {
+                const periodDate = Utils.halachicDate(period, cityId);
+                return periodDate >= windowStart && periodDate <= expectedDate;
+            });
+            const matchingPeriod = windowPeriods.some(period => {
                 const periodDate = Utils.halachicDate(period, cityId);
                 if (periodDate !== expectedDate) return false;
                 const info = CalendarServices.getEventDateInfo(period, cityId);
@@ -245,20 +251,30 @@ const HalachaLogic = {
             });
             if (matchingPeriod) {
                 missedCount = 0;
-            } else if (expectedDate < asOfDate) {
-                missedCount += 1;
+                deviationCount = 0;
             } else {
-                break;
+                deviationCount = Math.min(3, deviationCount + windowPeriods.length);
+                if (expectedDate < asOfDate) missedCount += 1;
+                else break;
             }
+            windowStart = Utils.fmt(Utils.addDays(Utils.newDate(expectedDate), 1));
             const nextDate = CalendarServices.getNextYomHachodeshDate(expectedDate, candidate.day);
             if (!nextDate || nextDate <= expectedDate) return null;
             expectedDate = nextDate;
             guard += 1;
         }
+        if (expectedDate > asOfDate) {
+            const pendingPeriods = periods.filter(period => {
+                const periodDate = Utils.halachicDate(period, cityId);
+                return periodDate >= windowStart && periodDate <= asOfDate;
+            });
+            if (pendingPeriods.length) deviationCount = Math.min(3, deviationCount + pendingPeriods.length);
+        }
         return {
             type: 'hachodesh', day: candidate.day, onah: candidate.onah,
             establishedAt: candidate.establishedAt, expectedDate,
-            missedCount, active: missedCount < 3
+            missedCount, deviationCount, deviated: missedCount > 0 || deviationCount > 0,
+            active: missedCount < 3
         };
     },
     getSuccessfulHefsekDates(state = State.get()) {
