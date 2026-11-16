@@ -96,6 +96,19 @@
     }
   }
 
+  function formatHebrewMonth(value) {
+    if (!validDate(value)) return '';
+    const { year, month, day } = dateParts(value);
+    const instant = new Date(Date.UTC(year, month - 1, day, 12));
+    try {
+      return new Intl.DateTimeFormat('he-u-ca-hebrew', {
+        timeZone: TIME_ZONE, month: 'long', year: 'numeric'
+      }).format(instant);
+    } catch (_) {
+      return '';
+    }
+  }
+
   function resolveEventRelation(record, fallbackCityId) {
     if (!record || !validDate(record.date)) return 'unknown';
     const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId') ? record.cityId : (fallbackCityId || null);
@@ -127,7 +140,7 @@
   }
 
   globalThis.CycleFlowCalendar = Object.freeze({
-    CITIES, cityById, getSunset, formatHebrewDate, getEventDateInfo,
+    CITIES, cityById, getSunset, formatHebrewDate, formatHebrewMonth, getEventDateInfo,
     resolveEventRelation, getCurrentHebrewDate, addCivilDays, TIME_ZONE
   });
 })();
