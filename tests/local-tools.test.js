@@ -30,7 +30,7 @@ assert.throws(() => tools.zonedLocalToUtc('2026-03-27', '02:30'), /אינה קי
 assert.throws(() => tools.zonedLocalToUtc('2026-10-25', '01:30'), /אינה חד-משמעית/,
   'ambiguous local times during DST transition are rejected');
 assert.throws(() => tools.buildIcs([]), /אין תזכורות/);
-assert.throws(() => tools.buildIcs([{ date: '2026-02-30', title: 'invalid' }]), /תזכורת לא תקין/);
+assert.throws(() => tools.buildIcs([{ date: '2026-02-30', title: 'invalid' }]), /תזכורת ללא תאריך/);
 
 const stain = tools.buildStainSummary({
   date: '2026-11-16', time: '10:20', color: 'brown', size: 'small',
