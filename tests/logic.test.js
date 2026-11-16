@@ -813,6 +813,10 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'the dashboard links to the Hebrew fixed-veset source');
     assert(sources?.querySelector('a[href="https://www.yoatzot.org/542/"]'),
        'the dashboard links to the source explaining local tzeit and mikveh timing');
+    assert(sources?.querySelector('a[href="https://www.yoatzot.org/faq/veset-hadilug/"]'),
+       'the dashboard links to the source for unusual dilug patterns');
+    assert(sources?.querySelector('a[href="https://www.yoatzot.org/674/"]'),
+       'the dashboard links to the source for veset haguf');
 })();
 
 (function testImmersionNightDoesNotInventTzeit() {
@@ -873,6 +877,54 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'an explicitly recorded sunset relation is labeled as recorded');
     eq(recorded.provenance?.assumptions?.onsetRelationSource, 'explicit-recorded-sunset-relation',
        'provenance identifies the manually recorded relation source');
+})();
+
+(function testPotentialVesetDilugIsFlaggedForReviewWithoutAutoApplying() {
+    const seed = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
+    const calendar = seed.window.CycleFlowCalendar;
+    let day21 = null;
+    for (let cursor = '2026-01-01'; cursor <= '2027-01-01'; cursor = calendar.addCivilDays(cursor, 1)) {
+        const parts = calendar.getHebrewDateParts(cursor);
+        if (parts && parts.day === 21) { day21 = cursor; break; }
+    }
+    assert(day21, 'a Hebrew day-21 seed date is available');
+    const month2Start = calendar.getNextYomHachodeshDate(day21, 1);
+    const day19 = calendar.addCivilDays(month2Start, 18);
+    const month3Start = calendar.getNextYomHachodeshDate(day19, 1);
+    const day17 = calendar.addCivilDays(month3Start, 16);
+    const periods = [day21, day19, day17].map((date, index) => ({
+        date, type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh',
+        id: `dilug-${index}`
+    }));
+    const api = loadApp({
+        periods, hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate(day17));
+    const pattern = status.provenance?.assumptions?.potentialSpecialPatterns?.[0];
+    assert(pattern, 'three successive monthly dates decreasing by two days are flagged as a possible dilug pattern');
+    eq(pattern.type, 'veset-dilug-hachodesh', 'the possible pattern is identified without claiming it is established');
+    eq(pattern.stepDays, -2, 'the monthly date shift is captured for review');
+    eq(status.provenance?.reviewState, 'needs-review', 'the possible unusual pattern requires human review');
+    assert(status.provenance?.ruleIds?.includes('potential-veset-dilug-review'),
+       'provenance records the special-pattern review rule');
+    assert(status.provenance?.sourceEvents?.filter(event => event.type === 'dilug-pattern-evidence').length === 3,
+       'all three source events are attached as evidence');
+    assert(!status.provenance?.ruleIds?.includes('fixed-veset-dilug-hachodesh'),
+       'the detector does not automatically activate a dilug halachic rule');
+
+    const differentStepDate = calendar.addCivilDays(month3Start, 17);
+    const nonPatternApi = loadApp({
+        periods: [day21, day19, differentStepDate].map((date, index) => ({
+            date, type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh',
+            id: `not-dilug-${index}`
+        })),
+        hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const nonPatternStatus = nonPatternApi.HalachaLogic.getStatus(nonPatternApi.Utils.newDate(differentStepDate));
+    eq(nonPatternStatus.provenance?.assumptions?.potentialSpecialPatterns?.length || 0, 0,
+       'unequal monthly shifts are not flagged as a dilug candidate');
 })();
 
 (function testFixedVesetRequiresKnownOnah() {

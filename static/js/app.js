@@ -739,6 +739,38 @@ HalachaLogic.getStatus = function(date) {
             ? HalachaLogic.getFixedHachodeshStatus(dateLabel)
             : HalachaLogic.getFixedHaflagahStatus(dateLabel))
         : null;
+    const potentialSpecialPatterns = [];
+    if (periods.length >= 3 && CalendarServices && CalendarServices.getHebrewDateParts &&
+        CalendarServices.getNextYomHachodeshDate && CalendarServices.getEventDateInfo) {
+        const recent = periods.slice(-3).map(period => ({
+            period,
+            effectiveDate: Utils.halachicDate(period, cityId),
+            info: CalendarServices.getEventDateInfo(period, cityId)
+        }));
+        const parts = recent.map(item => CalendarServices.getHebrewDateParts(item.effectiveDate));
+        const onot = recent.map(item => item.info ? item.info.estimatedOnah : 'unknown');
+        const consecutiveMonths = parts.every(Boolean) &&
+            [0, 1].every(index => {
+                const nextMonthDayOne = CalendarServices.getNextYomHachodeshDate(recent[index].effectiveDate, 1);
+                const nextMonth = nextMonthDayOne && CalendarServices.getHebrewDateParts(nextMonthDayOne);
+                return Boolean(nextMonth && parts[index + 1] &&
+                    nextMonth.month === parts[index + 1].month &&
+                    nextMonth.year === parts[index + 1].year);
+            });
+        if (consecutiveMonths && onot[0] !== 'unknown' && onot.every(onah => onah === onot[0])) {
+            const firstStep = parts[1].day - parts[0].day;
+            const secondStep = parts[2].day - parts[1].day;
+            if (firstStep !== 0 && firstStep === secondStep) {
+                potentialSpecialPatterns.push({
+                    type: 'veset-dilug-hachodesh',
+                    stepDays: firstStep,
+                    onah: onot[0],
+                    evidenceDates: recent.map(item => item.effectiveDate),
+                    evidenceEventIds: recent.map(item => item.period.id || item.effectiveDate)
+                });
+            }
+        }
+    }
     const evidenceDates = new Set(fixedCandidates.flatMap(candidate => candidate.evidenceDates || []));
     periods.filter(period => evidenceDates.has(Utils.halachicDate(period, cityId))).forEach(period => {
         const eventInfo = CalendarServices && CalendarServices.getEventDateInfo
@@ -754,6 +786,19 @@ HalachaLogic.getStatus = function(date) {
             estimatedOnah: eventInfo ? eventInfo.estimatedOnah : 'unknown',
             onahConfidence: eventInfo ? eventInfo.onahConfidence : 'unknown',
             recordedRuleContext: summarizeRuleContext(period.ruleContext)
+        });
+    });
+    potentialSpecialPatterns.forEach(pattern => {
+        periods.filter(period => pattern.evidenceDates.includes(Utils.halachicDate(period, cityId))).forEach(period => {
+            const eventInfo = CalendarServices.getEventDateInfo(period, cityId);
+            addSourceEvent({
+                type: 'dilug-pattern-evidence', id: period.id || null, date: period.date,
+                effectiveDate: Utils.halachicDate(period, cityId),
+                dateConfidence: eventInfo ? eventInfo.dateConfidence : 'unknown',
+                relationSource: eventInfo ? eventInfo.relationSource : 'unknown',
+                relation: eventInfo ? eventInfo.relation : 'unknown',
+                estimatedOnah: eventInfo ? eventInfo.estimatedOnah : 'unknown'
+            });
         });
     });
     if (lastPeriod && lastPeriod.lastRelations) {
@@ -781,6 +826,7 @@ HalachaLogic.getStatus = function(date) {
     if (fixedCandidate) ruleIds.push(`fixed-veset-${fixedCandidate.type}`);
     if (fixedPatternStatus && !fixedPatternStatus.active) ruleIds.push('fixed-veset-uprooted');
     if (fixedCandidates.length > 1) ruleIds.push('fixed-veset-ambiguous-review');
+    if (potentialSpecialPatterns.length) ruleIds.push('potential-veset-dilug-review');
     if (statusText.includes('וסת קבוע') && statusText.includes('החודש')) ruleIds.push('fixed-veset-hachodesh');
     if (statusText.includes('וסת קבוע') && statusText.includes('הפלגה')) ruleIds.push('fixed-veset-haflagah');
     if (statusText.includes('וסת החודש')) ruleIds.push('veset-hachodesh');
@@ -792,7 +838,8 @@ HalachaLogic.getStatus = function(date) {
     const noData = !lastPeriod;
     const needsReview = Boolean(status && status.type === 'needs-review') ||
         Boolean(lastPeriod && (!lastInfo || lastInfo.relation === 'unknown')) ||
-        fixedCandidates.length > 1;
+        fixedCandidates.length > 1 ||
+        potentialSpecialPatterns.length > 0;
     const confidence = needsReview ? 'needs-review' : (noData ? 'insufficient-data' : 'advisory');
     return {
         ...status,
@@ -828,6 +875,7 @@ HalachaLogic.getStatus = function(date) {
                 onsetSunsetTimeEstimate: lastInfo ? lastInfo.relationSunsetTime : null,
                 onsetEstimatedOnah: lastInfo ? lastInfo.estimatedOnah : 'unknown',
                 onsetOnahConfidence: lastInfo ? lastInfo.onahConfidence : 'unknown',
+                potentialSpecialPatterns,
                 fixedPattern: fixedPatternStatus ? {
                     type: fixedPatternStatus.type,
                     active: fixedPatternStatus.active,
@@ -1192,7 +1240,9 @@ const UI = {
                             ['מדריך עונות', 'https://www.yoatzot.org/547/'],
                             ['מינימום המתנה', 'https://www.yoatzot.org/526/'],
                             ['עונה בינונית', 'https://www.yoatzot.org/672/'],
-                            ['תזמון טבילה וצאת הכוכבים', 'https://www.yoatzot.org/542/']
+                            ['תזמון טבילה וצאת הכוכבים', 'https://www.yoatzot.org/542/'],
+                            ['וסת דילוג – שאלת ותשובת נישמת', 'https://www.yoatzot.org/faq/veset-hadilug/'],
+                            ['וסת הגוף – סימנים גופניים', 'https://www.yoatzot.org/674/']
                         ],
                         'chabad-onot-count-sources': [
                             ['מקור לחישוב עונות חב״ד', 'https://www.mikvah.org/images/cheshbon%20calendar%20outline.pdf']
@@ -1238,6 +1288,8 @@ const UI = {
                         `אמינות תאריך תחילת הווסת: ${values.onsetDateConfidence === 'recorded' ? 'נרשם במפורש' : (values.onsetDateConfidence === 'astronomical-estimate' ? 'הוסק משעה מול שקיעה אסטרונומית משוערת' : 'לא ידועה')}`,
                         `שעת שקיעה ששימשה לאומדן: ${values.onsetSunsetTimeEstimate || 'לא חושבה'}`,
                         `תאריך הפסק אחרון: ${values.hefsekDate || 'לא נרשם'}`,
+                        ...(values.potentialSpecialPatterns || []).map(pattern =>
+                            `דפוס חריג אפשרי: וסת דילוג בחודש, שינוי ${pattern.stepDays > 0 ? '+' : ''}${pattern.stepDays} ימים בכל חודש, עונת ${pattern.onah === 'day' ? 'יום' : 'לילה'} – נדרש בירור; לא הופעל כלל חישוב`),
                         'זמן טבילה: לאחר צאת הכוכבים לפי זמן המקווה המקומי; המערכת אינה מחשבת צאת הכוכבים'
                     ].join(' · ');
                 }
@@ -1248,6 +1300,7 @@ const UI = {
                     const eventLabels = {
                         period: 'רישום וסת',
                         'fixed-pattern-evidence': 'ראיה ששימשה לזיהוי דפוס קבוע',
+                        'dilug-pattern-evidence': 'ראיה לדפוס דילוג אפשרי – לבירור',
                         'last-relations': 'יחסי אישות אחרונים',
                         hefsek: 'הפסק טהרה'
                     };

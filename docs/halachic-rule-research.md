@@ -190,13 +190,21 @@ For the selected Yoatzot Halacha source profile, CycleFlow now calculates the tw
 - **Chabad haflagah:** uses the dedicated onot-count implementation described above, never the standard day-interval formula. The long-cycle exemption is not automatically applied in the Chabad selector because its applicability to that count method has not been verified.
 - **Long-cycle exemption:** the source profile suspends onah beinonit and yom hachodesh after three consecutive intervals of 32 days or more. One or two shorter intervals resume them; a subsequent long interval restores the exemption immediately. Three consecutive shorter intervals reset the requirement for three long intervals.
 
-**Still intentionally not automated:** unusual or compound fixed-veset patterns (including veset haguf, dilug, and overlapping patterns) that the source itself directs users to review with a halachic authority. The two common patterns—fixed yom hachodesh and standard fixed haflagah—now have tested state machines for establishment, deviations, uprooting, and reinstatement.
+**Special-pattern handling:**
+
+- **Veset dilug:** CycleFlow now detects a *possible* pattern when the three most recent known onsets fall in three consecutive Hebrew months, their Hebrew day numbers change by the same non-zero amount each month, and all three onsets have the same known day/night onah. The dashboard flags this as **needs review**, attaches all three source events, and links to the source. It does **not** establish or calculate a dilug veset, project the next onah, or suppress any of the ordinary onot. This is a conservative alert only; other dilug variants may still be missed.
+- **Veset haguf:** remains review-only. The source requires recording a distinct, consistently timed physical symptom in relation to blood-flow, and describes multiple timing cases, non-fixed/fixed states, uprooting, and compound forms. The current event model does not capture symptom start/end, uniqueness, relation to flow, or interval; date-only menstrual records cannot safely infer this pattern.
+- **Overlapping, compound, Or Zarua, hormonal/fertility, and other unusual patterns:** remain review-only pending dedicated data capture and source-specific regression tests.
+
+The two common patterns—fixed yom hachodesh and standard fixed haflagah—continue to use tested state machines for establishment, deviations, uprooting, and reinstatement.
 
 Sources:
 - [Veset Hachodesh](https://www.yoatzot.org/677/) – including the day-30 / 29-day-month case and the long-cycle exemption.
 - [Haflagah (Interval)](https://www.yoatzot.org/670/) – Hebrew-date interval, onah of the latest flow, Chabad distinction, and differing views on shorter cycles.
 - [Guide to Observing Vesatot](https://www.yoatzot.org/547/) – the three basic onot for a non-fixed pattern.
 - [Keeping a Veset Calendar](https://www.yoatzot.org/548/) – practical calendar calculations.
+- [Veset hadilug Q&A](https://www.yoatzot.org/faq/veset-hadilug/) – demonstrates a fixed monthly Hebrew-date increment/decrement pattern, same onah, and dormancy after deviations.
+- [Veset Haguf](https://www.yoatzot.org/674/) – distinct symptoms, timing relative to flow, fixed/non-fixed patterns, uprooting, and compound cases.
 
 ### Tzeit and immersion timing boundary
 
@@ -210,9 +218,9 @@ Source:
 
 - **Research verified:** the documented public sources are sufficient to implement the common, explicitly scoped rule families and negative/edge-case tests.
 - **Selected baseline:** standard common rules follow the published Nishmat–Yoatzot Halacha guides; Chabad haflagah follows the separate onot-count sources listed above. The user has chosen to rely on these published source families as the system's baseline.
-- **Implemented:** Israel date/time handling, event onah estimates, explicit minimum-wait and onah-beinonit choices, common fixed-veset state machines, Chabad haflagah count, versioned event context, and calculation provenance.
+- **Implemented:** Israel date/time handling, event onah estimates, explicit minimum-wait and onah-beinonit choices, common fixed-veset state machines, Chabad haflagah count, versioned event context, calculation provenance, and a review-only detector for one narrowly defined veset-dilug date pattern.
 - **Not an individualized psak:** source-based calculations are advisory. The source pages themselves describe differing community practices and individual-question cases; unsupported exceptions remain review-only.
-- **Release boundary:** do not automate stains, veset haguf, dilug, overlapping patterns, hormonal/fertility exceptions, or unusual cases without a dedicated source profile, explicit rule specification, and regression tests. Do not present a calculated tzeit or immersion time until a local convention is selected.
+- **Release boundary:** do not automatically apply the detected dilug pattern as a halachic rule. Do not automate stains, veset haguf, overlapping patterns, hormonal/fertility exceptions, or unusual cases without dedicated event capture, a source-specific rule specification, and regression tests. Do not present a calculated tzeit or immersion time until a local convention is selected.
 
 ## Implementation boundary
 
