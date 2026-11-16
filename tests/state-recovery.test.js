@@ -1,10 +1,12 @@
 /** Verify invalid local state is preserved and cannot be overwritten silently. */
+process.env.TZ = 'Asia/Jerusalem';
 const fs = require('fs');
 const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const dom = new JSDOM('', { runScripts: 'outside-only', url: 'https://cycleflow.test/' });
 const { window } = dom;
+assert.equal(new Date('2026-11-17T00:00:00').getUTCDate(), 16, 'test environment must exercise UTC date rollover in Israel');
 const STORAGE_KEY = 'cycleflow_v61_python_pro';
 const RECOVERY_KEY = 'cycleflow_recovery_v1';
 const original = '{"periods":"corrupt-or-unsupported"}';
