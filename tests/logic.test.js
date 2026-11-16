@@ -42,16 +42,9 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const { todayCivilDate, window } = loadApp({
         periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings }
     });
-    const NativeDate = window.Date;
-    window.Date = class FixedDate extends NativeDate {
-        constructor(...args) {
-            if (args.length) super(...args);
-            else super('2026-11-16T22:30:00.000Z');
-        }
-    };
-    eq(todayCivilDate(), '2026-11-17',
+    const instant = new window.Date('2026-11-16T22:30:00.000Z');
+    eq(todayCivilDate(instant), '2026-11-17',
        'screens use the Israel civil date after midnight in Israel even if the device date is still previous day');
-    window.Date = NativeDate;
 })();
 
 (function testUtils() {
