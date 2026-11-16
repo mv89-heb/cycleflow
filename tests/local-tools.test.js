@@ -16,6 +16,10 @@ assert.match(timed, /DTSTART:[0-9]{8}T[0-9]{6}Z/);
 assert.match(timed, /DTEND:[0-9]{8}T[0-9]{6}Z/);
 assert(timed.includes('בדיקה\\, תזכורת\\; אישית'));
 assert(timed.includes('שורה ראשונה\\nשורה שנייה'));
+const longIcs = tools.buildIcs([{ date: '2026-11-16', title: 'תזכורת'.repeat(20), notes: 'פרט ארוך '.repeat(60) }]);
+for (const line of longIcs.split(/\r\n/)) {
+  assert(new TextEncoder().encode(line).length <= 75, 'ICS content lines must respect the 75-octet folding limit');
+}
 
 const winterUtc = tools.zonedLocalToUtc('2026-11-16', '18:30');
 const summerUtc = tools.zonedLocalToUtc('2026-07-16', '18:30');
