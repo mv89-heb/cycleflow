@@ -258,7 +258,7 @@ const HalachaLogic = {
         const getOnahLabels = () => {
             const labels = [];
             if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && dStr === Utils.fmt(Utils.addDays(pDate, 29))) labels.push({ label: 'עונה בינונית (30)', day: 30 });
-            if (!longCycleExempt && onsetInfo && onsetInfo.relation !== 'unknown' && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) labels.push({ label: 'עונה בינונית (31)', day: 31 });
+            if (onsetInfo && onsetInfo.relation !== 'unknown' && onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30))) labels.push({ label: 'עונה בינונית (31)', day: 31 });
             if (hachodeshDate && dStr === hachodeshDate) labels.push({ label: 'וסת החודש', day: null });
             if (haflagahDate && dStr === haflagahDate) labels.push({ label: `וסת הפלגה (${intervalDays})`, day: null });
             return labels;
