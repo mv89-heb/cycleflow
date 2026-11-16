@@ -1020,7 +1020,7 @@ const UI = {
             const candidates = HalachaLogic.getFixedVesetCandidates();
             const note = document.createElement('p');
             note.className = 'text-muted small-note';
-            note.textContent = 'זיהוי דפוסים פשוטים בלבד. זה אינו קובע שהווסת הקבוע בתוקף, אינו מבצע עקירה/הותרה, ואינו מבטל התראות רגילות.';
+            note.textContent = 'וסת החודש הקבוע מנוהל אוטומטית בדפוס פשוט; וסת הפלגה קבועה ודפוסים חריגים נשארים לבדיקה. יש לאמת כל מקרה שאינו תואם בדיוק לכללים.';
             fixedSummary.appendChild(note);
             if (!candidates.length) {
                 const empty = document.createElement('p');
