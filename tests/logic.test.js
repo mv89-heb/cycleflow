@@ -282,6 +282,23 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'rule context records when the user entered the event');
 })();
 
+(function testChabadRuleContextUsesSeparateSourceSet() {
+    const { UI, State, document } = loadApp({
+        periods: [], hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, minhag: 'chabad', cityId: 'beit-shemesh' }
+    });
+    UI.toast = () => {};
+    UI.switchTab = () => {};
+    document.getElementById('report_date').value = '2026-06-01';
+    document.getElementById('report_time').value = '10:00';
+    UI.actions.reportPeriod.call(UI);
+    const context = State.get().periods[0]?.ruleContext;
+    eq(context?.rulesetId, 'cycleflow-chabad-onot-count',
+       'Chabad event records identify the separate onot-count ruleset');
+    assert(context?.sourceIds?.includes('chabad-onot-count-sources'),
+       'Chabad event records retain the dedicated source family');
+})();
+
 (function testOnahStatusUsesEstimatedDayNightFromOnset() {
     const dayState = {
         periods: [{ date: '2026-11-16', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', id: 'day-onset' }],
