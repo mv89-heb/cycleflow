@@ -59,6 +59,25 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     assert(periods[0].date === '2026-06-15', 'chronological helpers do not mutate source array');
 })();
 
+(function testSettingsAndCheckboxChangesPersistAfterControlUpdates() {
+    const { UI, State, document, window, Utils } = loadApp({
+        periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings }
+    });
+    UI.cacheDOM();
+    UI.bindEvents();
+
+    const city = document.getElementById('set_city');
+    city.value = 'beit-shemesh';
+    city.dispatchEvent(new window.Event('change', { bubbles: true }));
+    eq(State.get().settings.cityId, 'beit-shemesh', 'city selection persists on change');
+
+    UI.selectedDate = Utils.newDate('2026-06-10');
+    const morning = document.getElementById('chk_morning');
+    morning.checked = true;
+    morning.dispatchEvent(new window.Event('change', { bubbles: true }));
+    eq(State.get().daily['2026-06-10'].checks.morning, true, 'checkbox state persists after change');
+})();
+
 (function testHalacha() {
     const state = {
         periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],
