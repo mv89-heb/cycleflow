@@ -45,6 +45,10 @@ const validCalendarWindow = validCalendarDom.window;
 validCalendarWindow.eval(hardening);
 const calendarState = {
   periods: [{ date: '2026-11-16', type: 'veset', isSunset: true, eventTime: '17:05', cityId: 'beit-shemesh', sunsetRelation: 'after' }],
+  manualReminders: [{ id: 'r1', date: '2026-11-17', title: 'בדיקה', time: '18:00', notes: '' }],
+  stainReports: [{ id: 's1', date: '2026-11-18', color: 'brown', size: 'small', surface: 'tissue', source: 'unknown', note: '' }],
+  mikvehChecklist: { '2026-11-19': ['hair'] },
+  ovulationObservations: [{ id: 'o1', date: '2026-11-20', type: 'opk_positive', immersionDate: '2026-11-23', note: '' }],
   hefseks: {}, hefsekMeta: { '2026-11-20': { eventTime: '16:30', cityId: 'beit-shemesh', sunsetRelation: 'before' } },
   daily: {}, settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: 'beit-shemesh' }
 };
