@@ -150,6 +150,8 @@
             const imported = validateState(await decrypt(raw, passphrase));
             // Transactional import: validate/decrypt everything before touching localStorage.
             const serialized = JSON.stringify(imported);
+            // A validated user-selected backup is the explicit recovery path.
+            localStorage.removeItem('cycleflow_recovery_v1');
             localStorage.setItem(STORAGE_KEY, serialized);
             if (localStorage.getItem(STORAGE_KEY) !== serialized) throw new Error('שמירת הגיבוי נכשלה');
             toast('שחזור הושלם בהצלחה');
