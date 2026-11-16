@@ -41,7 +41,7 @@
     }
 
     async function encrypt(state, passphrase) {
-        if (typeof passphrase !== 'string' || passphrase.length < 4) throw new Error('הסיסמה חייבת לפחות 4 תווים');
+        if (typeof passphrase !== 'string' || passphrase.length < 10) throw new Error('סיסמת גיבוי חייבת להכיל לפחות 10 תווים');
         const salt = crypto.getRandomValues(new Uint8Array(16));
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const key = await deriveKey(passphrase, salt, ITERATIONS);
@@ -100,6 +100,10 @@
         return state;
     }
 
+    if (window.__CYCLEFLOW_TEST__) {
+        window.__CycleFlowBackupTest = { encrypt, decrypt, validateState, importBackup };
+    }
+
     function currentState() {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) throw new Error('אין נתונים לגיבוי');
@@ -134,7 +138,7 @@
         try {
             const passphrase = prompt('בחרי סיסמה להצפנת הגיבוי (יש לזכור אותה):');
             if (!passphrase) return;
-            if (passphrase.length < 4) throw new Error('הסיסמה חייבת לפחות 4 תווים');
+            if (passphrase.length < 10) throw new Error('סיסמת גיבוי חייבת להכיל לפחות 10 תווים');
             download(await encrypt(currentState(), passphrase));
             toast('גיבוי מוצפן נוצר בהצלחה');
         } catch (error) { toast(error.message || 'שגיאה ביצירת הגיבוי', true); }
