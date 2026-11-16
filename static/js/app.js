@@ -195,8 +195,12 @@ const HalachaLogic = {
         let minWaitDays = 5;
         if (minimumWaitMode === 'four_from_last_relations') {
             const lastRelations = lastP.lastRelations;
-            if (!lastRelations || !lastRelations.date || !lastRelations.eventTime || !lastRelations.cityId) {
-                return { type: 'needs-review', text: 'חסר תיעוד תאריך, שעה ויישוב של יחסי האישות האחרונים – לא ניתן לחשב את שיטת ארבעת הימים', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', canHefsek: false };
+            if (!lastRelations || !lastRelations.date || !lastRelations.eventTime || !lastRelations.cityId ||
+                !lastP.eventTime || !lastP.cityId) {
+                return { type: 'needs-review', text: 'חסר תיעוד תאריך ושעה של תחילת הנידה או יחסי האישות האחרונים – לא ניתן לחשב את שיטת ארבעת הימים', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', canHefsek: false };
+            }
+            if (`${lastRelations.date}T${lastRelations.eventTime}` >= `${lastP.date}T${lastP.eventTime}`) {
+                return { type: 'needs-review', text: 'יחסי האישות האחרונים אינם מתועדים לפני תחילת הנידה – נדרשת בדיקה', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', canHefsek: false };
             }
             const lastRelationsInfo = CalendarServices && CalendarServices.getEventDateInfo
                 ? CalendarServices.getEventDateInfo(lastRelations, null)
@@ -870,8 +874,12 @@ const UI = {
             if (!isSpotting && minimumWaitMode === 'four_from_last_relations') {
                 const lastRelationsDate = document.getElementById('last_relations_date')?.value || '';
                 const lastRelationsTime = document.getElementById('last_relations_time')?.value || '';
-                if (!lastRelationsDate || !lastRelationsTime || !cityId) {
-                    this.toast('לשיטת ארבעת הימים יש להזין תאריך, שעה ויישוב של יחסי האישות האחרונים', true);
+                if (!lastRelationsDate || !lastRelationsTime || !eventTime || !cityId) {
+                    this.toast('לשיטת ארבעת הימים יש להזין תאריך ושעה של יחסי האישות האחרונים וגם שעת תחילת הנידה, לאחר בחירת יישוב', true);
+                    return;
+                }
+                if (`${lastRelationsDate}T${lastRelationsTime}` >= `${d}T${eventTime}`) {
+                    this.toast('יחסי האישות האחרונים חייבים להיות לפני תחילת הנידה', true);
                     return;
                 }
                 const relationRecord = { date: lastRelationsDate, eventTime: lastRelationsTime, cityId };
