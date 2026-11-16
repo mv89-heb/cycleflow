@@ -189,17 +189,47 @@
     return null;
   }
 
-  function resolveEventRelation(record, fallbackCityId) {
-    if (!record || !validDate(record.date)) return 'unknown';
+  function resolveEventRelationDetails(record, fallbackCityId) {
+    if (!record || !validDate(record.date)) {
+      return { relation: 'unknown', source: 'missing-or-invalid-event', confidence: 'unknown', approximate: false };
+    }
     const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId') ? record.cityId : (fallbackCityId || null);
     if (typeof record.eventTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(record.eventTime)) {
       const sunset = getSunset(record.date, cityId);
-      if (sunset) return record.eventTime >= sunset.time ? 'after' : 'before';
+      if (sunset) {
+        return {
+          relation: record.eventTime >= sunset.time ? 'after' : 'before',
+          source: 'event-time-compared-with-approximate-sunset',
+          confidence: 'astronomical-estimate',
+          approximate: true,
+          cityId,
+          sunsetTime: sunset.time
+        };
+      }
     }
-    if (record.sunsetRelation === 'before' || record.sunsetRelation === 'after') return record.sunsetRelation;
-    if (record.isSunset === true) return 'after';
-    if (record.isSunset === false) return 'before';
-    return 'unknown';
+    if (record.sunsetRelation === 'before' || record.sunsetRelation === 'after') {
+      return {
+        relation: record.sunsetRelation,
+        source: 'explicit-recorded-sunset-relation',
+        confidence: 'recorded',
+        approximate: false,
+        cityId
+      };
+    }
+    if (record.isSunset === true || record.isSunset === false) {
+      return {
+        relation: record.isSunset ? 'after' : 'before',
+        source: 'explicit-legacy-sunset-flag',
+        confidence: 'recorded',
+        approximate: false,
+        cityId
+      };
+    }
+    return { relation: 'unknown', source: 'missing-sunset-relation', confidence: 'unknown', approximate: false, cityId };
+  }
+
+  function resolveEventRelation(record, fallbackCityId) {
+    return resolveEventRelationDetails(record, fallbackCityId).relation;
   }
 
   function resolveEventOnah(record, fallbackCityId) {
@@ -218,8 +248,10 @@
   }
 
   function getEventDateInfo(record, fallbackCityId) {
-    const relation = resolveEventRelation(record, fallbackCityId);
-    const cityId = record && (Object.prototype.hasOwnProperty.call(record, 'cityId') ? record.cityId : fallbackCityId);
+    if (!record || !validDate(record.date)) return null;
+    const relationDetails = resolveEventRelationDetails(record, fallbackCityId);
+    const relation = relationDetails.relation;
+    const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId') ? record.cityId : fallbackCityId;
     const effectiveDate = relation === 'after' ? addCivilDays(record.date, 1) : record.date;
     const hebrewDate = formatHebrewDate(record.date, { afterSunset: relation === 'after' });
     const sunset = getSunset(record.date, cityId);
@@ -230,7 +262,9 @@
       sunriseTime: sunrise ? sunrise.time : null,
       sunsetTime: sunset ? sunset.time : null,
       approximate: Boolean(sunset && sunrise),
-      dateConfidence: relation === 'unknown' ? 'unknown' : 'recorded',
+      dateConfidence: relationDetails.confidence,
+      relationSource: relationDetails.source,
+      relationSunsetTime: relationDetails.sunsetTime || null,
       onahConfidence: estimatedOnah === 'unknown' ? 'unknown' : 'astronomical-estimate'
     };
   }
@@ -269,6 +303,6 @@
   globalThis.CycleFlowCalendar = Object.freeze({
     CITIES, cityById, getSunrise, getSunset, getSolarTimes,
     formatHebrewDate, formatHebrewMonth, getHebrewDateParts, getNextYomHachodeshDate, getEventDateInfo,
-    resolveEventRelation, resolveEventOnah, getCurrentHebrewDate, getIsraelCivilDate, getIsraelClock, addCivilDays, TIME_ZONE
+    resolveEventRelation, resolveEventRelationDetails, resolveEventOnah, getCurrentHebrewDate, getIsraelCivilDate, getIsraelClock, addCivilDays, TIME_ZONE
   });
 })();
