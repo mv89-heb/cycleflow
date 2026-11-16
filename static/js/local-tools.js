@@ -51,7 +51,7 @@
   function escapeIcsText(value) {
     return String(value ?? '')
       .replace(/\\/g, '\\\\')
-      .replace(/\r?\n/g, '\n')
+      .replace(/\r?\n/g, '\\n')
       .replace(/,/g, '\\,')
       .replace(/;/g, '\\;');
   }
