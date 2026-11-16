@@ -186,10 +186,21 @@ class StateManager {
     captureCurrentCalculation() {
         const history = window.CycleFlowCalculationHistory;
         if (!history || typeof HalachaLogic === 'undefined') return false;
-        const evaluatedDate = todayCivilDate();
-        const status = HalachaLogic.getStatus(Utils.newDate(evaluatedDate));
-        const snapshot = history.createSnapshot(this.state, evaluatedDate, status);
-        return history.append(this.state, snapshot);
+        try {
+            const evaluatedDate = todayCivilDate();
+            const status = HalachaLogic.getStatus(Utils.newDate(evaluatedDate));
+            const snapshot = history.createSnapshot(this.state, evaluatedDate, status);
+            if (Array.isArray(this.state.calculationSnapshots) &&
+                this.state.calculationSnapshots.length >= history.MAX_SNAPSHOTS) {
+                window.dispatchEvent(new CustomEvent('cycleflow:calculation-history-full'));
+                return false;
+            }
+            return history.append(this.state, snapshot);
+        } catch (error) {
+            window.dispatchEvent(new CustomEvent('cycleflow:calculation-history-error'));
+            console.warn('CycleFlow could not capture a calculation snapshot.', error);
+            return false;
+        }
     }
     update(updater) {
         const previous = JSON.parse(JSON.stringify(this.state));
