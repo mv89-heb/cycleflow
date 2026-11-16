@@ -51,7 +51,7 @@
   function escapeIcsText(value) {
     return String(value ?? '')
       .replace(/\\/g, '\\\\')
-      .replace(/\r?\n/g, '\\n')
+      .replace(/\r?\n/g, '\n')
       .replace(/,/g, '\\,')
       .replace(/;/g, '\\;');
   }
@@ -163,7 +163,7 @@
   }
 
   function buildSymptomSummary(item) {
-    const validTime = value => typeof value === 'string' && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+    const validTime = value => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
     if (!item || !validDate(item.date) ||
         !Object.prototype.hasOwnProperty.call(SYMPTOM_LABELS, item.type) ||
         (item.time != null && !validTime(item.time)) ||
@@ -189,7 +189,7 @@
       `תאריך תחילת דימום שסומן כקשור: ${item.relatedFlowDate || 'לא צוין'}`,
       `הערות: ${String(item.note || '').trim() || 'ללא'}`,
       'הקישור לדימום הוא דיווח משתמש בלבד; לא בוצעה התאמה או מסקנה אוטומטית.'
-    ].join('\\n');
+    ].join('\n');
   }
 
   function buildDoctorSummary(state, from, to, options = {}) {
@@ -229,7 +229,7 @@
     if (options.includeSymptoms) {
       const symptoms = (state.symptomObservations || []).filter(item => inRange(item.date)).sort((a, b) => a.date.localeCompare(b.date));
       lines.push('', 'תיעודי סימנים גופניים (דיווח בלבד):');
-      if (symptoms.length) symptoms.forEach(item => lines.push('- ' + buildSymptomSummary(item).replace(/\\n/g, ' | ')));
+      if (symptoms.length) symptoms.forEach(item => lines.push('- ' + buildSymptomSummary(item).replace(/\n/g, ' | ')));
       else lines.push('- אין תיעוד בטווח');
     }
     if (options.includeStains) {
