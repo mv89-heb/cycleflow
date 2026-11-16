@@ -379,7 +379,7 @@ const HalachaLogic = {
         }
         const fixedHachodeshStatus = HalachaLogic.getFixedHachodeshStatus(dStr);
         const fixedHachodeshActive = Boolean(fixedHachodeshStatus && fixedHachodeshStatus.active);
-        const fixedHachodeshDeviated = fixedHachodeshActive && fixedHachodeshStatus.missedCount > 0;
+        const fixedHachodeshDeviated = fixedHachodeshActive && Boolean(fixedHachodeshStatus.deviated);
         const onsetOnah = onsetInfo ? onsetInfo.estimatedOnah : 'unknown';
         const onahSuffix = onsetOnah === 'day'
             ? ' · עונת יום (אומדן)'
