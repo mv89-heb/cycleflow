@@ -104,6 +104,18 @@ const { TextEncoder, TextDecoder } = require('util');
   assert.throws(() => api.validateState({ ...state, tevilot: { 'not-a-date': true } }),
     /נתוני טבילה לא תקינים/);
 
+  // Older state schema: optional fields introduced by later releases are absent.
+  const legacyState = {
+    periods: [{ id: 'legacy-period', date: '2025-03-12', type: 'veset', isSunset: false }],
+    hefseks: { '2025-03-18': true },
+    daily: {},
+    settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark' }
+  };
+  const legacySchemaEncrypted = await api.encrypt(legacyState, 'correct horse battery');
+  const legacySchemaRestored = api.validateState(await api.decrypt(legacySchemaEncrypted, 'correct horse battery'));
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(legacySchemaRestored)), legacyState,
+    'older records without newer optional metadata remain valid and retain all original fields');
+
   const storageKey = 'cycleflow_v61_python_pro';
   const recoveryKey = 'cycleflow_recovery_v1';
   const previous = JSON.stringify({
