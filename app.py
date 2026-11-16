@@ -38,9 +38,9 @@ def set_security_headers(resp):
     resp.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
         "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; "
-        "script-src 'self' https://cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
-        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "font-src 'self' data:; "
         "img-src 'self' data: blob:; "
         "connect-src 'self'; "
         "worker-src 'self' blob:; object-src 'none'"
