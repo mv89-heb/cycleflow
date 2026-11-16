@@ -512,7 +512,8 @@ const UI = {
         const m = this.navDate.getMonth();
         
         document.getElementById('cal_month_title').innerText = this.navDate.toLocaleDateString('he-IL', { month: 'long' });
-        document.getElementById('cal_year_subtitle').innerText = y;
+        const hebrewMonth = CalendarServices ? CalendarServices.formatHebrewMonth(new Date(y, m, 15)) : '';
+        document.getElementById('cal_year_subtitle').innerText = hebrewMonth ? `${y} · ${hebrewMonth}` : y;
         
         const firstDay = new Date(y, m, 1).getDay();
         const daysInMonth = new Date(y, m + 1, 0).getDate();
