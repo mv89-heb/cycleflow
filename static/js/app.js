@@ -21,6 +21,12 @@ const Utils = {
     prettyDate: (d) => d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' }),
     chronologicalPeriods: (periods) => [...periods].sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || ''))),
     chronologicalVesets: (periods) => [...periods].filter(p => p.type === 'veset').sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || ''))),
+    hasKnownHalachicDate: (record, fallbackCityId) => {
+        const info = CalendarServices && CalendarServices.getEventDateInfo
+            ? CalendarServices.getEventDateInfo(record, fallbackCityId)
+            : null;
+        return Boolean(info && info.relation !== 'unknown' && info.effectiveDate);
+    },
     halachicDate: (record, fallbackCityId) => {
         const info = CalendarServices && CalendarServices.getEventDateInfo
             ? CalendarServices.getEventDateInfo(record, fallbackCityId)
@@ -364,6 +370,7 @@ const FertilityLogic = {
     getAvgCycleLength() {
         const state = State.get();
         const periods = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, state.settings.cityId))
             .sort((a, b) => Utils.halachicDate(a, state.settings.cityId).localeCompare(Utils.halachicDate(b, state.settings.cityId)));
         if (periods.length < 2) {
             const fixed = parseInt(state.settings.cycle, 10);
@@ -383,7 +390,12 @@ const FertilityLogic = {
 
     getEstimate() {
         const state = State.get();
-        const periods = Utils.chronologicalVesets(state.periods)
+        const allPeriods = Utils.chronologicalVesets(state.periods)
+            .sort((a, b) => a.date.localeCompare(b.date));
+        const latestRecord = allPeriods[allPeriods.length - 1];
+        if (!latestRecord || !Utils.hasKnownHalachicDate(latestRecord, state.settings.cityId)) return null;
+        const periods = allPeriods
+            .filter(period => Utils.hasKnownHalachicDate(period, state.settings.cityId))
             .sort((a, b) => Utils.halachicDate(a, state.settings.cityId).localeCompare(Utils.halachicDate(b, state.settings.cityId)));
         const lastP = periods[periods.length - 1];
         if (!lastP) return null;
