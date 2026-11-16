@@ -45,7 +45,8 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const NativeDate = window.Date;
     window.Date = class FixedDate extends NativeDate {
         constructor(...args) {
-            return args.length ? new NativeDate(...args) : new NativeDate('2026-11-16T22:30:00.000Z');
+            if (args.length) super(...args);
+            else super('2026-11-16T22:30:00.000Z');
         }
     };
     eq(todayCivilDate(), '2026-11-17',
