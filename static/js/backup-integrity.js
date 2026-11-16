@@ -92,7 +92,7 @@
         for (const p of state.periods) {
             if (!p || typeof p !== 'object' || typeof p.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(p.date)) throw new Error('רשומת וסת לא תקינה');
             if (!['veset', 'spotting'].includes(p.type)) throw new Error('סוג רשומה לא תקין');
-            if (p.eventTime !== undefined && p.eventTime !== null && (typeof p.eventTime !== 'string' || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(p.eventTime))) throw new Error('שעת אירוע לא תקינה');
+            if (p.eventTime !== undefined && p.eventTime !== null && (typeof p.eventTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(p.eventTime))) throw new Error('שעת אירוע לא תקינה');
             if (p.cityId !== undefined && p.cityId !== null && !cityIds.includes(p.cityId)) throw new Error('יישוב אירוע לא תקין');
             if (p.sunsetRelation !== undefined && !['before', 'after', 'unknown'].includes(p.sunsetRelation)) throw new Error('יחס שקיעה לא תקין');
         }
@@ -105,8 +105,8 @@
         if (state.hefsekMeta !== undefined) {
             if (!state.hefsekMeta || typeof state.hefsekMeta !== 'object' || Array.isArray(state.hefsekMeta)) throw new Error('נתוני זמן הפסק לא תקינים');
             for (const [date, meta] of Object.entries(state.hefsekMeta)) {
-                if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date) || !meta || typeof meta !== 'object' || Array.isArray(meta)) throw new Error('נתוני זמן הפסק לא תקינים');
-                if (meta.eventTime !== undefined && meta.eventTime !== null && (typeof meta.eventTime !== 'string' || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(meta.eventTime))) throw new Error('שעת הפסק לא תקינה');
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !meta || typeof meta !== 'object' || Array.isArray(meta)) throw new Error('נתוני זמן הפסק לא תקינים');
+                if (meta.eventTime !== undefined && meta.eventTime !== null && (typeof meta.eventTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(meta.eventTime))) throw new Error('שעת הפסק לא תקינה');
                 if (meta.cityId !== undefined && meta.cityId !== null && !cityIds.includes(meta.cityId)) throw new Error('יישוב הפסק לא תקין');
                 if (meta.sunsetRelation !== undefined && !['before', 'after', 'unknown'].includes(meta.sunsetRelation)) throw new Error('יחס שקיעה לא תקין');
             }
