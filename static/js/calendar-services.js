@@ -139,7 +139,7 @@
 
   function resolveEventOnah(record, fallbackCityId) {
     if (!record || !validDate(record.date) ||
-        typeof record.eventTime !== 'string' || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(record.eventTime)) {
+        typeof record.eventTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(record.eventTime)) {
       return 'unknown';
     }
     const cityId = Object.prototype.hasOwnProperty.call(record, 'cityId')
