@@ -7,6 +7,7 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'templates', 'index.html
 const dom = new JSDOM(html, { runScripts: 'outside-only', url: 'https://cycleflow-tools.test/' });
 const { window } = dom;
 window.confirm = () => true;
+window.TextEncoder = TextEncoder;
 window.localStorage.setItem('cycleflow_v61_python_pro', JSON.stringify({
   periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {},
   settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: null }
