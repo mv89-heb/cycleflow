@@ -89,6 +89,13 @@ const { TextEncoder, TextDecoder } = require('util');
   const recoveryKey = 'cycleflow_recovery_v1';
   const previous = JSON.stringify({
     periods: [{ id: 'old', date: '2026-05-01', type: 'veset', isSunset: false }],
+    calculationSnapshots: [{
+      schemaVersion: 1, snapshotId: 'cf-calc-v1:2026-05-01:fedcba9876543210',
+      evaluatedDate: '2026-05-01', capturedAt: '2026-05-01T12:00:00.000Z',
+      inputFingerprint: 'fedcba9876543210',
+      result: { type: 'nidda', text: 'נידה היסטורית', canHefsek: false },
+      provenance: { isPersonalPsak: false }
+    }],
     hefseks: {}, daily: {},
     settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark' }
   });
@@ -100,8 +107,15 @@ const { TextEncoder, TextDecoder } = require('util');
     value: 'selected'
   };
   await api.importBackup(fileInput);
-  assert.strictEqual(window.localStorage.getItem(storageKey), JSON.stringify(state),
-    'a fully validated backup should atomically replace the active state');
+  const restoredState = JSON.parse(window.localStorage.getItem(storageKey));
+  assert.strictEqual(restoredState.periods[0].id, 'p1',
+    'a fully validated backup should replace the active event state');
+  assert.strictEqual(restoredState.calculationSnapshots.length, 2,
+    'backup restore must merge existing local snapshots instead of deleting them');
+  assert(restoredState.calculationSnapshots.some(snapshot => snapshot.snapshotId === 'cf-calc-v1:2026-05-01:fedcba9876543210'),
+    'the pre-restore local calculation history must remain available');
+  assert(restoredState.calculationSnapshots.some(snapshot => snapshot.snapshotId === 'cf-calc-v1:2026-11-16:0123456789abcdef'),
+    'the imported backup calculation history must remain available');
   assert.strictEqual(window.localStorage.getItem(recoveryKey), null,
     'successful backup recovery should clear the recovery block');
   assert.strictEqual(fileInput.value, '', 'file input should be reset after import');
