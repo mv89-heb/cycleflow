@@ -1,5 +1,6 @@
 /** Verify invalid local state is preserved and cannot be overwritten silently. */
 process.env.TZ = 'Asia/Jerusalem';
+const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const { JSDOM } = require('jsdom');
