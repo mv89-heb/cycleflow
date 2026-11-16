@@ -120,7 +120,7 @@ The following Hebrew-language pages were opened and checked against the rule mat
 The current application profile is deliberately explicit rather than inferred from the broad Ashkenazi/Sephardi/Chabad selector:
 
 - **Minimum wait default:** five halachic days from the onset of niddah. The hefsek eligibility boundary is the fifth halachic day (counting the onset day as day one), not the sixth civil-date label.
-- **Optional four-day practice:** available only as a separate selected mode for communities that follow it. The start is the halachic day of the most recent marital relations, not automatically the onset of bleeding. CycleFlow requires the user to record the date, time, and selected city; if that context is missing or inconsistent, the engine returns "needs review" and does not calculate an early hefsek.
+- **Optional four-day practice:** available only as a separate selected mode for communities that follow it. The start is the halachic day of the most recent marital relations, not automatically the onset of bleeding. CycleFlow requires the user to record the date/time of the last relations and the onset, plus the selected city; if that context is missing or inconsistent, the engine returns "needs review" and does not calculate an early hefsek.
 - **Onah beinonit default:** day 30, on the same day/night onah as the onset of the most recent flow.
 - **Optional customs:** day 31 and a full 24-hour day 30 are separate selectable modes. Neither is enabled by default.
 - These are source-derived application defaults and options, not a claim that one profile fits every family or a personal ruling. Exceptions (including stains, special circumstances, long cycles, and hormonal regimens) remain outside automatic calculation.
