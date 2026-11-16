@@ -160,19 +160,23 @@ const HalachaLogic = {
             if (cleanDay >= 1 && cleanDay <= 7) return { type: 'naki', text: `נקיים: יום ${cleanDay}`, color: 'var(--st-naki)', bg: 'rgba(16, 185, 129, 0.1)', cleanCount: cleanDay, canHefsek: false };
 
             const expectedTevilaDate = Utils.fmt(Utils.addDays(hefsekDate, 8));
-            const tevilaReported = Boolean(state.tevilot && state.tevilot[expectedTevilaDate]);
+            const reportedTevilaDate = Object.keys(state.tevilot || {})
+                .filter(recordedDate => recordedDate >= expectedTevilaDate && recordedDate <= dStr)
+                .sort()
+                .pop() || null;
+            const tevilaReported = Boolean(reportedTevilaDate);
             if (cleanDay === 8) {
                 return {
                     type: tevilaReported ? 'tevila-done' : 'tevila',
                     text: tevilaReported ? 'טבילה סומנה' : 'ליל טבילה משוער – יש לסמן ביצוע',
                     color: 'var(--st-tevila)', bg: 'rgba(14, 165, 233, 0.1)',
-                    expectedTevilaDate, canHefsek: false
+                    expectedTevilaDate, reportedTevilaDate, canHefsek: false
                 };
             }
             if (cleanDay > 8 && !tevilaReported) {
-                return { type: 'pending-tevila', text: 'טרם סומנה טבילה', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', expectedTevilaDate, canHefsek: false };
+                return { type: 'pending-tevila', text: 'טרם סומנה טבילה', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', expectedTevilaDate, reportedTevilaDate, canHefsek: false };
             }
-            if (cleanDay > 8 && tevilaReported) res = { ...res, text: 'לאחר טבילה מדווחת', expectedTevilaDate };
+            if (cleanDay > 8 && tevilaReported) res = { ...res, text: 'לאחר טבילה מדווחת', expectedTevilaDate, reportedTevilaDate };
         } else {
             if (daysDiff < minWait) return { type: 'nidda', text: `נידה (יום ${daysDiff + 1})`, color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: false };
             return { type: 'nidda', text: 'נידה - ממתינה להפסק', color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: true };
@@ -180,7 +184,7 @@ const HalachaLogic = {
 
         const beinonit30 = Utils.addDays(pDate, 29);
         const beinonit31 = Utils.addDays(pDate, 30);
-        if (dStr === Utils.fmt(beinonit30)) return { type: 'onah', text: 'עונה בינונית (30)', color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate };
+        if (dStr === Utils.fmt(beinonit30)) return { type: 'onah', text: 'עונה בינונית (30)', color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
         if (dStr === Utils.fmt(beinonit31)) return { type: 'onah', text: 'עונה בינונית (31)', color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate };
         return res;
     }
@@ -633,9 +637,8 @@ const UI = {
         btnH.disabled = (!st.canHefsek && st.type !== 'hefsek');
         btnH.style.opacity = btnH.disabled ? 0.4 : 1;
         if (st.expectedTevilaDate) {
-            const recorded = Boolean(State.get().tevilot && State.get().tevilot[st.expectedTevilaDate]);
             btnT.classList.remove('hidden');
-            btnT.textContent = recorded ? 'ביטול סימון טבילה' : 'סמני טבילה בוצעה';
+            btnT.textContent = st.reportedTevilaDate ? `ביטול סימון טבילה (${st.reportedTevilaDate})` : 'סמני טבילה בוצעה';
         }
         
         const dStr = Utils.fmt(date); 
@@ -738,12 +741,12 @@ const UI = {
         toggleTevilaPanel() {
             if (!this.selectedDate) return;
             const status = HalachaLogic.getStatus(this.selectedDate);
-            const expectedDate = status.expectedTevilaDate;
-            if (!expectedDate) return;
+            if (!status.expectedTevilaDate) return;
+            const recordedDate = status.reportedTevilaDate;
             State.update(s => {
                 if (!s.tevilot) s.tevilot = {};
-                if (s.tevilot[expectedDate]) delete s.tevilot[expectedDate];
-                else s.tevilot[expectedDate] = true;
+                if (recordedDate) delete s.tevilot[recordedDate];
+                else s.tevilot[Utils.fmt(this.selectedDate)] = true;
             });
             this.actions.closePanel.call(this);
         },
