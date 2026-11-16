@@ -61,7 +61,8 @@ const doctor = tools.buildDoctorSummary({
     { date: '2026-10-27', type: 'veset' },
     { date: '2026-10-10', type: 'spotting' }
   ],
-  symptomObservations: [symptom],\n  ovulationObservations: [{ date: '2026-10-20', type: 'opk_positive', immersionDate: '2026-10-18', note: 'תוצאה חיובית' }],
+  symptomObservations: [symptom],
+  ovulationObservations: [{ date: '2026-10-20', type: 'opk_positive', immersionDate: '2026-10-18', note: 'תוצאה חיובית' }],
   tevilot: { '2026-10-18': true },
   stainReports: [{ date: '2026-10-10', color: 'pink', size: 'small', surface: 'tissue', source: 'unknown' }]
 }, '2026-10-01', '2026-10-31', { includeStains: true, includeSymptoms: true });
@@ -70,7 +71,8 @@ assert(doctor.includes('דיווחי הכתמה/דימום נוספים'));
 assert(doctor.includes('2026-10-10'));
 assert(doctor.includes('בדיקת LH חיובית'));
 assert(doctor.includes('טבילה להשוואה 2026-10-18'));
-assert(doctor.includes('תיאורי כתמים'));\nassert(doctor.includes('תיעודי סימנים גופניים (דיווח בלבד)'));\nassert(doctor.includes('כאב גב'));
+assert(doctor.includes('תיאורי כתמים'));
+assert(doctor.includes('תיעודי סימנים גופניים (דיווח בלבד)'));\nassert(doctor.includes('כאב גב'));
 assert(doctor.includes('2026-10-18'));
 assert(!doctor.includes('שם:'));
 
