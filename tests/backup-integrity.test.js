@@ -34,7 +34,7 @@ const { TextEncoder, TextDecoder } = require('util');
     manualReminders: [{ id: 'r1', date: '2026-06-20', time: '18:30', title: 'תזכורת', notes: '' }],
     stainReports: [{ id: 's1', date: '2026-06-21', time: null, color: 'brown', size: 'small', surface: 'tissue', source: 'unknown', note: '' }],
     mikvehChecklist: { '2026-06-22': ['hair', 'nails'] },
-    ovulationObservations: [{ id: 'o1', date: '2026-06-23', time: '08:00', type: 'opk_positive', immersionDate: '2026-06-26', note: '' }],
+    symptomObservations: [{ id: 'symptom-1', date: '2026-06-19', time: '08:15', endDate: '2026-06-19', endTime: '10:00', type: 'back_pain', distinctive: 'yes', occursOutsideFlow: 'no', relatedFlowDate: '2026-06-20', note: '' }],\n    ovulationObservations: [{ id: 'o1', date: '2026-06-23', time: '08:00', type: 'opk_positive', immersionDate: '2026-06-26', note: '' }],
     tevilot: { '2026-06-15': true },
     calculationSnapshots: [{
       schemaVersion: 1,
@@ -80,7 +80,7 @@ const { TextEncoder, TextDecoder } = require('util');
   assert.throws(() => api.validateState({ ...state, manualReminders: [{ ...state.manualReminders[0], date: '2026-02-30' }] }), /תזכורת לא תקינה/);
   assert.throws(() => api.validateState({ ...state, stainReports: [{ ...state.stainReports[0], color: 'invalid' }] }), /צבע כתם לא תקין/);
   assert.throws(() => api.validateState({ ...state, mikvehChecklist: { '2026-06-22': ['not-a-check'] } }), /סימון הכנה למקווה אינו תקין/);
-  assert.throws(() => api.validateState({ ...state, ovulationObservations: [{ ...state.ovulationObservations[0], type: 'diagnosis' }] }), /תיעוד ביוץ לא תקין/);
+  assert.throws(() => api.validateState({ ...state, symptomObservations: [{ ...state.symptomObservations[0], endDate: '2026-06-18' }] }), /תאריך סיום תסמין לא תקין/);\n  assert.throws(() => api.validateState({ ...state, symptomObservations: [{ ...state.symptomObservations[0], occursOutsideFlow: 'maybe' }] }), /תיעוד תסמין לא תקין/);\n  assert.throws(() => api.validateState({ ...state, ovulationObservations: [{ ...state.ovulationObservations[0], type: 'diagnosis' }] }), /תיעוד ביוץ לא תקין/);
 
   assert.throws(() => api.validateState({ ...state, tevilot: { 'not-a-date': true } }),
     /נתוני טבילה לא תקינים/);
