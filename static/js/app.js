@@ -1103,7 +1103,7 @@ const UI = {
             const candidates = HalachaLogic.getFixedVesetCandidates();
             const note = document.createElement('p');
             note.className = 'text-muted small-note';
-            note.textContent = 'וסת החודש הקבוע מנוהל אוטומטית בדפוס פשוט; וסת הפלגה קבועה ודפוסים חריגים נשארים לבדיקה. יש לאמת כל מקרה שאינו תואם בדיוק לכללים.';
+            note.textContent = 'וסת החודש והפלגה קבועה מנוהלים אוטומטית בדפוסים הפשוטים המתועדים. חב״ד משתמש בחישוב הפלגה נפרד לפי עונות. דפוסים חריגים או משולבים נשארים לבדיקה הלכתית.';
             fixedSummary.appendChild(note);
             if (!candidates.length) {
                 const empty = document.createElement('p');
@@ -1118,10 +1118,21 @@ const UI = {
                     row.className = 'status-card mb-10';
                     const onahLabel = candidate.onah === 'day' ? 'עונת יום' : 'עונת לילה';
                     const title = candidate.type === 'hachodesh'
-                        ? `דפוס אפשרי: וסת החודש – יום ${candidate.day} בחודש העברי, ${onahLabel}`
-                        : `דפוס אפשרי: וסת הפלגה – כל ${candidate.intervalDays} ימים, ${onahLabel}`;
+                        ? `וסת החודש – יום ${candidate.day} בחודש העברי, ${onahLabel}`
+                        : `וסת הפלגה – כל ${candidate.intervalDays} ימים, ${onahLabel}`;
+                    const asOfDate = todayCivilDate();
+                    const fixedStatus = candidate.type === 'hachodesh'
+                        ? HalachaLogic.getFixedHachodeshStatus(asOfDate)
+                        : HalachaLogic.getFixedHaflagahStatus(asOfDate);
+                    const statusLabel = !fixedStatus
+                        ? 'דורש בירור – לא הופעל אוטומטית'
+                        : (!fixedStatus.active
+                            ? 'הווסת הקבוע נעקר לאחר שלוש החמצות'
+                            : (fixedStatus.deviated
+                                ? `ווסת קבוע פעיל עם חריגות (${fixedStatus.missedCount}/3)`
+                                : 'ווסת קבוע פעיל'));
                     const evidence = candidate.evidenceDates.map(value => Utils.prettyDate(Utils.newDate(value))).join(' · ');
-                    row.textContent = `${title}. נצפה עד ${Utils.prettyDate(Utils.newDate(candidate.establishedAt))}. נתונים: ${evidence}.`;
+                    row.textContent = `${title}. ${statusLabel}. נקבע לפי הנתונים עד ${Utils.prettyDate(Utils.newDate(candidate.establishedAt))}. נתונים: ${evidence}.`;
                     fixedSummary.appendChild(row);
                 });
             }
