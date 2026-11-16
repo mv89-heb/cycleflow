@@ -174,7 +174,7 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
 })();
 
 (function testTevilaPanelCanToggleTheReport() {
-    const { UI, State, Utils } = loadApp({
+    const { UI, State, Utils, HalachaLogic } = loadApp({
         periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],
         hefseks: { '2026-06-06': true }, tevilot: {}, daily: {}, settings: baseSettings
     });
