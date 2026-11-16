@@ -39,9 +39,16 @@ Versioned event context now stored on new records:
 - Standard records use `cycleflow-yoatzot-standard@1.0.0`; Chabad records use `cycleflow-chabad-onot-count@1.0.0` plus the common-source rules.
 - Historical records are not backfilled from today's settings. If an old record has no `ruleContext`, its original profile is unknown and remains unknown.
 
+Runtime calculation provenance now accompanies every status result:
+
+- The result includes ruleset ID/version, source IDs, evaluated Hebrew-date label and timestamp, triggered rule IDs, source-event references, assumptions (event date/time, city, estimated onah, hefsek date, and selected rule modes), confidence, and review state.
+- The provenance links fixed-pattern results to their evidence events and distinguishes the current calculation profile from the profile snapshot stored on the source event.
+- A profile mismatch is flagged when the current calculation settings differ from the source event's recorded context. Historical events without a snapshot remain explicitly unknown.
+- The result is marked advisory and explicitly records `isPersonalPsak: false`.
+
 Remaining engineering work:
 
-- Persist per-calculation output provenance (source event IDs, rule ID/version, assumptions, confidence, and review state) alongside each displayed result; event snapshots are not a substitute for a calculation audit trail.
+- Persist immutable historical calculation-result snapshots if a user-facing audit history is required; current provenance is attached to the live status result and is recalculated as the calendar or selected settings change.
 - Add a configurable, sourced tzeit/zmanim convention before showing any immersion-time estimate. Until then, no sunset-to-tzeit offset is inferred.
 - Keep unknown / needs-review states for ambiguous stains, missing event times, and missing hefsek context; do not infer a confident date.
 
