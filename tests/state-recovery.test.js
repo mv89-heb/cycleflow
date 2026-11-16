@@ -62,6 +62,13 @@ try {
   }));
 } catch (_) { invalidCityBlocked = true; }
 assert(invalidCityBlocked, 'unknown city identifiers must be rejected by local storage hardening');
+let invalidToolDataBlocked = false;
+try {
+  validCalendarWindow.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...calendarState, manualReminders: [{ id: 'bad', date: '2026-11-17', title: 'bad', time: '99:99' }]
+  }));
+} catch (_) { invalidToolDataBlocked = true; }
+assert(invalidToolDataBlocked, 'invalid local reminder data must be rejected by storage hardening');
 
 
 const noSpaceDom = new JSDOM('', { runScripts: 'outside-only', url: 'https://cycleflow-no-space.test/' });
