@@ -5,6 +5,7 @@ const CORE_ASSETS = [
     '/static/css/main.css',
     '/static/js/hardening.js',
     '/static/js/app.js',
+    '/static/js/backup-integrity.js',
     '/static/manifest.json'
 ];
 
