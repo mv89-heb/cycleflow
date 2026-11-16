@@ -166,6 +166,64 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'a later veset starts a new status period');
 })();
 
+(function testAfterSunsetOnsetUsesNextHebrewDate() {
+    const state = {
+        periods: [{ date: '2026-06-01', type: 'veset', sunsetRelation: 'after', isSunset: true, id: 'after-sunset' }],
+        hefseks: {}, hefsekMeta: {}, daily: {}, settings: { ...baseSettings }
+    };
+    const { HalachaLogic, Utils } = loadApp(state);
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-01')).type, 'regular',
+       'after-sunset onset is not applied to the preceding daytime Hebrew date');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-02')).type, 'nidda',
+       'after-sunset onset begins on the next Hebrew-date calendar label');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-02')).text, 'וסת (יום 1)',
+       'the effective Hebrew-date label is also recognized as cycle day one');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-07')).canHefsek, true,
+       'minimum-wait day count is based on the effective Hebrew-date label');
+})();
+
+(function testCycleStatisticsUseEffectiveHebrewDates() {
+    const state = {
+        periods: [
+            { date: '2026-06-01', type: 'veset', sunsetRelation: 'after', isSunset: true, id: 'first' },
+            { date: '2026-06-30', type: 'veset', sunsetRelation: 'before', isSunset: false, id: 'second' }
+        ],
+        hefseks: {}, daily: {}, settings: { ...baseSettings }
+    };
+    const { FertilityLogic, Utils } = loadApp(state);
+    eq(FertilityLogic.getAvgCycleLength(), 28,
+       'cycle length is measured between effective Hebrew-date labels, not raw civil entry dates');
+    eq(Utils.fmt(FertilityLogic.getEstimate().nextPeriodEstimate), '2026-07-28',
+       'future estimates start from the effective Hebrew-date label');
+})();
+
+(function testAfterSunsetHefsekIsNotSilentlyAccepted() {
+    const state = {
+        periods: [{ date: '2026-06-01', type: 'veset', sunsetRelation: 'before', isSunset: false, id: 'before' }],
+        hefseks: { '2026-06-06': true },
+        hefsekMeta: { '2026-06-06': { sunsetRelation: 'after', isSunset: true, cityId: null } },
+        daily: {}, settings: { ...baseSettings }
+    };
+    const { HalachaLogic, Utils } = loadApp(state);
+    const status = HalachaLogic.getStatus(Utils.newDate('2026-06-07'));
+    eq(status.type, 'nidda', 'after-sunset hefsek remains pending review instead of starting clean days');
+    eq(status.canHefsek, true, 'the calendar does not treat the after-sunset record as a completed hefsek');
+})();
+
+(function testUnknownHefsekTimeDoesNotUseLaterCitySetting() {
+    const state = {
+        periods: [{ date: '2026-11-10', type: 'veset', sunsetRelation: 'before', isSunset: false, id: 'before' }],
+        hefseks: { '2026-11-15': true },
+        hefsekMeta: { '2026-11-15': { eventTime: '16:30', cityId: null } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    };
+    const { HalachaLogic, Utils } = loadApp(state);
+    const status = HalachaLogic.getStatus(Utils.newDate('2026-11-16'));
+    eq(status.type, 'nidda',
+       'a later selected city must not retroactively classify a hefsek recorded without a city');
+    eq(status.canHefsek, true, 'an unknown-time-relation hefsek remains pending review');
+})();
+
 (function testHalachaSepharad() {
     const state = {
         periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],

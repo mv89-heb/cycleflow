@@ -125,9 +125,15 @@
   function getEventDateInfo(record, fallbackCityId) {
     const relation = resolveEventRelation(record, fallbackCityId);
     const cityId = record && (Object.prototype.hasOwnProperty.call(record, 'cityId') ? record.cityId : fallbackCityId);
+    const effectiveDate = relation === 'after' ? addCivilDays(record.date, 1) : record.date;
     const hebrewDate = formatHebrewDate(record.date, { afterSunset: relation === 'after' });
     const sunset = getSunset(record.date, cityId);
-    return { hebrewDate, relation, sunsetTime: sunset ? sunset.time : null, approximate: Boolean(sunset) };
+    return {
+      hebrewDate, relation, effectiveDate,
+      sunsetTime: sunset ? sunset.time : null,
+      approximate: Boolean(sunset),
+      dateConfidence: relation === 'unknown' ? 'unknown' : 'recorded'
+    };
   }
 
   function getIsraelCivilDate(date) {
