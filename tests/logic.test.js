@@ -365,6 +365,23 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'a new higher haflagah number cancels all lower numbers');
 })();
 
+(function testChabadHaflagahRequiresEligibleMinimumWaitAndCurrentHefsek() {
+    const state = {
+        periods: [
+            { date: '2026-01-01', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'a' },
+            { date: '2026-01-30', type: 'veset', eventTime: '10:00', cityId: 'beit-shemesh', isSunset: false, id: 'b' }
+        ],
+        hefseks: { '2026-01-04': true },
+        hefsekMeta: { '2026-01-04': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' } },
+        daily: {}, settings: { ...baseSettings, minhag: 'chabad', cityId: 'beit-shemesh' }
+    };
+    const api = loadApp(state);
+    eq(api.HalachaLogic.getChabadHaflagahNumbers().length, 0,
+       'a hefsek before the fifth halachic day is not used to establish a Chabad haflagah number');
+    eq(api.HalachaLogic.getChabadHaflagahTargets('2026-03-01').length, 0,
+       'no future Chabad haflagah is projected without a successful hefsek after the latest period');
+})();
+
 (function testChabadHaflagahIgnoresUnverifiedHefsek() {
     const state = {
         periods: [
