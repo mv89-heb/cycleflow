@@ -47,6 +47,8 @@ const doctor = tools.buildDoctorSummary({
   stainReports: [{ date: '2026-10-10', color: 'pink', size: 'small', surface: 'tissue', source: 'unknown' }]
 }, '2026-10-01', '2026-10-31', { includeStains: true });
 assert(doctor.includes('28 ימים'));
+assert(doctor.includes('דיווחי הכתמה/דימום נוספים'));
+assert(doctor.includes('2026-10-10'));
 assert(doctor.includes('בדיקת LH חיובית'));
 assert(doctor.includes('תיאורי כתמים'));
 assert(doctor.includes('2026-10-18'));
