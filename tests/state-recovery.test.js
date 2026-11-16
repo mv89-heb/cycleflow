@@ -51,12 +51,27 @@ const calendarState = {
   stainReports: [{ id: 's1', date: '2026-11-18', color: 'brown', size: 'small', surface: 'tissue', source: 'unknown', note: '' }],
   mikvehChecklist: { '2026-11-19': ['hair'] },
   ovulationObservations: [{ id: 'o1', date: '2026-11-20', type: 'opk_positive', immersionDate: '2026-11-23', note: '' }],
+  calculationSnapshots: [{
+    schemaVersion: 1, snapshotId: 'cf-calc-v1:2026-11-20:0123456789abcdef',
+    evaluatedDate: '2026-11-20', capturedAt: '2026-11-20T12:00:00.000Z',
+    inputFingerprint: '0123456789abcdef',
+    result: { type: 'nidda', text: 'נידה', canHefsek: false },
+    provenance: { isPersonalPsak: false }
+  }],
   hefseks: {}, hefsekMeta: { '2026-11-20': { eventTime: '16:30', cityId: 'beit-shemesh', sunsetRelation: 'before' } },
   daily: {}, settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: 'beit-shemesh' }
 };
 validCalendarWindow.localStorage.setItem(STORAGE_KEY, JSON.stringify(calendarState));
 assert(validCalendarWindow.localStorage.getItem(STORAGE_KEY) === JSON.stringify(calendarState),
-  'valid calendar metadata must pass local storage hardening');
+  'valid calendar metadata and immutable calculation history must pass local storage hardening');
+let invalidSnapshotBlocked = false;
+try {
+  validCalendarWindow.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...calendarState,
+    calculationSnapshots: [{ ...calendarState.calculationSnapshots[0], provenance: { isPersonalPsak: true } }]
+  }));
+} catch (_) { invalidSnapshotBlocked = true; }
+assert(invalidSnapshotBlocked, 'a snapshot that claims to be a personal psak must be rejected by local storage hardening');
 let invalidCityBlocked = false;
 try {
   validCalendarWindow.localStorage.setItem(STORAGE_KEY, JSON.stringify({
