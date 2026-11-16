@@ -249,6 +249,60 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'after-sunset onset shifts to the next Hebrew date and uses the estimated night onah');
 })();
 
+(function testYomHachodeshAndStandardHaflagah() {
+    const state = {
+        periods: [
+            { date: '2026-06-01', type: 'veset', isSunset: false, eventTime: '10:00', cityId: 'beit-shemesh', id: 'p1' },
+            { date: '2026-06-29', type: 'veset', isSunset: false, eventTime: '10:00', cityId: 'beit-shemesh', id: 'p2' }
+        ],
+        hefseks: { '2026-07-04': true },
+        hefsekMeta: { '2026-07-04': { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    };
+    const api = loadApp(state);
+    const hachodeshDate = api.window.CycleFlowCalendar.getNextYomHachodeshDate('2026-06-29');
+    const hachodeshStatus = api.HalachaLogic.getStatus(api.Utils.newDate(hachodeshDate));
+    eq(hachodeshStatus.type, 'onah', 'the next Hebrew-month date is displayed as an onah');
+    assert(hachodeshStatus.text.includes('וסת החודש'), 'the status identifies yom hachodesh');
+
+    const haflagahStatus = api.HalachaLogic.getStatus(api.Utils.newDate('2026-07-27'));
+    eq(haflagahStatus.type, 'onah', 'the same interval from the most recent flow is displayed');
+    assert(haflagahStatus.text.includes('וסת הפלגה (28)'), 'standard haflagah uses the interval between the two most recent flows');
+})();
+
+(function testChabadDoesNotUseStandardDayIntervalForHaflagah() {
+    const state = {
+        periods: [
+            { date: '2026-06-01', type: 'veset', isSunset: false, eventTime: '10:00', cityId: 'beit-shemesh', id: 'p1' },
+            { date: '2026-06-29', type: 'veset', isSunset: false, eventTime: '10:00', cityId: 'beit-shemesh', id: 'p2' }
+        ],
+        hefseks: { '2026-07-04': true },
+        hefsekMeta: { '2026-07-04': { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, minhag: 'chabad', cityId: 'beit-shemesh' }
+    };
+    const api = loadApp(state);
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate('2026-07-27'));
+    assert(!status.text.includes('וסת הפלגה'),
+       'Chabad haflagah is not approximated with the non-Chabad day-interval formula');
+})();
+
+(function testLongCycleExemptionAfterThreeLongIntervals() {
+    const dates = ['2026-01-01', '2026-02-02', '2026-03-06', '2026-04-07'];
+    const state = {
+        periods: dates.map((date, index) => ({
+            date, type: 'veset', isSunset: false, eventTime: '10:00',
+            cityId: 'beit-shemesh', id: `long-${index}`
+        })),
+        hefseks: { '2026-04-12': true },
+        hefsekMeta: { '2026-04-12': { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    };
+    const api = loadApp(state);
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate('2026-05-06'));
+    eq(status.type, 'pending-tevila',
+       'after three consecutive 32-day-or-longer intervals, day 30 and yom hachodesh are exempt in this source profile');
+})();
+
 (function testHalachaSepharad() {
     const state = {
         periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],
