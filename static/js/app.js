@@ -679,6 +679,155 @@ const HalachaLogic = {
     }
 };
 
+const getStatusWithoutProvenance = HalachaLogic.getStatus.bind(HalachaLogic);
+HalachaLogic.getStatus = function(date) {
+    const status = getStatusWithoutProvenance(date);
+    const state = State.get();
+    const dateLabel = Utils.fmt(date);
+    const cityId = state.settings.cityId || null;
+    const periods = Utils.chronologicalVesets(state.periods)
+        .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+        .filter(period => Utils.halachicDate(period, cityId) <= dateLabel)
+        .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)));
+    const lastPeriod = periods[periods.length - 1] || null;
+    const previousPeriod = periods.length > 1 ? periods[periods.length - 2] : null;
+    const lastInfo = lastPeriod && CalendarServices && CalendarServices.getEventDateInfo
+        ? CalendarServices.getEventDateInfo(lastPeriod, cityId)
+        : null;
+    const ruleContext = captureRuleContext(state.settings);
+    const sourceEventRuleContext = lastPeriod && lastPeriod.ruleContext ? lastPeriod.ruleContext : null;
+    const sourceEventProfileMatchesCurrent = sourceEventRuleContext
+        ? ['rulesetId', 'rulesetVersion', 'community', 'minimumWaitMode', 'onahBeinonitMode', 'cityId', 'timeZone', 'solarTimeMethod']
+            .every(key => sourceEventRuleContext[key] === ruleContext[key])
+        : null;
+    const summarizeRuleContext = context => context ? {
+        rulesetId: context.rulesetId || null,
+        rulesetVersion: context.rulesetVersion || null,
+        sourceIds: Array.isArray(context.sourceIds) ? context.sourceIds : [],
+        community: context.community || null,
+        minimumWaitMode: context.minimumWaitMode || null,
+        onahBeinonitMode: context.onahBeinonitMode || null
+    } : null;
+    const sourceEvents = [];
+    const addSourceEvent = event => {
+        if (!event) return;
+        const key = `${event.type}:${event.id || event.date || ''}`;
+        if (!sourceEvents.some(existing => existing.key === key)) sourceEvents.push({ ...event, key });
+    };
+    [previousPeriod, lastPeriod].forEach(period => {
+        if (!period) return;
+        addSourceEvent({
+            type: 'period', id: period.id || null, date: period.date,
+            effectiveDate: Utils.halachicDate(period, cityId),
+            recordedRuleContext: summarizeRuleContext(period.ruleContext)
+        });
+    });
+    const statusText = String(status && status.text || '');
+    const fixedCandidates = HalachaLogic.getFixedVesetCandidates(dateLabel);
+    const fixedCandidate = fixedCandidates.length === 1 ? fixedCandidates[0] : null;
+    const fixedPatternStatus = fixedCandidate
+        ? (fixedCandidate.type === 'hachodesh'
+            ? HalachaLogic.getFixedHachodeshStatus(dateLabel)
+            : HalachaLogic.getFixedHaflagahStatus(dateLabel))
+        : null;
+    const evidenceDates = new Set(fixedCandidates.flatMap(candidate => candidate.evidenceDates || []));
+    periods.filter(period => evidenceDates.has(Utils.halachicDate(period, cityId))).forEach(period => {
+        addSourceEvent({
+            type: 'fixed-pattern-evidence', id: period.id || null, date: period.date,
+            effectiveDate: Utils.halachicDate(period, cityId),
+            recordedRuleContext: summarizeRuleContext(period.ruleContext)
+        });
+    });
+    if (lastPeriod && lastPeriod.lastRelations) {
+        addSourceEvent({
+            type: 'last-relations', date: lastPeriod.lastRelations.date,
+            eventTime: lastPeriod.lastRelations.eventTime || null,
+            cityId: lastPeriod.lastRelations.cityId || null,
+            recordedRuleContext: summarizeRuleContext(lastPeriod.lastRelations.ruleContext)
+        });
+    }
+    const lastHefsekDate = Object.keys(state.hefseks || {})
+        .filter(value => value <= dateLabel && (!lastPeriod || value >= Utils.halachicDate(lastPeriod, cityId)))
+        .sort()
+        .pop() || null;
+    if (lastHefsekDate) {
+        const meta = (state.hefsekMeta || {})[lastHefsekDate] || {};
+        addSourceEvent({
+            type: 'hefsek', date: lastHefsekDate,
+            eventTime: meta.eventTime || null, cityId: meta.cityId || null,
+            recordedRuleContext: summarizeRuleContext(meta.ruleContext)
+        });
+    }
+    const ruleIds = [];
+    if (statusText.includes('עונה בינונית')) ruleIds.push('onah-beinonit');
+    if (fixedCandidate) ruleIds.push(`fixed-veset-${fixedCandidate.type}`);
+    if (fixedPatternStatus && !fixedPatternStatus.active) ruleIds.push('fixed-veset-uprooted');
+    if (fixedCandidates.length > 1) ruleIds.push('fixed-veset-ambiguous-review');
+    if (statusText.includes('וסת קבוע') && statusText.includes('החודש')) ruleIds.push('fixed-veset-hachodesh');
+    if (statusText.includes('וסת קבוע') && statusText.includes('הפלגה')) ruleIds.push('fixed-veset-haflagah');
+    if (statusText.includes('וסת החודש')) ruleIds.push('veset-hachodesh');
+    if (statusText.includes('וסת הפלגה')) ruleIds.push('veset-haflagah');
+    if (status && (status.type === 'nidda' || status.canHefsek)) ruleIds.push('minimum-wait');
+    if (status && ['naki', 'tevila', 'tevila-done', 'pending-tevila'].includes(status.type)) ruleIds.push('shivah-nekiim');
+    if (statusText.includes('טבילה')) ruleIds.push('immersion-tracking');
+    if (lastInfo && lastInfo.estimatedOnah !== 'unknown') ruleIds.push('estimated-day-night-onah');
+    const noData = !lastPeriod;
+    const needsReview = Boolean(status && status.type === 'needs-review') ||
+        Boolean(lastPeriod && (!lastInfo || lastInfo.relation === 'unknown')) ||
+        fixedCandidates.length > 1;
+    const confidence = needsReview ? 'needs-review' : (noData ? 'insufficient-data' : 'advisory');
+    return {
+        ...status,
+        provenance: {
+            schemaVersion: 1,
+            rulesetId: ruleContext.rulesetId,
+            rulesetVersion: ruleContext.rulesetVersion,
+            sourceIds: ruleContext.sourceIds,
+            calculationProfile: summarizeRuleContext(ruleContext),
+            sourceEventProfileState: sourceEventRuleContext ? 'recorded' : (lastPeriod ? 'unknown-historical' : 'no-source-event'),
+            sourceEventProfile: summarizeRuleContext(sourceEventRuleContext),
+            sourceEventProfileMatchesCurrent,
+            evaluatedDate: dateLabel,
+            evaluatedAt: new Date().toISOString(),
+            ruleIds: [...new Set(ruleIds)],
+            sourceEvents: sourceEvents.map(({ key, ...event }) => event),
+            sourceEventIds: [...new Set(sourceEvents.map(event => event.id || event.date).filter(Boolean))],
+            assumptions: {
+                community: ruleContext.community,
+                minimumWaitMode: ruleContext.minimumWaitMode,
+                onahBeinonitMode: ruleContext.onahBeinonitMode,
+                cityId: lastPeriod && Object.prototype.hasOwnProperty.call(lastPeriod, 'cityId')
+                    ? lastPeriod.cityId
+                    : cityId,
+                timeZone: ruleContext.timeZone,
+                solarTimeMethod: ruleContext.solarTimeMethod,
+                onsetCivilDate: lastPeriod ? lastPeriod.date : null,
+                onsetEffectiveDate: lastInfo ? lastInfo.effectiveDate : null,
+                onsetEventTime: lastPeriod ? lastPeriod.eventTime || null : null,
+                onsetSunsetRelation: lastInfo ? lastInfo.relation : 'unknown',
+                onsetEstimatedOnah: lastInfo ? lastInfo.estimatedOnah : 'unknown',
+                fixedPattern: fixedPatternStatus ? {
+                    type: fixedPatternStatus.type,
+                    active: fixedPatternStatus.active,
+                    deviated: fixedPatternStatus.deviated,
+                    missedCount: fixedPatternStatus.missedCount,
+                    expectedDate: fixedPatternStatus.expectedDate,
+                    onah: fixedPatternStatus.onah,
+                    intervalDays: fixedPatternStatus.intervalDays || null,
+                    day: fixedPatternStatus.day || null
+                } : null,
+                fixedPatternAmbiguous: fixedCandidates.length > 1,
+                hefsekDate: lastHefsekDate
+            },
+            confidence,
+            reviewState: confidence === 'needs-review'
+                ? 'needs-review'
+                : (noData ? 'insufficient-data' : 'source-based-advisory'),
+            isPersonalPsak: false
+        }
+    };
+};
+
 const FertilityLogic = {
     getAvgCycleLength() {
         const state = State.get();
@@ -987,9 +1136,104 @@ const UI = {
         const card = document.getElementById('status_card');
         const badge = document.getElementById('status_badge');
         
-        badge.innerText = st.text; 
-        badge.style.color = st.color; 
-        
+        badge.innerText = st.text;
+        badge.style.color = st.color;
+
+        const provenance = st.provenance || null;
+        const provenanceDetails = document.getElementById('status_provenance_details');
+        if (provenanceDetails) {
+            provenanceDetails.hidden = !provenance;
+            if (provenance) {
+                const reviewLabels = {
+                    'needs-review': 'נדרש בירור – חסר מידע או קיימת עמימות',
+                    'insufficient-data': 'אין עדיין נתוני מקור מספיקים',
+                    'source-based-advisory': 'חישוב לפי פרופיל מקורות – לא פסק אישי'
+                };
+                const profileMatchLabel = provenance.sourceEventProfileState === 'no-source-event'
+                    ? 'אין אירוע מקור'
+                    : (provenance.sourceEventProfileMatchesCurrent === false
+                        ? 'הגדרות החישוב שונות מפרופיל האירוע המקורי'
+                        : (provenance.sourceEventProfileMatchesCurrent === true
+                            ? 'הגדרות החישוב תואמות לפרופיל האירוע'
+                            : 'פרופיל האירוע ההיסטורי לא נשמר'));
+                const summary = document.getElementById('status_provenance_summary');
+                if (summary) summary.textContent =
+                    `${provenance.rulesetId} v${provenance.rulesetVersion} · ${reviewLabels[provenance.reviewState] || 'סטטוס חישוב לא ידוע'} · ${profileMatchLabel}`;
+
+                const sources = document.getElementById('status_provenance_sources');
+                if (sources) {
+                    sources.replaceChildren();
+                    const catalog = {
+                        'nishmat-yoatzot-common': [
+                            ['חלוקת עונות – מקור בעברית', 'https://hebrew.yoatzot.org/5075-2/'],
+                            ['וסת קבוע – מקור בעברית', 'https://hebrew.yoatzot.org/6118-2/'],
+                            ['מדריך עונות', 'https://www.yoatzot.org/547/'],
+                            ['מינימום המתנה', 'https://www.yoatzot.org/526/'],
+                            ['עונה בינונית', 'https://www.yoatzot.org/672/']
+                        ],
+                        'chabad-onot-count-sources': [
+                            ['מקור לחישוב עונות חב״ד', 'https://www.mikvah.org/images/cheshbon%20calendar%20outline.pdf']
+                        ]
+                    };
+                    (provenance.sourceIds || []).forEach(sourceId => {
+                        (catalog[sourceId] || []).forEach(([label, url]) => {
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.target = '_blank';
+                            link.rel = 'noopener noreferrer';
+                            link.textContent = label;
+                            link.style.marginInlineEnd = '10px';
+                            sources.appendChild(link);
+                        });
+                    });
+                }
+
+                const assumptions = document.getElementById('status_provenance_assumptions');
+                if (assumptions) {
+                    const values = provenance.assumptions || {};
+                    const waitLabel = values.minimumWaitMode === 'four_from_last_relations'
+                        ? '4 ימים מיחסים אחרונים'
+                        : '5 ימים מתחילת הנידה';
+                    const onahLabels = {
+                        day30_onah: 'יום 30 באותה עונה',
+                        day30_full_day: 'כל יום 30',
+                        day30_plus31_onah: 'יום 30 ויום 31',
+                        day30_full_day_plus31_onah: 'כל יום 30 ויום 31'
+                    };
+                    const city = CalendarServices && CalendarServices.cityById && values.cityId
+                        ? CalendarServices.cityById(values.cityId)
+                        : null;
+                    const onahLabel = values.onsetEstimatedOnah === 'day'
+                        ? 'יום (אומדן)'
+                        : (values.onsetEstimatedOnah === 'night' ? 'לילה (אומדן)' : 'לא ידועה');
+                    assumptions.textContent = [
+                        `מנהג: ${values.community || 'לא ידוע'}`,
+                        `המתנה: ${waitLabel}`,
+                        `עונה בינונית: ${onahLabels[values.onahBeinonitMode] || 'לא ידועה'}`,
+                        `יישוב: ${city && (city.name || city.label) || values.cityId || 'לא ידוע'}`,
+                        `עונת תחילת הווסת: ${onahLabel}`,
+                        `תאריך הפסק אחרון: ${values.hefsekDate || 'לא נרשם'}`
+                    ].join(' · ');
+                }
+
+                const events = document.getElementById('status_provenance_events');
+                if (events) {
+                    events.replaceChildren();
+                    const eventLabels = {
+                        period: 'רישום וסת',
+                        'fixed-pattern-evidence': 'ראיה ששימשה לזיהוי דפוס קבוע',
+                        'last-relations': 'יחסי אישות אחרונים',
+                        hefsek: 'הפסק טהרה'
+                    };
+                    (provenance.sourceEvents || []).slice(0, 8).forEach(event => {
+                        const item = document.createElement('li');
+                        item.textContent = `${eventLabels[event.type] || 'אירוע מקור'}: ${event.date || 'תאריך לא ידוע'}${event.eventTime ? ` · ${event.eventTime}` : ''}`;
+                        events.appendChild(item);
+                    });
+                }
+            }
+        }
+
         const cdContainer = document.getElementById('clean_days_container');
         if (st.type === 'naki' || st.type === 'hefsek' || st.type === 'tevila' || st.type === 'tevila-done') {
             cdContainer.classList.remove('hidden');

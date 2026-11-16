@@ -280,6 +280,19 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'last-relations reference preserves the same rule-set version');
     assert(Boolean(Date.parse(period?.ruleContext?.recordedAt)),
        'rule context records when the user entered the event');
+    eq(State.get().periods[0]?.ruleContext?.rulesetId, 'cycleflow-yoatzot-standard',
+       'the period keeps its original source profile after entry');
+    const sameProfileApi = loadApp(State.get());
+    const sameProfileStatus = sameProfileApi.HalachaLogic.getStatus(sameProfileApi.Utils.newDate('2026-06-07'));
+    eq(sameProfileStatus.provenance?.sourceEventProfileMatchesCurrent, true,
+       'provenance confirms when current calculation settings match the event-entry snapshot');
+    State.update(current => { current.settings.onahBeinonitMode = 'day30_onah'; });
+    const recalculated = loadApp({
+        ...State.get(), settings: State.get().settings
+    });
+    const recalculatedStatus = recalculated.HalachaLogic.getStatus(recalculated.Utils.newDate('2026-06-07'));
+    eq(recalculatedStatus.provenance?.sourceEventProfileMatchesCurrent, false,
+       'provenance flags when current calculation settings differ from the event-entry snapshot');
 })();
 
 (function testChabadRuleContextUsesSeparateSourceSet() {
@@ -310,6 +323,16 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const dayStatus = dayApi.HalachaLogic.getStatus(dayApi.Utils.newDate('2026-12-15'));
     assert(dayStatus.text.includes('עונת יום (אומדן)'),
        'onah beinonit uses the estimated daytime onah of the original onset');
+    eq(dayStatus.provenance?.rulesetId, 'cycleflow-yoatzot-standard',
+       'status results identify the active source ruleset');
+    assert(dayStatus.provenance?.ruleIds.includes('onah-beinonit'),
+       'status provenance identifies the onah-beinonit rule');
+    assert(dayStatus.provenance?.sourceEventIds.includes('day-onset'),
+       'status provenance links the calculation to its source period record');
+    eq(dayStatus.provenance?.sourceEventProfileState, 'unknown-historical',
+       'historical records without a saved rule context remain explicitly unknown');
+    eq(dayStatus.provenance?.confidence, 'advisory',
+       'source-based calendar results are labeled advisory, not as personal psak');
 
     const nightState = {
         periods: [{ date: '2026-11-16', type: 'veset', eventTime: '18:00', cityId: 'beit-shemesh', id: 'night-onset' }],
@@ -719,6 +742,12 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const targetStatus = base.HalachaLogic.getStatus(base.Utils.newDate('2026-09-22'));
     assert(targetStatus.text.includes('וסת קבוע – וסת הפלגה (28)'),
        'the expected fixed haflagah onah is displayed explicitly');
+    assert(targetStatus.provenance?.ruleIds.includes('fixed-veset-haflagah'),
+       'fixed haflagah status identifies its dedicated rule');
+    ['interval-0', 'interval-1', 'interval-2', 'interval-3'].forEach(id =>
+        assert(targetStatus.provenance?.sourceEventIds.includes(id),
+            `fixed haflagah provenance includes evidence event ${id}`)
+    );
     const beinonitStatus = base.HalachaLogic.getStatus(base.Utils.newDate('2026-09-23'));
     assert(!beinonitStatus.text.includes('עונה בינונית'),
        'onah beinonit is suppressed while a fixed haflagah is active');
@@ -765,6 +794,36 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const reinstated = reinstatedApi.HalachaLogic.getFixedHaflagahStatus('2026-11-17');
     assert(reinstated && reinstated.active && reinstated.missedCount === 0,
        'one later matching onset reinstates the prior fixed haflagah if no newer fixed pattern replaced it');
+})();
+
+(function testDashboardShowsCollapsedSourceAndAssumptionDetails() {
+    const api = loadApp({
+        periods: [], hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    api.UI.renderDashboard();
+    const details = api.document.getElementById('status_provenance_details');
+    const summary = api.document.getElementById('status_provenance_summary');
+    const sources = api.document.getElementById('status_provenance_sources');
+    assert(details && !details.hidden,
+       'the dashboard exposes a collapsed provenance section');
+    assert(summary?.textContent.includes('cycleflow-yoatzot-standard'),
+       'the dashboard identifies the selected source ruleset');
+    assert(sources?.querySelector('a[href="https://hebrew.yoatzot.org/6118-2/"]'),
+       'the dashboard links to the Hebrew fixed-veset source');
+})();
+
+(function testUnknownEventProducesNeedsReviewProvenance() {
+    const api = loadApp({
+        periods: [{ date: '2026-11-16', type: 'veset', id: 'unknown-onset' }],
+        hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate('2026-11-17'));
+    eq(status.provenance?.reviewState, 'needs-review',
+       'an event without a known time or sunset relation remains in the needs-review provenance state');
+    eq(status.provenance?.assumptions?.onsetEstimatedOnah, 'unknown',
+       'provenance does not guess an onah for an event with missing time');
 })();
 
 (function testFixedVesetRequiresKnownOnah() {
