@@ -23,8 +23,15 @@ if (calendar.addCivilDays('2024-02-28', 1) !== '2024-02-29' ||
     calendar.addCivilDays('2024-02-29', 1) !== '2024-03-01') {
   throw new Error('Civil day arithmetic changed with device timezone');
 }
+const solarTimes = calendar.getSolarTimes('2026-11-16', 'beit-shemesh');
+if (!solarTimes || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(solarTimes.sunrise) ||
+    !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(solarTimes.sunset)) {
+  throw new Error('Solar times must be valid Israel-local clock values');
+}
+process.stdout.write(JSON.stringify({ sunrise: solarTimes.sunrise, sunset: solarTimes.sunset }));
 `;
 
+const solarResults = [];
 for (const timezone of ['UTC', 'America/Los_Angeles', 'Pacific/Kiritimati', 'Asia/Jerusalem']) {
   const result = spawnSync(process.execPath, ['-e', script], {
     cwd: path.resolve(__dirname, '..'),
@@ -33,6 +40,9 @@ for (const timezone of ['UTC', 'America/Los_Angeles', 'Pacific/Kiritimati', 'Asi
   });
   assert.equal(result.status, 0,
     `calendar behavior must be stable with device timezone ${timezone}: ${result.stderr || result.stdout}`);
+  solarResults.push(JSON.parse(result.stdout));
 }
-
-console.log('Israel timezone independence regression tests passed (4 device timezones).');
+assert(solarResults.every(value => value.sunrise === solarResults[0].sunrise &&
+  value.sunset === solarResults[0].sunset),
+  'sunrise and sunset estimates must be identical across device timezones');
+console.log('Israel clock, Hebrew date, and solar-time timezone regression tests passed (4 device timezones).');
