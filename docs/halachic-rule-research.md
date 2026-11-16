@@ -142,7 +142,7 @@ The simple fixed yom-hachodesh profile is now active after three consecutive flo
 - A newer established fixed pattern supersedes the previous pattern.
 - Day-30 month rollover preserves the fixed day number when moving from a 29-day month to the first of the following month.
 
-Fixed haflagah patterns remain review-only; the full active fixed-haflagah state machine and its deviation edge cases are not yet enabled.
+The standard fixed-haflagah state machine is now active for non-Chabad profiles. It requires four recorded flows with three equal intervals, with the final three onsets in the same known onah; the first onset may be in the opposite onah. It projects the fixed interval forward, retains the fixed onah plus the current non-fixed calendar onot after one or two deviations, suppresses onah beinonit while the fixed pattern remains active, uproots after three consecutive missed expected onot, and immediately reinstates the prior pattern after a matching onset if no newer fixed pattern has replaced it. Chabad remains excluded from this day-interval algorithm and continues to use its separate onot-count calculation.
 
 Source:
 - [Veset Kavua](https://www.yoatzot.org/676/) – establishment, deviation, uprooting, and reinstatement of fixed patterns.
@@ -172,7 +172,7 @@ For the selected Yoatzot Halacha source profile, CycleFlow now calculates the tw
 - **Chabad haflagah:** intentionally not calculated by the standard day-interval formula. The Chabad method counts onot and uses the hefsek taharah as its starting point; it requires a dedicated implementation and tests before activation. The long-cycle exemption is also not automatically applied in the Chabad selector until its applicability is verified.
 - **Long-cycle exemption:** the source profile suspends onah beinonit and yom hachodesh after three consecutive intervals of 32 days or more. One or two shorter intervals resume them; a subsequent long interval restores the exemption immediately. Three consecutive shorter intervals reset the requirement for three long intervals.
 
-**Still intentionally not automated:** fixed-veset establishment and uprooting. The source describes a fixed yom hachodesh after three consecutive flows on the same Hebrew date and same onah, and a fixed haflagah after three equal intervals (four periods), with the relevant onah conditions. It also describes uprooting after three consecutive expected onot pass without the onset. Until the full state machine (including deviations, reinstatement, and profile exceptions) is implemented and tested, CycleFlow keeps the standard calendar onot visible and does not infer that they are cancelled.
+**Still intentionally not automated:** unusual or compound fixed-veset patterns (including veset haguf, dilug, and overlapping patterns) that the source itself directs users to review with a halachic authority. The two common patterns—fixed yom hachodesh and standard fixed haflagah—now have tested state machines for establishment, deviations, uprooting, and reinstatement.
 
 Sources:
 - [Veset Hachodesh](https://www.yoatzot.org/677/) – including the day-30 / 29-day-month case and the long-cycle exemption.
