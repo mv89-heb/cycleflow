@@ -718,9 +718,13 @@ HalachaLogic.getStatus = function(date) {
         });
     });
     const statusText = String(status && status.text || '');
-    const fixedCandidates = statusText.includes('וסת קבוע')
-        ? HalachaLogic.getFixedVesetCandidates(dateLabel)
-        : [];
+    const fixedCandidates = HalachaLogic.getFixedVesetCandidates(dateLabel);
+    const fixedCandidate = fixedCandidates.length === 1 ? fixedCandidates[0] : null;
+    const fixedPatternStatus = fixedCandidate
+        ? (fixedCandidate.type === 'hachodesh'
+            ? HalachaLogic.getFixedHachodeshStatus(dateLabel)
+            : HalachaLogic.getFixedHaflagahStatus(dateLabel))
+        : null;
     const evidenceDates = new Set(fixedCandidates.flatMap(candidate => candidate.evidenceDates || []));
     periods.filter(period => evidenceDates.has(Utils.halachicDate(period, cityId))).forEach(period => {
         addSourceEvent({
@@ -751,6 +755,9 @@ HalachaLogic.getStatus = function(date) {
     }
     const ruleIds = [];
     if (statusText.includes('עונה בינונית')) ruleIds.push('onah-beinonit');
+    if (fixedCandidate) ruleIds.push(`fixed-veset-${fixedCandidate.type}`);
+    if (fixedPatternStatus && !fixedPatternStatus.active) ruleIds.push('fixed-veset-uprooted');
+    if (fixedCandidates.length > 1) ruleIds.push('fixed-veset-ambiguous-review');
     if (statusText.includes('וסת קבוע') && statusText.includes('החודש')) ruleIds.push('fixed-veset-hachodesh');
     if (statusText.includes('וסת קבוע') && statusText.includes('הפלגה')) ruleIds.push('fixed-veset-haflagah');
     if (statusText.includes('וסת החודש')) ruleIds.push('veset-hachodesh');
@@ -761,7 +768,8 @@ HalachaLogic.getStatus = function(date) {
     if (lastInfo && lastInfo.estimatedOnah !== 'unknown') ruleIds.push('estimated-day-night-onah');
     const noData = !lastPeriod;
     const needsReview = Boolean(status && status.type === 'needs-review') ||
-        Boolean(lastPeriod && (!lastInfo || lastInfo.relation === 'unknown'));
+        Boolean(lastPeriod && (!lastInfo || lastInfo.relation === 'unknown')) ||
+        fixedCandidates.length > 1;
     const confidence = needsReview ? 'needs-review' : (noData ? 'insufficient-data' : 'advisory');
     return {
         ...status,
@@ -792,6 +800,17 @@ HalachaLogic.getStatus = function(date) {
                 onsetEventTime: lastPeriod ? lastPeriod.eventTime || null : null,
                 onsetSunsetRelation: lastInfo ? lastInfo.relation : 'unknown',
                 onsetEstimatedOnah: lastInfo ? lastInfo.estimatedOnah : 'unknown',
+                fixedPattern: fixedPatternStatus ? {
+                    type: fixedPatternStatus.type,
+                    active: fixedPatternStatus.active,
+                    deviated: fixedPatternStatus.deviated,
+                    missedCount: fixedPatternStatus.missedCount,
+                    expectedDate: fixedPatternStatus.expectedDate,
+                    onah: fixedPatternStatus.onah,
+                    intervalDays: fixedPatternStatus.intervalDays || null,
+                    day: fixedPatternStatus.day || null
+                } : null,
+                fixedPatternAmbiguous: fixedCandidates.length > 1,
                 hefsekDate: lastHefsekDate
             },
             confidence,
