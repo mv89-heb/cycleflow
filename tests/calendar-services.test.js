@@ -77,6 +77,24 @@ for (let cursor = '2026-01-01'; cursor <= '2027-01-01'; cursor = calendar.addCiv
 assert(firstOfMonthWith30DayNextMonth,
   'a fixed day-30 pattern continues to day 30 of a following 30-day month instead of drifting to day 1');
 
+let adarOneDayOne = null;
+for (let cursor = '2023-09-01'; cursor <= '2024-10-15'; cursor = calendar.addCivilDays(cursor, 1)) {
+  const parts = calendar.getHebrewDateParts(cursor);
+  if (parts && parts.month === 'Adar I' && parts.day === 1) {
+    adarOneDayOne = cursor;
+    break;
+  }
+}
+assert(adarOneDayOne, 'the Hebrew leap-year calendar exposes Adar I');
+const adarTwoDayOne = calendar.getNextYomHachodeshDate(adarOneDayOne, 1);
+const adarTwoParts = adarTwoDayOne && calendar.getHebrewDateParts(adarTwoDayOne);
+assert(adarTwoParts && adarTwoParts.month === 'Adar II' && adarTwoParts.day === 1,
+  'the next Hebrew month after Adar I is Adar II, not a collapsed generic Adar');
+const nisanDayOne = calendar.getNextYomHachodeshDate(adarTwoDayOne, 1);
+const nisanParts = nisanDayOne && calendar.getHebrewDateParts(nisanDayOne);
+assert(nisanParts && nisanParts.month === 'Nisan' && nisanParts.day === 1,
+  'the month after Adar II is Nisan');
+
 const sunset = calendar.getSunset('2026-11-16', 'beit-shemesh');
 assert(sunset && /^([01]\d|2[0-3]):[0-5]\d$/.test(sunset.time), 'sunset estimate is a local HH:mm time');
 const before = sunset.time === '00:00' ? '00:01' : '00:00';
