@@ -95,4 +95,27 @@ let noSpaceWriteBlocked = false;
 try { noSpaceWindow.localStorage.setItem(STORAGE_KEY, validState); } catch (_) { noSpaceWriteBlocked = true; }
 assert(noSpaceWriteBlocked, 'failed recovery-copy storage must not permit destructive writes');
 
+// A quota failure during a validated restore must not delete the only recovery copy.
+const quotaDom = new JSDOM('', {
+  runScripts: 'outside-only',
+  url: 'https://cycleflow-quota.test/',
+  storageQuota: 128
+});
+const quotaWindow = quotaDom.window;
+quotaWindow.localStorage.setItem(RECOVERY_KEY, 'preserved-original-data');
+quotaWindow.eval(hardening);
+const oversizedValidState = JSON.stringify({
+  periods: [], hefseks: {}, daily: {},
+  settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark' },
+  notes: 'x'.repeat(300)
+});
+let restoreFailedOnQuota = false;
+try { quotaWindow.__cycleflowRestoreValidatedState(oversizedValidState); }
+catch (_) { restoreFailedOnQuota = true; }
+assert(restoreFailedOnQuota, 'restore should report a storage quota failure');
+assert(quotaWindow.localStorage.getItem(STORAGE_KEY) === null,
+  'failed restore must not leave a partial active state');
+assert(quotaWindow.localStorage.getItem(RECOVERY_KEY) === 'preserved-original-data',
+  'failed restore must preserve the original recovery copy');
+
 console.log('Local state recovery regression tests passed.');
