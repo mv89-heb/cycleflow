@@ -40,6 +40,25 @@ const backup = fs.readFileSync(path.join(__dirname, '..', 'static', 'js', 'backu
 assert(backup.includes("localStorage.removeItem('cycleflow_recovery_v1')"),
   'a validated backup import must be able to clear the recovery block');
 
+const validCalendarDom = new JSDOM('', { runScripts: 'outside-only', url: 'https://cycleflow-calendar.test/' });
+const validCalendarWindow = validCalendarDom.window;
+validCalendarWindow.eval(hardening);
+const calendarState = {
+  periods: [{ date: '2026-11-16', type: 'veset', isSunset: true, eventTime: '17:05', cityId: 'beit-shemesh', sunsetRelation: 'after' }],
+  hefseks: {}, hefsekMeta: { '2026-11-20': { eventTime: '16:30', cityId: 'beit-shemesh', sunsetRelation: 'before' } },
+  daily: {}, settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: 'beit-shemesh' }
+};
+validCalendarWindow.localStorage.setItem(STORAGE_KEY, JSON.stringify(calendarState));
+assert(validCalendarWindow.localStorage.getItem(STORAGE_KEY) === JSON.stringify(calendarState),
+  'valid calendar metadata must pass local storage hardening');
+let invalidCityBlocked = false;
+try {
+  validCalendarWindow.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...calendarState, settings: { ...calendarState.settings, cityId: 'unknown-city' }
+  }));
+} catch (_) { invalidCityBlocked = true; }
+assert(invalidCityBlocked, 'unknown city identifiers must be rejected by local storage hardening');
+
 
 const noSpaceDom = new JSDOM('', { runScripts: 'outside-only', url: 'https://cycleflow-no-space.test/' });
 const noSpaceWindow = noSpaceDom.window;

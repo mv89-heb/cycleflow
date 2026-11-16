@@ -1,0 +1,10 @@
+/* Local icon fallbacks: keeps the interface legible without a remote icon font. */
+.fas,.fa-solid{font-style:normal;display:inline-block;min-width:1.1em;text-align:center;font-family:Arial,sans-serif}
+.fa-calculator::before{content:"▦"}.fa-calendar-alt::before,.fa-calendar-day::before{content:"▣"}
+.fa-chart-line::before,.fa-chart-pie::before{content:"▥"}.fa-check-circle::before{content:"✓"}
+.fa-chevron-left::before{content:"‹"}.fa-chevron-right::before{content:"›"}.fa-cog::before{content:"⚙"}
+.fa-exclamation-circle::before{content:"!"}.fa-eye-slash::before{content:"◉"}
+.fa-file-upload::before{content:"⇧"}.fa-history::before{content:"↶"}.fa-home::before{content:"⌂"}
+.fa-list::before{content:"☷"}.fa-lock::before{content:"▣"}.fa-moon::before{content:"☾"}
+.fa-share-alt::before{content:"↗"}.fa-sun::before{content:"☀"}.fa-tint::before{content:"●"}
+.fa-trash::before,.fa-trash-alt::before{content:"⌫"}
