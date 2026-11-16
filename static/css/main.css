@@ -372,3 +372,81 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
 .tool-checklist input{width:20px;height:20px;flex-shrink:0}
 .tool-indicator{padding:10px;border-radius:10px;background:rgba(99,102,241,.08);margin-top:12px;font-size:.88rem;line-height:1.5}
 @media(max-width:420px){.tool-form-grid{grid-template-columns:1fr}.tool-list-row{align-items:flex-start;flex-direction:column}.tool-list-row button{width:100%}.bottom-nav .nav-item{min-width:0;padding-left:4px;padding-right:4px}.bottom-nav .nav-item span{font-size:.65rem}}
+
+/* Mobile viewport and safe-area resilience (iOS PWA / Android browsers). */
+body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+}
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.header-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin-left: 0;
+    flex-shrink: 0;
+}
+.bottom-nav {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+#day_panel {
+    max-height: 90vh;
+    max-height: 90dvh;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    overscroll-behavior: contain;
+}
+
+@media (max-width: 380px) {
+    header {
+        padding: 10px 12px;
+    }
+    .brand {
+        font-size: 1.05rem;
+        gap: 6px;
+    }
+    .header-actions {
+        gap: 2px;
+    }
+    .header-actions button {
+        width: 36px;
+        height: 40px;
+        font-size: 1.05rem;
+    }
+    main {
+        padding: 12px;
+    }
+    .cal-grid {
+        gap: 4px;
+    }
+    .cal-day {
+        padding: 4px;
+    }
+    .day-num {
+        font-size: 0.9rem;
+    }
+    .day-hebrew {
+        font-size: 0.52rem;
+    }
+    .day-badge {
+        font-size: 0.6rem;
+        padding: 2px 3px;
+    }
+    .bottom-nav {
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+    .bottom-nav .nav-item {
+        width: auto;
+        min-width: 0;
+        padding-left: 3px;
+        padding-right: 3px;
+    }
+}
