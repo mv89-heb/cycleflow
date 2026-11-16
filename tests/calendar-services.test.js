@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 assert(calendar, 'calendar services must be exposed locally');
 assert.equal(calendar.CITIES.length >= 10, true, 'manual Israeli city list is available');
 assert.match(calendar.formatHebrewDate('2026-11-16'), /.+/, 'Intl Hebrew calendar should format a civil date');
+assert.match(calendar.formatHebrewMonth('2026-11-16'), /.+/, 'Intl Hebrew calendar should format Hebrew month and year');
 assert.notEqual(
   calendar.formatHebrewDate('2026-11-16'),
   calendar.formatHebrewDate('2026-11-16', { afterSunset: true }),
