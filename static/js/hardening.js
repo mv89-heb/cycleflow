@@ -9,7 +9,7 @@
 
     function isValidDateString(value) {
         if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-        const d = new Date(`${value}T00:00:00`);
+        const d = new Date(`${value}T12:00:00Z`);
         return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
     }
 
@@ -55,6 +55,52 @@
                 if (meta.eventTime !== undefined && meta.eventTime !== null && (typeof meta.eventTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(meta.eventTime))) return false;
                 if (meta.cityId !== undefined && meta.cityId !== null && !cityIds.includes(meta.cityId)) return false;
                 if (meta.sunsetRelation !== undefined && !['before', 'after', 'unknown'].includes(meta.sunsetRelation)) return false;
+            }
+        }
+
+        const checklistIds = ['body-prep', 'hair', 'nails', 'barriers', 'clothing', 'towel', 'schedule', 'personal'];
+        const toolTypes = ['opk_positive', 'bbt_shift', 'ultrasound', 'estimate', 'other'];
+        const validTime = time => typeof time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+        if (value.manualReminders !== undefined) {
+            if (!Array.isArray(value.manualReminders) || value.manualReminders.length > 500) return false;
+            const ids = new Set();
+            for (const item of value.manualReminders) {
+                if (!isPlainObject(item) || typeof item.id !== 'string' || item.id.length > 80 || ids.has(item.id) || !isValidDateString(item.date)) return false;
+                ids.add(item.id);
+                if (typeof item.title !== 'string' || !item.title.trim() || item.title.length > 120) return false;
+                if (item.time !== undefined && item.time !== null && !validTime(item.time)) return false;
+                if (item.notes !== undefined && (typeof item.notes !== 'string' || item.notes.length > 500)) return false;
+            }
+        }
+        if (value.stainReports !== undefined) {
+            if (!Array.isArray(value.stainReports) || value.stainReports.length > 500) return false;
+            const ids = new Set();
+            for (const item of value.stainReports) {
+                if (!isPlainObject(item) || typeof item.id !== 'string' || ids.has(item.id) || !isValidDateString(item.date)) return false;
+                ids.add(item.id);
+                if (item.time !== undefined && item.time !== null && !validTime(item.time)) return false;
+                if (!['red', 'pink', 'brown', 'yellow', 'clear', 'other', 'unknown'].includes(item.color)) return false;
+                if (!['small', 'medium', 'large', 'multiple', 'unknown'].includes(item.size)) return false;
+                if (!['white_underwear', 'colored_underwear', 'sheet', 'tissue', 'pad', 'bedikah_cloth', 'other', 'unknown'].includes(item.surface)) return false;
+                if (!['unknown', 'external', 'medical', 'other'].includes(item.source)) return false;
+                if (item.note !== undefined && (typeof item.note !== 'string' || item.note.length > 1000)) return false;
+            }
+        }
+        if (value.mikvehChecklist !== undefined) {
+            if (!isPlainObject(value.mikvehChecklist) || Object.keys(value.mikvehChecklist).length > 500) return false;
+            for (const [date, checked] of Object.entries(value.mikvehChecklist)) {
+                if (!isValidDateString(date) || !Array.isArray(checked) || checked.some(id => !checklistIds.includes(id)) || new Set(checked).size !== checked.length) return false;
+            }
+        }
+        if (value.ovulationObservations !== undefined) {
+            if (!Array.isArray(value.ovulationObservations) || value.ovulationObservations.length > 500) return false;
+            const ids = new Set();
+            for (const item of value.ovulationObservations) {
+                if (!isPlainObject(item) || typeof item.id !== 'string' || ids.has(item.id) || !isValidDateString(item.date) || !toolTypes.includes(item.type)) return false;
+                ids.add(item.id);
+                if (item.time !== undefined && item.time !== null && !validTime(item.time)) return false;
+                if (item.immersionDate !== undefined && item.immersionDate !== null && !isValidDateString(item.immersionDate)) return false;
+                if (item.note !== undefined && (typeof item.note !== 'string' || item.note.length > 500)) return false;
             }
         }
 

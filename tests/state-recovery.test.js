@@ -1,10 +1,12 @@
 /** Verify invalid local state is preserved and cannot be overwritten silently. */
+process.env.TZ = 'Asia/Jerusalem';
 const fs = require('fs');
 const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const dom = new JSDOM('', { runScripts: 'outside-only', url: 'https://cycleflow.test/' });
 const { window } = dom;
+assert(new Date('2026-11-17T00:00:00').getUTCDate() === 16, 'test environment must exercise UTC date rollover in Israel');
 const STORAGE_KEY = 'cycleflow_v61_python_pro';
 const RECOVERY_KEY = 'cycleflow_recovery_v1';
 const original = '{"periods":"corrupt-or-unsupported"}';
@@ -45,6 +47,10 @@ const validCalendarWindow = validCalendarDom.window;
 validCalendarWindow.eval(hardening);
 const calendarState = {
   periods: [{ date: '2026-11-16', type: 'veset', isSunset: true, eventTime: '17:05', cityId: 'beit-shemesh', sunsetRelation: 'after' }],
+  manualReminders: [{ id: 'r1', date: '2026-11-17', title: 'בדיקה', time: '18:00', notes: '' }],
+  stainReports: [{ id: 's1', date: '2026-11-18', color: 'brown', size: 'small', surface: 'tissue', source: 'unknown', note: '' }],
+  mikvehChecklist: { '2026-11-19': ['hair'] },
+  ovulationObservations: [{ id: 'o1', date: '2026-11-20', type: 'opk_positive', immersionDate: '2026-11-23', note: '' }],
   hefseks: {}, hefsekMeta: { '2026-11-20': { eventTime: '16:30', cityId: 'beit-shemesh', sunsetRelation: 'before' } },
   daily: {}, settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: 'beit-shemesh' }
 };
@@ -58,6 +64,20 @@ try {
   }));
 } catch (_) { invalidCityBlocked = true; }
 assert(invalidCityBlocked, 'unknown city identifiers must be rejected by local storage hardening');
+let invalidToolDataBlocked = false;
+try {
+  validCalendarWindow.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...calendarState, manualReminders: [{ id: 'bad', date: '2026-11-17', title: 'bad', time: '99:99' }]
+  }));
+} catch (_) { invalidToolDataBlocked = true; }
+assert(invalidToolDataBlocked, 'invalid local reminder data must be rejected by storage hardening');
+let invalidCivilDateBlocked = false;
+try {
+  validCalendarWindow.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...calendarState, manualReminders: [{ id: 'bad-date', date: '2026-02-30', title: 'bad' }]
+  }));
+} catch (_) { invalidCivilDateBlocked = true; }
+assert(invalidCivilDateBlocked, 'impossible civil dates must be rejected in Israel timezone');
 
 
 const noSpaceDom = new JSDOM('', { runScripts: 'outside-only', url: 'https://cycleflow-no-space.test/' });

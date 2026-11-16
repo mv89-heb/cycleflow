@@ -4,6 +4,7 @@
 
 const STORAGE_KEY = 'cycleflow_v61_python_pro';
 const CalendarServices = window.CycleFlowCalendar || null;
+const LocalTools = window.CycleFlowTools || null;
 
 const Utils = {
     fmt: (d) => {
@@ -21,6 +22,20 @@ const Utils = {
     chronologicalPeriods: (periods) => [...periods].sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || ''))),
     chronologicalVesets: (periods) => [...periods].filter(p => p.type === 'veset').sort((a, b) => a.date.localeCompare(b.date) || String(a.id || '').localeCompare(String(b.id || '')))
 };
+
+const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+
+function downloadLocalFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 const SecurityService = {
     async hashPin(pin) {
@@ -110,7 +125,7 @@ const StorageService = {
     clear() { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem('cycleflow_recovery_v1'); }
 };
 
-const defaultState = { periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {}, settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: null } };
+const defaultState = { periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {}, manualReminders: [], stainReports: [], mikvehChecklist: {}, ovulationObservations: [], settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: null } };
 
 class StateManager {
     constructor() { this.state = StorageService.load() || defaultState; this.listeners = []; }
@@ -355,6 +370,8 @@ const UI = {
             }
         });
         
+        document.getElementById('mikveh_checklist_date')?.addEventListener('change', () => this.renderTools());
+
         const acBtn = document.getElementById('calc_ac');
         if (acBtn) {
             let pressTimer = null;
@@ -428,6 +445,7 @@ const UI = {
         if (this.currentTab === 'dashboard') this.renderDashboard();
         if (this.currentTab === 'calendar') this.renderCalendar();
         if (this.currentTab === 'history') this.renderHistory();
+        if (this.currentTab === 'tools') this.renderTools();
         
         const s = State.get().settings;
         document.getElementById('set_minhag').value = s.minhag;
@@ -441,6 +459,48 @@ const UI = {
         }
     },
     
+    renderTools() {
+        if (!LocalTools) return;
+        const state = State.get();
+        const today = Utils.fmt(new Date());
+        const setDefault = (id, value) => {
+            const input = document.getElementById(id);
+            if (input && !input.value) input.value = value;
+        };
+        ['reminder_date', 'stain_date', 'mikveh_checklist_date', 'ovulation_date'].forEach(id => setDefault(id, today));
+        setDefault('doctor_to', today);
+        setDefault('doctor_from', Utils.fmt(Utils.addDays(new Date(), -180)));
+
+        const reminders = [...(state.manualReminders || [])].sort((a, b) => a.date.localeCompare(b.date) || String(a.time || '').localeCompare(String(b.time || '')));
+        const reminderList = document.getElementById('reminders_list');
+        reminderList.innerHTML = reminders.length ? reminders.map(item => `
+            <div class="tool-list-row"><div><strong>${escapeHTML(item.title)}</strong><div class="text-muted small-note">${item.date} · ${item.time || 'כל היום'}</div></div>
+            <button class="btn btn-outline" data-action="deleteReminder" data-id="${escapeHTML(item.id)}">מחיקה</button></div>`).join('') : '<p class="text-muted small-note">אין עדיין תזכורות שמורות.</p>';
+
+        const stains = [...(state.stainReports || [])].sort((a, b) => b.date.localeCompare(a.date));
+        document.getElementById('stain_reports_list').innerHTML = stains.length ? stains.map(item => {
+            const color = LocalTools.STAIN_LABELS.color[item.color] || 'לא ידוע';
+            const size = LocalTools.STAIN_LABELS.size[item.size] || 'לא ידוע';
+            return `<div class="tool-list-row"><div><strong>${item.date} · ${escapeHTML(color)}</strong><div class="text-muted small-note">${escapeHTML(size)} · ${escapeHTML(LocalTools.STAIN_LABELS.surface[item.surface] || 'לא ידוע')}</div></div>
+            <div class="flex gap-10"><button class="btn btn-outline" data-action="copyStainSummary" data-id="${escapeHTML(item.id)}">העתקה</button><button class="btn btn-outline" data-action="downloadStainSummary" data-id="${escapeHTML(item.id)}">הורדה</button><button class="btn btn-outline" data-action="deleteStainReport" data-id="${escapeHTML(item.id)}">מחיקה</button></div></div>`;
+        }).join('') : '<p class="text-muted small-note">אין עדיין תיאורי כתמים שמורים.</p>';
+
+        const checklistDate = document.getElementById('mikveh_checklist_date').value || today;
+        const checked = (state.mikvehChecklist || {})[checklistDate] || [];
+        const checklistContainer = document.getElementById('mikveh_checklist_items');
+        checklistContainer.innerHTML = LocalTools.CHECKLIST_ITEMS.map(item => `
+            <label><input type="checkbox" data-action="toggleMikvehChecklist" data-item="${item.id}" data-date="${escapeHTML(checklistDate)}" ${checked.includes(item.id) ? 'checked' : ''}><span>${escapeHTML(item.label)}</span></label>`).join('');
+        checklistContainer.querySelectorAll('input[data-action="toggleMikvehChecklist"]').forEach(input => {
+            input.addEventListener('change', e => this.actions.toggleMikvehChecklist.call(this, input, e));
+        });
+
+        const observations = [...(state.ovulationObservations || [])].sort((a, b) => b.date.localeCompare(a.date));
+        const indicator = document.getElementById('ovulation_indicator');
+        indicator.textContent = observations.length ? LocalTools.earlyOvulationIndicator(observations[0]) : 'אין עדיין תיעוד ביוץ.';
+        document.getElementById('ovulation_list').innerHTML = observations.length ? observations.map(item => `
+            <div class="tool-list-row"><div><strong>${item.date}${item.time ? ' · ' + item.time : ''}</strong><div class="text-muted small-note">${escapeHTML(LocalTools.OVULATION_LABELS[item.type] || item.type)} · ${escapeHTML(LocalTools.earlyOvulationIndicator(item))}</div></div><button class="btn btn-outline" data-action="deleteOvulationObservation" data-id="${escapeHTML(item.id)}">מחיקה</button></div>`).join('') : '<p class="text-muted small-note">אין עדיין תיעודי ביוץ.</p>';
+    },
+
     renderDashboard() {
         const today = new Date();
         const st = HalachaLogic.getStatus(today);
@@ -780,6 +840,129 @@ const UI = {
                 else s.tevilot[Utils.fmt(this.selectedDate)] = true;
             });
             this.actions.closePanel.call(this);
+        },
+        addReminder() {
+            if (!LocalTools) return;
+            const date = document.getElementById('reminder_date').value;
+            const time = document.getElementById('reminder_time').value || null;
+            const title = document.getElementById('reminder_title').value.trim();
+            const notes = document.getElementById('reminder_notes').value.trim();
+            if (!LocalTools.validDate(date) || !title) { this.toast('יש להזין תאריך וכותרת לתזכורת', true); return; }
+            const item = { id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7), date, time, title, notes };
+            try { LocalTools.buildIcs([item]); } catch (error) { this.toast(error.message, true); return; }
+            const saved = State.update(state => { if (!state.manualReminders) state.manualReminders = []; state.manualReminders.push(item); });
+            if (!saved) { this.toast('שמירת התזכורת נכשלה', true); return; }
+            document.getElementById('reminder_title').value = '';
+            document.getElementById('reminder_time').value = '';
+            document.getElementById('reminder_notes').value = '';
+            this.toast('התזכורת נשמרה במכשיר');
+        },
+        exportIcs() {
+            try {
+                const content = LocalTools.buildIcs(State.get().manualReminders || []);
+                downloadLocalFile(content, 'cycleflow-reminders.ics', 'text/calendar;charset=utf-8');
+                this.toast('קובץ היומן נוצר במכשיר');
+            } catch (error) { this.toast(error.message, true); }
+        },
+        deleteReminder(btn) {
+            if (!confirm('למחוק את התזכורת?')) return;
+            State.update(state => { state.manualReminders = (state.manualReminders || []).filter(item => item.id !== btn.dataset.id); });
+            this.toast('התזכורת נמחקה');
+        },
+        addStainReport() {
+            if (!LocalTools) return;
+            const item = {
+                id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7),
+                date: document.getElementById('stain_date').value,
+                time: document.getElementById('stain_time').value || null,
+                color: document.getElementById('stain_color').value,
+                size: document.getElementById('stain_size').value,
+                surface: document.getElementById('stain_surface').value,
+                source: document.getElementById('stain_source').value,
+                note: document.getElementById('stain_note').value.trim()
+            };
+            if (!LocalTools.validDate(item.date)) { this.toast('יש לבחור תאריך תקין', true); return; }
+            try { LocalTools.buildStainSummary(item); } catch (error) { this.toast(error.message, true); return; }
+            const saved = State.update(state => { if (!state.stainReports) state.stainReports = []; state.stainReports.push(item); });
+            if (!saved) { this.toast('שמירת התיאור נכשלה', true); return; }
+            document.getElementById('stain_note').value = '';
+            this.toast('התיאור נשמר מקומית בלבד');
+        },
+        async copyStainSummary(btn) {
+            const item = (State.get().stainReports || []).find(record => record.id === btn.dataset.id);
+            if (!item) { this.toast('לא נמצא תיאור כתם', true); return; }
+            const summary = LocalTools.buildStainSummary(item);
+            try {
+                if (!navigator.clipboard?.writeText) throw new Error('clipboard unavailable');
+                await navigator.clipboard.writeText(summary);
+                this.toast('הסיכום האנונימי הועתק');
+            } catch (_) {
+                downloadLocalFile(summary, 'cycleflow-stain-summary.txt', 'text/plain;charset=utf-8');
+                this.toast('הסיכום הורד למכשיר');
+            }
+        },
+        deleteStainReport(btn) {
+            if (!confirm('למחוק את תיאור הכתם השמור?')) return;
+            State.update(state => { state.stainReports = (state.stainReports || []).filter(item => item.id !== btn.dataset.id); });
+            this.toast('תיאור הכתם נמחק');
+        },
+        downloadStainSummary(btn) {
+            const item = (State.get().stainReports || []).find(record => record.id === btn.dataset.id);
+            if (!item) { this.toast('לא נמצא תיאור כתם', true); return; }
+            downloadLocalFile(LocalTools.buildStainSummary(item), 'cycleflow-stain-summary.txt', 'text/plain;charset=utf-8');
+            this.toast('הסיכום הורד למכשיר');
+        },
+        toggleMikvehChecklist(input) {
+            const date = input.dataset.date;
+            const itemId = input.dataset.item;
+            if (!LocalTools.validDate(date) || !LocalTools.CHECKLIST_ITEMS.some(item => item.id === itemId)) return;
+            State.update(state => {
+                if (!state.mikvehChecklist) state.mikvehChecklist = {};
+                const checked = new Set(state.mikvehChecklist[date] || []);
+                if (input.checked) checked.add(itemId); else checked.delete(itemId);
+                state.mikvehChecklist[date] = [...checked];
+            });
+        },
+        resetMikvehChecklist() {
+            const date = document.getElementById('mikveh_checklist_date').value;
+            if (!LocalTools.validDate(date)) { this.toast('יש לבחור תאריך תקין', true); return; }
+            if (!confirm('לאפס את רשימת ההכנות לתאריך זה?')) return;
+            State.update(state => { if (state.mikvehChecklist) delete state.mikvehChecklist[date]; });
+            this.toast('הרשימה אופסה');
+        },
+        addOvulationObservation() {
+            if (!LocalTools) return;
+            const item = {
+                id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7),
+                date: document.getElementById('ovulation_date').value,
+                time: document.getElementById('ovulation_time').value || null,
+                type: document.getElementById('ovulation_type').value,
+                immersionDate: document.getElementById('ovulation_immersion_date').value || null,
+                note: document.getElementById('ovulation_note').value.trim()
+            };
+            if (!LocalTools.validDate(item.date) || (item.immersionDate && !LocalTools.validDate(item.immersionDate))) {
+                this.toast('יש לבחור תאריך תקין', true); return;
+            }
+            const saved = State.update(state => { if (!state.ovulationObservations) state.ovulationObservations = []; state.ovulationObservations.push(item); });
+            if (!saved) { this.toast('שמירת התיעוד נכשלה', true); return; }
+            document.getElementById('ovulation_note').value = '';
+            this.toast('תיעוד הביוץ נשמר מקומית');
+        },
+        deleteOvulationObservation(btn) {
+            if (!confirm('למחוק את תיעוד הביוץ?')) return;
+            State.update(state => { state.ovulationObservations = (state.ovulationObservations || []).filter(item => item.id !== btn.dataset.id); });
+            this.toast('תיעוד הביוץ נמחק');
+        },
+        exportDoctorSummary() {
+            const from = document.getElementById('doctor_from').value;
+            const to = document.getElementById('doctor_to').value;
+            try {
+                const summary = LocalTools.buildDoctorSummary(State.get(), from, to, {
+                    includeStains: document.getElementById('doctor_include_stains').checked
+                });
+                downloadLocalFile(summary, 'cycleflow-doctor-summary.txt', 'text/plain;charset=utf-8');
+                this.toast('הסיכום הרפואי הורד למכשיר');
+            } catch (error) { this.toast(error.message, true); }
         },
         saveDaily() { 
             if (!this.selectedDate) return; 

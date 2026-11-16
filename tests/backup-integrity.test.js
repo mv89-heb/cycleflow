@@ -30,6 +30,10 @@ const { TextEncoder, TextDecoder } = require('util');
     periods: [{ id: 'p1', date: '2026-06-01', type: 'veset', isSunset: false, eventTime: '14:20', cityId: 'beit-shemesh', sunsetRelation: 'before' }],
     hefseks: { '2026-06-06': true },
     hefsekMeta: { '2026-06-06': { eventTime: '17:10', cityId: 'beit-shemesh', sunsetRelation: 'after' } },
+    manualReminders: [{ id: 'r1', date: '2026-06-20', time: '18:30', title: 'תזכורת', notes: '' }],
+    stainReports: [{ id: 's1', date: '2026-06-21', time: null, color: 'brown', size: 'small', surface: 'tissue', source: 'unknown', note: '' }],
+    mikvehChecklist: { '2026-06-22': ['hair', 'nails'] },
+    ovulationObservations: [{ id: 'o1', date: '2026-06-23', time: '08:00', type: 'opk_positive', immersionDate: '2026-06-26', note: '' }],
     tevilot: { '2026-06-15': true },
     daily: {},
     settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: 'beit-shemesh' }
@@ -55,6 +59,11 @@ const { TextEncoder, TextDecoder } = require('util');
 
   assert.throws(() => api.validateState({ ...state, periods: [{ ...state.periods[0], eventTime: '25:99' }] }), /שעת אירוע לא תקינה/);
   assert.throws(() => api.validateState({ ...state, settings: { ...state.settings, cityId: 'not-a-city' } }), /יישוב לא תקין/);
+  assert.throws(() => api.validateState({ ...state, manualReminders: [{ ...state.manualReminders[0], time: '29:99' }] }), /שעת תזכורת לא תקינה/);
+  assert.throws(() => api.validateState({ ...state, manualReminders: [{ ...state.manualReminders[0], date: '2026-02-30' }] }), /תזכורת לא תקינה/);
+  assert.throws(() => api.validateState({ ...state, stainReports: [{ ...state.stainReports[0], color: 'invalid' }] }), /צבע כתם לא תקין/);
+  assert.throws(() => api.validateState({ ...state, mikvehChecklist: { '2026-06-22': ['not-a-check'] } }), /סימון הכנה למקווה אינו תקין/);
+  assert.throws(() => api.validateState({ ...state, ovulationObservations: [{ ...state.ovulationObservations[0], type: 'diagnosis' }] }), /תיעוד ביוץ לא תקין/);
 
   assert.throws(() => api.validateState({ ...state, tevilot: { 'not-a-date': true } }),
     /נתוני טבילה לא תקינים/);

@@ -86,29 +86,80 @@
         return JSON.parse(dec.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher)));
     }
 
+    function isValidDateString(value) {
+        if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+        const date = new Date(value + 'T12:00:00Z');
+        return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+    }
+
     function validateState(state) {
         if (!state || typeof state !== 'object' || !Array.isArray(state.periods)) throw new Error('מבנה הגיבוי אינו תקין');
         if (state.periods.length > 10000) throw new Error('הגיבוי מכיל יותר מדי רשומות');
         const cityIds = ["beit-shemesh","jerusalem","bnei-brak","tel-aviv","haifa","ashdod","ashkelon","netanya","petah-tikva","modiin","other"];
         for (const p of state.periods) {
-            if (!p || typeof p !== 'object' || typeof p.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(p.date)) throw new Error('רשומת וסת לא תקינה');
+            if (!p || typeof p !== 'object' || !isValidDateString(p.date)) throw new Error('רשומת וסת לא תקינה');
             if (!['veset', 'spotting'].includes(p.type)) throw new Error('סוג רשומה לא תקין');
             if (p.eventTime !== undefined && p.eventTime !== null && (typeof p.eventTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(p.eventTime))) throw new Error('שעת אירוע לא תקינה');
             if (p.cityId !== undefined && p.cityId !== null && !cityIds.includes(p.cityId)) throw new Error('יישוב אירוע לא תקין');
             if (p.sunsetRelation !== undefined && !['before', 'after', 'unknown'].includes(p.sunsetRelation)) throw new Error('יחס שקיעה לא תקין');
         }
         if (state.hefseks !== undefined && (typeof state.hefseks !== 'object' || Array.isArray(state.hefseks))) throw new Error('נתוני הפסק לא תקינים');
-        if (state.tevilot !== undefined && (state.tevilot === null || typeof state.tevilot !== 'object' || Array.isArray(state.tevilot) || Object.entries(state.tevilot).some(([date, enabled]) => !/^\d{4}-\d{2}-\d{2}$/.test(date) || enabled !== true))) throw new Error('נתוני טבילה לא תקינים');
+        if (state.tevilot !== undefined && (state.tevilot === null || typeof state.tevilot !== 'object' || Array.isArray(state.tevilot) || Object.entries(state.tevilot).some(([date, enabled]) => !isValidDateString(date) || enabled !== true))) throw new Error('נתוני טבילה לא תקינים');
         if (state.daily !== undefined && (typeof state.daily !== 'object' || Array.isArray(state.daily))) throw new Error('נתוני דיווח יומי לא תקינים');
         if (state.settings !== undefined && (typeof state.settings !== 'object' || Array.isArray(state.settings))) throw new Error('הגדרות לא תקינות');
         if (state.settings && state.settings.cityId !== undefined && state.settings.cityId !== null && !cityIds.includes(state.settings.cityId)) throw new Error('יישוב לא תקין');
         if (state.hefsekMeta !== undefined) {
             if (!state.hefsekMeta || typeof state.hefsekMeta !== 'object' || Array.isArray(state.hefsekMeta)) throw new Error('נתוני זמן הפסק לא תקינים');
             for (const [date, meta] of Object.entries(state.hefsekMeta)) {
-                if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !meta || typeof meta !== 'object' || Array.isArray(meta)) throw new Error('נתוני זמן הפסק לא תקינים');
+                if (!isValidDateString(date) || !meta || typeof meta !== 'object' || Array.isArray(meta)) throw new Error('נתוני זמן הפסק לא תקינים');
                 if (meta.eventTime !== undefined && meta.eventTime !== null && (typeof meta.eventTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(meta.eventTime))) throw new Error('שעת הפסק לא תקינה');
                 if (meta.cityId !== undefined && meta.cityId !== null && !cityIds.includes(meta.cityId)) throw new Error('יישוב הפסק לא תקין');
                 if (meta.sunsetRelation !== undefined && !['before', 'after', 'unknown'].includes(meta.sunsetRelation)) throw new Error('יחס שקיעה לא תקין');
+            }
+        }
+        const checklistIds = ['body-prep', 'hair', 'nails', 'barriers', 'clothing', 'towel', 'schedule', 'personal'];
+        const toolTypes = ['opk_positive', 'bbt_shift', 'ultrasound', 'estimate', 'other'];
+        const validTime = time => typeof time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+        if (state.manualReminders !== undefined) {
+            if (!Array.isArray(state.manualReminders) || state.manualReminders.length > 500) throw new Error('רשימת התזכורות אינה תקינה');
+            const ids = new Set();
+            for (const item of state.manualReminders) {
+                if (!item || typeof item !== 'object' || typeof item.id !== 'string' || item.id.length > 80 || ids.has(item.id) || !isValidDateString(item.date)) throw new Error('תזכורת לא תקינה');
+                ids.add(item.id);
+                if (typeof item.title !== 'string' || !item.title.trim() || item.title.length > 120) throw new Error('כותרת תזכורת לא תקינה');
+                if (item.time !== undefined && item.time !== null && !validTime(item.time)) throw new Error('שעת תזכורת לא תקינה');
+                if (item.notes !== undefined && (typeof item.notes !== 'string' || item.notes.length > 500)) throw new Error('הערות תזכורת לא תקינות');
+            }
+        }
+        if (state.stainReports !== undefined) {
+            if (!Array.isArray(state.stainReports) || state.stainReports.length > 500) throw new Error('רישומי כתמים אינם תקינים');
+            const ids = new Set();
+            for (const item of state.stainReports) {
+                if (!item || typeof item !== 'object' || typeof item.id !== 'string' || ids.has(item.id) || !isValidDateString(item.date)) throw new Error('רישום כתם לא תקין');
+                ids.add(item.id);
+                if (item.time !== undefined && item.time !== null && !validTime(item.time)) throw new Error('שעת כתם לא תקינה');
+                if (!['red', 'pink', 'brown', 'yellow', 'clear', 'other', 'unknown'].includes(item.color)) throw new Error('צבע כתם לא תקין');
+                if (!['small', 'medium', 'large', 'multiple', 'unknown'].includes(item.size)) throw new Error('גודל כתם לא תקין');
+                if (!['white_underwear', 'colored_underwear', 'sheet', 'tissue', 'pad', 'bedikah_cloth', 'other', 'unknown'].includes(item.surface)) throw new Error('משטח כתם לא תקין');
+                if (!['unknown', 'external', 'medical', 'other'].includes(item.source)) throw new Error('מקור כתם לא תקין');
+                if (item.note !== undefined && (typeof item.note !== 'string' || item.note.length > 1000)) throw new Error('הערת כתם ארוכה מדי');
+            }
+        }
+        if (state.mikvehChecklist !== undefined) {
+            if (!state.mikvehChecklist || typeof state.mikvehChecklist !== 'object' || Array.isArray(state.mikvehChecklist) || Object.keys(state.mikvehChecklist).length > 500) throw new Error('רשימת הכנות למקווה אינה תקינה');
+            for (const [date, checked] of Object.entries(state.mikvehChecklist)) {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Array.isArray(checked) || checked.some(id => !checklistIds.includes(id)) || new Set(checked).size !== checked.length) throw new Error('סימון הכנה למקווה אינו תקין');
+            }
+        }
+        if (state.ovulationObservations !== undefined) {
+            if (!Array.isArray(state.ovulationObservations) || state.ovulationObservations.length > 500) throw new Error('תיעודי ביוץ אינם תקינים');
+            const ids = new Set();
+            for (const item of state.ovulationObservations) {
+                if (!item || typeof item !== 'object' || typeof item.id !== 'string' || ids.has(item.id) || !/^\d{4}-\d{2}-\d{2}$/.test(item.date) || !toolTypes.includes(item.type)) throw new Error('תיעוד ביוץ לא תקין');
+                ids.add(item.id);
+                if (item.time !== undefined && item.time !== null && !validTime(item.time)) throw new Error('שעת ביוץ לא תקינה');
+                if (item.immersionDate !== undefined && item.immersionDate !== null && !isValidDateString(item.immersionDate)) throw new Error('תאריך טבילה להשוואה לא תקין');
+                if (item.note !== undefined && (typeof item.note !== 'string' || item.note.length > 500)) throw new Error('הערת ביוץ ארוכה מדי');
             }
         }
         return state;

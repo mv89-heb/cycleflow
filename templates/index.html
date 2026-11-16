@@ -89,6 +89,54 @@
             <div class="card glass"><h3><i class="fas fa-list"></i> היסטוריה</h3><div id="history_list" class="flex-col gap-10"></div><button class="btn btn-outline mt-15" data-action="generateRabbiText"><i class="fas fa-share-alt"></i> שאלת רב / ייצוא</button></div>
         </section>
 
+        <section id="view_tools" class="app-view hidden">
+            <div class="card glass">
+                <h3><i class="fas fa-bell"></i> תזכורות אישיות ליומן</h3>
+                <p class="text-muted small-note">התזכורות נוצרות רק לפי תאריך ושעה שתבחרי. אין כאן חישוב אוטומטי של מועדים הלכתיים.</p>
+                <label for="reminder_title">כותרת</label><input id="reminder_title" maxlength="120" placeholder="תזכורת אישית">
+                <div class="tool-form-grid"><div><label for="reminder_date">תאריך</label><input type="date" id="reminder_date"></div><div><label for="reminder_time">שעה (אופציונלי)</label><input type="time" id="reminder_time"></div></div>
+                <label for="reminder_notes">הערה (אופציונלי)</label><input id="reminder_notes" maxlength="500" placeholder="הערה לתזכורת">
+                <div class="flex gap-10 mt-15"><button class="btn btn-primary" data-action="addReminder">שמירת תזכורת</button><button class="btn btn-outline" data-action="exportIcs">ייצוא ליומן ‎.ics</button></div>
+                <div id="reminders_list" class="tool-list"></div>
+            </div>
+            <div class="card glass">
+                <h3><i class="fas fa-droplet"></i> שאלון תיאור כתם</h3>
+                <p class="text-muted small-note">השאלון אוסף תיאור עובדתי בלבד. הוא אינו קובע מעמד הלכתי ואינו מחליף שאלה לרב או ליועצת הלכה. אין להזין שם או פרטי זיהוי.</p>
+                <div class="tool-form-grid"><div><label for="stain_date">תאריך</label><input type="date" id="stain_date"></div><div><label for="stain_time">שעה (אופציונלי)</label><input type="time" id="stain_time"></div></div>
+                <label for="stain_color">צבע כפי שנראה</label><select id="stain_color"><option value="unknown">לא ידוע</option><option value="red">אדום</option><option value="pink">ורוד</option><option value="brown">חום</option><option value="yellow">צהוב</option><option value="clear">שקוף</option><option value="other">אחר</option></select>
+                <div class="tool-form-grid"><div><label for="stain_size">גודל</label><select id="stain_size"><option value="unknown">לא ידוע</option><option value="small">קטן</option><option value="medium">בינוני</option><option value="large">גדול</option><option value="multiple">מספר כתמים</option></select></div><div><label for="stain_surface">על איזה משטח</label><select id="stain_surface"><option value="unknown">לא ידוע</option><option value="white_underwear">תחתון לבן</option><option value="colored_underwear">תחתון צבעוני</option><option value="sheet">מצעים</option><option value="tissue">נייר</option><option value="pad">תחבושת/מגן</option><option value="bedikah_cloth">בדיקה/עד</option><option value="other">אחר</option></select></div></div>
+                <label for="stain_source">מקור אפשרי</label><select id="stain_source"><option value="unknown">לא ידוע</option><option value="external">מקור חיצוני אפשרי</option><option value="medical">הליך/בדיקה רפואית</option><option value="other">אחר</option></select>
+                <label for="stain_note">תיאור עובדתי נוסף (ללא פרטים מזהים)</label><textarea id="stain_note" maxlength="1000" rows="3" placeholder="מה ראית, מתי ובאיזה הקשר?"></textarea>
+                <button class="btn btn-primary mt-15" data-action="addStainReport">שמירת תיאור</button>
+                <div id="stain_reports_list" class="tool-list"></div>
+            </div>
+            <div class="card glass">
+                <h3><i class="fas fa-clipboard-check"></i> רשימת הכנות למקווה</h3>
+                <p class="text-muted small-note">רשימה ארגונית כללית בלבד. התאימי אותה למנהגך ולהנחיות המקווה או היועצת.</p>
+                <label for="mikveh_checklist_date">תאריך</label><input type="date" id="mikveh_checklist_date">
+                <div id="mikveh_checklist_items" class="tool-checklist"></div>
+                <button class="btn btn-outline mt-15" data-action="resetMikvehChecklist">איפוס הרשימה לתאריך זה</button>
+            </div>
+            <div class="card glass">
+                <h3><i class="fas fa-vial"></i> תיעוד ביוץ מוקדם</h3>
+                <p class="text-muted small-note">תיעוד בדיקות ותאריכים בלבד. ההשוואה לתאריך הטבילה היא חיווי לוח שנה, לא אבחון רפואי ולא קביעה הלכתית.</p>
+                <div class="tool-form-grid"><div><label for="ovulation_date">תאריך תיעוד</label><input type="date" id="ovulation_date"></div><div><label for="ovulation_time">שעה (אופציונלי)</label><input type="time" id="ovulation_time"></div></div>
+                <label for="ovulation_type">סוג תיעוד</label><select id="ovulation_type"><option value="opk_positive">בדיקת LH חיובית</option><option value="bbt_shift">עליית חום בסיסי</option><option value="ultrasound">מעקב אולטרסאונד</option><option value="estimate">הערכה אישית</option><option value="other">אחר</option></select>
+                <label for="ovulation_immersion_date">תאריך טבילה להשוואה (ידני, אופציונלי)</label><input type="date" id="ovulation_immersion_date">
+                <label for="ovulation_note">הערה (אופציונלי)</label><input id="ovulation_note" maxlength="500">
+                <button class="btn btn-primary mt-15" data-action="addOvulationObservation">שמירת תיעוד ביוץ</button>
+                <div id="ovulation_indicator" class="tool-indicator text-muted">אין עדיין תיעוד ביוץ.</div>
+                <div id="ovulation_list" class="tool-list"></div>
+            </div>
+            <div class="card glass">
+                <h3><i class="fas fa-file-medical"></i> סיכום לפגישה רפואית</h3>
+                <p class="text-muted small-note">ייצוא מקומי של נתונים שתועדו בלבד, ללא שדות שם או פרטי חשבון. הערות חופשיות עשויות לכלול פרטים מזהים — בדקי את הקובץ לפני שיתוף. בחרי אם לכלול גם תיאורי כתמים.</p>
+                <div class="tool-form-grid"><div><label for="doctor_from">מתאריך</label><input type="date" id="doctor_from"></div><div><label for="doctor_to">עד תאריך</label><input type="date" id="doctor_to"></div></div>
+                <label class="checkbox-label"><input type="checkbox" id="doctor_include_stains"> לכלול תיאורי כתמים</label>
+                <button class="btn btn-outline mt-15" data-action="exportDoctorSummary">הורדת סיכום רפואי ‎.txt</button>
+            </div>
+        </section>
+
         <section id="view_settings" class="app-view hidden">
             <div class="card glass"><h3>הגדרות הלכתיות</h3><label>מנהג (פרופיל מידע – כללי החישוב דורשים אימות הלכתי)</label><select id="set_minhag" data-action="saveSettings"><option value="ashkenaz">אשכנז</option><option value="sepharad">ספרד</option><option value="chabad">חב"ד</option></select><label>יישוב לחישוב שקיעה משוערת (בחירה ידנית, ללא GPS)</label><select id="set_city" data-action="saveSettings"><option value="">יש לבחור יישוב</option><option value="beit-shemesh">בית שמש</option><option value="jerusalem">ירושלים</option><option value="bnei-brak">בני ברק</option><option value="tel-aviv">תל אביב–יפו</option><option value="haifa">חיפה</option><option value="ashdod">אשדוד</option><option value="ashkelon">אשקלון</option><option value="netanya">נתניה</option><option value="petah-tikva">פתח תקווה</option><option value="modiin">מודיעין</option><option value="other">יישוב אחר – ללא חישוב שקיעה</option></select><p id="sunset_hint" class="text-muted small-note">בחרי יישוב כדי להציג שעת שקיעה משוערת. אין שימוש במיקום GPS.</p><p class="text-muted small-note">חישוב השקיעה הוא אומדן אסטרונומי בלבד ואינו זמן הלכתי מוסמך. פרופילי המנהג אינם פסיקה.</p><p class="text-muted small-note">חישוב הימים הקיים עדיין בסיסי ואינו מכסה את כל תתי־המנהגים, החריגים או פרטי המקרה. אין להסתמך עליו לקביעת מועד הלכתי.</p><label>הגדרת פרישה (וסת קבוע)</label><select id="set_cycle_len" data-action="saveSettings"><option value="28">ממוצע אוטומטי (ברירת מחדל)</option><option value="30">30 יום קבוע</option></select></div>
             <div class="card glass"><h3>ניהול נתונים</h3><button class="btn btn-outline mb-10" data-action="exportBackup"><i class="fas fa-lock"></i> גיבוי מוצפן</button><button class="btn btn-outline mb-10" data-action="triggerImport"><i class="fas fa-file-upload"></i> שחזור מגיבוי</button><input type="file" id="import_file" class="hidden" data-action="importBackup" accept=".enc,.cfbk,application/json"><hr class="divider"><button class="btn btn-outline btn-danger-outline" data-action="resetAll"><i class="fas fa-trash"></i> מחיקת נתונים</button></div>
@@ -97,7 +145,7 @@
         </section>
     </main>
 
-    <nav class="bottom-nav blur-target" id="bottom_nav"><button class="nav-item active" data-action="switchTab" data-tab="dashboard"><i class="fas fa-home"></i><span>ראשי</span></button><button class="nav-item" data-action="switchTab" data-tab="calendar"><i class="fas fa-calendar-day"></i><span>לוח</span></button><button class="nav-item" data-action="switchTab" data-tab="history"><i class="fas fa-chart-pie"></i><span>היסטוריה</span></button><button class="nav-item" data-action="switchTab" data-tab="settings"><i class="fas fa-cog"></i><span>הגדרות</span></button></nav>
+    <nav class="bottom-nav blur-target" id="bottom_nav"><button class="nav-item active" data-action="switchTab" data-tab="dashboard"><i class="fas fa-home"></i><span>ראשי</span></button><button class="nav-item" data-action="switchTab" data-tab="calendar"><i class="fas fa-calendar-day"></i><span>לוח</span></button><button class="nav-item" data-action="switchTab" data-tab="history"><i class="fas fa-chart-pie"></i><span>היסטוריה</span></button><button class="nav-item" data-action="switchTab" data-tab="tools"><i class="fas fa-tools"></i><span>כלים</span></button><button class="nav-item" data-action="switchTab" data-tab="settings"><i class="fas fa-cog"></i><span>הגדרות</span></button></nav>
 
     <div id="day_panel_overlay" data-action="closePanel"></div>
     <div id="day_panel">
@@ -110,6 +158,7 @@
 
     <script src="/static/js/hardening.js?v={{ asset_version('js/hardening.js') }}"></script>
     <script src="/static/js/calendar-services.js?v={{ asset_version('js/calendar-services.js') }}"></script>
+    <script src="/static/js/local-tools.js?v={{ asset_version('js/local-tools.js') }}"></script>
     <script type="module" src="/static/js/app.js?v={{ asset_version('js/app.js') }}"></script>
     <script src="/static/js/backup-integrity.js?v={{ asset_version('js/backup-integrity.js') }}"></script>
 </body>

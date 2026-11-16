@@ -8,3 +8,6 @@
 .fa-list::before{content:"☷"}.fa-lock::before{content:"▣"}.fa-moon::before{content:"☾"}
 .fa-share-alt::before{content:"↗"}.fa-sun::before{content:"☀"}.fa-tint::before{content:"●"}
 .fa-trash::before,.fa-trash-alt::before{content:"⌫"}
+
+.fa-tools::before{content:"⚒"}.fa-bell::before{content:"♢"}.fa-file-medical::before{content:"▤"}.fa-clipboard-check::before{content:"☑"}
+.fa-droplet::before{content:"●"}.fa-vial::before{content:"⚗"}

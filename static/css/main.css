@@ -336,3 +336,17 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
 .day-hebrew{font-size:.58rem;line-height:1.25;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-top:2px}
 .small-note{font-size:.76rem;line-height:1.5;margin:7px 0 12px;color:var(--text-muted)}
 .chart-container svg{display:block;max-width:100%;overflow:visible}
+
+
+/* Local personal tools: responsive forms and compact record lists */
+.tool-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tool-form-grid>div{min-width:0}
+.tool-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.tool-list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--border-light);border-radius:10px;min-width:0}
+.tool-list-row>div{min-width:0;overflow-wrap:anywhere}
+.tool-list-row button{flex-shrink:0}
+.tool-checklist{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+.tool-checklist label{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border-light);border-radius:10px}
+.tool-checklist input{width:20px;height:20px;flex-shrink:0}
+.tool-indicator{padding:10px;border-radius:10px;background:rgba(99,102,241,.08);margin-top:12px;font-size:.88rem;line-height:1.5}
+@media(max-width:420px){.tool-form-grid{grid-template-columns:1fr}.tool-list-row{align-items:flex-start;flex-direction:column}.tool-list-row button{width:100%}.bottom-nav .nav-item{min-width:0;padding-left:4px;padding-right:4px}.bottom-nav .nav-item span{font-size:.65rem}}
