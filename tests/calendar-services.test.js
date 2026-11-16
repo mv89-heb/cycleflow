@@ -136,6 +136,18 @@ assert.equal(calendar.getEventDateInfo({
 }).effectiveDate, '2026-11-16', 'before-sunset event keeps the same Hebrew-date civil label');
 assert.equal(calendar.resolveEventRelation({ date: '2026-11-16', eventTime: '17:00', cityId: null, sunsetRelation: 'before', isSunset: false }, 'beit-shemesh'), 'before',
   'a later settings city must not rewrite an event recorded without a city');
+assert.equal(calendar.resolveEventRelation({
+  date: '2026-11-16', eventTime: '23:59'
+}, 'beit-shemesh'), 'unknown',
+  'a current settings city must not be borrowed for a historical event that has no recorded city or sunset relation');
+const historicalCityInfo = calendar.getEventDateInfo({
+  date: '2026-11-16', eventTime: '23:59',
+  ruleContext: { cityId: 'beit-shemesh' }
+}, 'jerusalem');
+assert.equal(historicalCityInfo.dateConfidence, 'astronomical-estimate',
+  'a city saved in the event rule-context can be used for its historical sunset estimate');
+assert.equal(historicalCityInfo.relationSource, 'event-time-compared-with-approximate-sunset',
+  'the saved event city, rather than the current profile, supplies the historical estimate');
 assert.equal(calendar.getSunset('2026-11-16', 'other'), null, 'other city never fabricates a sunset');
 
 const dstBefore = calendar.getSunset('2026-03-26', 'jerusalem');
