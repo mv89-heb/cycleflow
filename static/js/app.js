@@ -1887,7 +1887,7 @@ const UI = {
                 type: document.getElementById('symptom_type').value,
                 customDescription: document.getElementById('symptom_custom').value.trim(),
                 distinctive: document.getElementById('symptom_distinctive').value,
-                occursOutsideFlow: document.getElementById('symptom_outside_flow').value,
+                occursOutsideFlow: document.getElementById('symptom_outside_flow').value,\n                flowWithoutSymptom: document.getElementById('symptom_flow_without').value,
                 relatedFlowDate: document.getElementById('symptom_flow_date').value || null,
                 note: document.getElementById('symptom_note').value.trim()
             };
