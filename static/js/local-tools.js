@@ -125,7 +125,7 @@
         lines.push(`DTSTART;VALUE=DATE:${icsDate(item.date)}`, `DTEND;VALUE=DATE:${icsDate(addDays(item.date, 1))}`);
       }
       lines.push('END:VEVENT');
-      return lines.join('\r\n');
+      return lines.map(foldIcsLine).join('\r\n');
     });
     return [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//CycleFlow//Local Reminders//HE',
