@@ -249,6 +249,22 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'after-sunset onset shifts to the next Hebrew date and uses the estimated night onah');
 })();
 
+(function testLongCycleExemptionReturnsAfterOneOrTwoShortCycles() {
+    const dates = ['2026-01-01', '2026-02-02', '2026-03-06', '2026-04-07', '2026-05-01', '2026-06-02'];
+    const state = {
+        periods: dates.map((date, index) => ({
+            date, type: 'veset', isSunset: false, eventTime: '10:00',
+            cityId: 'beit-shemesh', id: `cycle-${index}`
+        })),
+        hefseks: { '2026-06-07': true },
+        hefsekMeta: { '2026-06-07': { eventTime: '15:00', cityId: 'beit-shemesh' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    };
+    const api = loadApp(state);
+    eq(api.HalachaLogic.getStatus(api.Utils.newDate('2026-07-01')).type, 'pending-tevila',
+       'after one shorter cycle, a subsequent long cycle restores the exemption immediately');
+})();
+
 (function testUnknownOnsetRelationBlocksAutomaticOnot() {
     const state = {
         periods: [{ date: '2026-06-01', type: 'veset', id: 'unknown-onset' }],
