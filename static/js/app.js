@@ -135,7 +135,7 @@ const StorageService = {
     clear() { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem('cycleflow_recovery_v1'); }
 };
 
-const defaultState = { periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {}, manualReminders: [], stainReports: [], mikvehChecklist: {}, ovulationObservations: [], settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: null } };
+const defaultState = { periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {}, manualReminders: [], stainReports: [], mikvehChecklist: {}, ovulationObservations: [], settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: null, minimumWaitMode: 'five_from_onset', onahBeinonitMode: 'day30_onah' } };
 
 class StateManager {
     constructor() { this.state = StorageService.load() || defaultState; this.listeners = []; }
@@ -183,10 +183,37 @@ const HalachaLogic = {
         const onahSuffix = onsetOnah === 'day'
             ? ' · עונת יום (אומדן)'
             : (onsetOnah === 'night' ? ' · עונת לילה (אומדן)' : ' · עונה לא ידועה');
+        const onahMode = state.settings.onahBeinonitMode || 'day30_onah';
+        const onahDay31Enabled = onahMode === 'day30_plus31_onah' || onahMode === 'day30_full_day_plus31_onah';
+        const onahDay30FullDay = onahMode === 'day30_full_day' || onahMode === 'day30_full_day_plus31_onah';
+        const onahSuffixFor = dayNumber => dayNumber === 30 && onahDay30FullDay
+            ? ' · כל היממה (לפי ההגדרה)'
+            : onahSuffix;
         const daysDiff = Utils.diffDays(date, pDate);
+        const minimumWaitMode = state.settings.minimumWaitMode || 'five_from_onset';
+        let minimumWaitStartDate = pDate;
+        let minWaitDays = 5;
+        if (minimumWaitMode === 'four_from_last_relations') {
+            const lastRelations = lastP.lastRelations;
+            if (!lastRelations || !lastRelations.date || !lastRelations.eventTime || !lastRelations.cityId) {
+                return { type: 'needs-review', text: 'חסר תיעוד תאריך, שעה ויישוב של יחסי האישות האחרונים – לא ניתן לחשב את שיטת ארבעת הימים', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', canHefsek: false };
+            }
+            const lastRelationsInfo = CalendarServices && CalendarServices.getEventDateInfo
+                ? CalendarServices.getEventDateInfo(lastRelations, null)
+                : null;
+            if (!lastRelationsInfo || lastRelationsInfo.relation === 'unknown' || !lastRelationsInfo.effectiveDate) {
+                return { type: 'needs-review', text: 'לא ניתן לקבוע את היום ההלכתי של יחסי האישות האחרונים – נדרשת בדיקה', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', canHefsek: false };
+            }
+            minimumWaitStartDate = Utils.newDate(lastRelationsInfo.effectiveDate);
+            if (minimumWaitStartDate > pDate) {
+                return { type: 'needs-review', text: 'תאריך יחסי האישות האחרונים מאוחר מתחילת הווסת – נדרשת בדיקה', color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.1)', canHefsek: false };
+            }
+            minWaitDays = 4;
+        }
+        const earliestHefsekDate = Utils.addDays(minimumWaitStartDate, minWaitDays - 1);
+        const waitDaysDiff = Utils.diffDays(date, minimumWaitStartDate);
         if (dStr === eventCalculationDate(lastP)) return { type: 'nidda', text: 'וסת (יום 1)', color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: false };
 
-        const minWait = state.settings.minhag === 'sepharad' ? 4 : 5;
         let hefsekDate = null;
         let temp = new Date(pDate.getTime());
         while (temp <= date) {
@@ -201,7 +228,8 @@ const HalachaLogic = {
             // A hefsek explicitly recorded after sunset is not silently accepted as a
             // before-sunset hefsek. It remains in history for review.
             const hasRecordedMeta = Object.prototype.hasOwnProperty.call(state.hefsekMeta || {}, key);
-            if (state.hefseks[key] && relation !== 'after' && (relation !== 'unknown' || !hasRecordedMeta)) {
+            if (state.hefseks[key] && temp >= earliestHefsekDate &&
+                relation !== 'after' && (relation !== 'unknown' || !hasRecordedMeta)) {
                 hefsekDate = new Date(temp.getTime());
             }
             temp.setDate(temp.getDate() + 1);
@@ -228,12 +256,12 @@ const HalachaLogic = {
             }
             if (cleanDay > 8 && !tevilaReported) {
                 const onah30 = dStr === Utils.fmt(Utils.addDays(pDate, 29));
-                const onah31 = dStr === Utils.fmt(Utils.addDays(pDate, 30));
+                const onah31 = onahDay31Enabled && dStr === Utils.fmt(Utils.addDays(pDate, 30));
                 if (onah30 || onah31) {
                     const dayNumber = onah30 ? 30 : 31;
                     return {
                         type: 'onah',
-                        text: `עונה בינונית (${dayNumber}) · טרם סומנה טבילה${onahSuffix}`,
+                        text: `עונה בינונית (${dayNumber}) · טרם סומנה טבילה${onahSuffixFor(dayNumber)}`,
                         color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)',
                         expectedTevilaDate, reportedTevilaDate, canHefsek: false
                     };
@@ -242,14 +270,14 @@ const HalachaLogic = {
             }
             if (cleanDay > 8 && tevilaReported) res = { ...res, text: 'לאחר טבילה מדווחת', expectedTevilaDate, reportedTevilaDate };
         } else {
-            if (daysDiff < minWait) return { type: 'nidda', text: `נידה (יום ${daysDiff + 1})`, color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: false };
+            if (waitDaysDiff < minWaitDays - 1) return { type: 'nidda', text: `נידה (יום ${daysDiff + 1})`, color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: false };
             return { type: 'nidda', text: 'נידה - ממתינה להפסק', color: 'var(--st-nidda)', bg: 'rgba(239, 68, 68, 0.1)', canHefsek: true };
         }
 
         const beinonit30 = Utils.addDays(pDate, 29);
         const beinonit31 = Utils.addDays(pDate, 30);
-        if (dStr === Utils.fmt(beinonit30)) return { type: 'onah', text: `עונה בינונית (30)${onahSuffix}`, color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
-        if (dStr === Utils.fmt(beinonit31)) return { type: 'onah', text: `עונה בינונית (31)${onahSuffix}`, color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
+        if (dStr === Utils.fmt(beinonit30)) return { type: 'onah', text: `עונה בינונית (30)${onahSuffixFor(30)}`, color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
+        if (onahDay31Enabled && dStr === Utils.fmt(beinonit31)) return { type: 'onah', text: `עונה בינונית (31)${onahSuffixFor(31)}`, color: 'var(--st-onah)', bg: 'rgba(167, 139, 250, 0.1)', canHefsek: false, expectedTevilaDate: res.expectedTevilaDate, reportedTevilaDate: res.reportedTevilaDate };
         return res;
     }
 };
@@ -492,6 +520,12 @@ const UI = {
         const s = State.get().settings;
         document.getElementById('set_minhag').value = s.minhag;
         document.getElementById('set_cycle_len').value = s.cycle;
+        const minimumWaitSelect = document.getElementById('set_minimum_wait_mode');
+        if (minimumWaitSelect) minimumWaitSelect.value = s.minimumWaitMode || 'five_from_onset';
+        const onahSelect = document.getElementById('set_onah_beinonit_mode');
+        if (onahSelect) onahSelect.value = s.onahBeinonitMode || 'day30_onah';
+        const lastRelationsGroup = document.getElementById('last_relations_group');
+        if (lastRelationsGroup) lastRelationsGroup.classList.toggle('hidden', (s.minimumWaitMode || 'five_from_onset') !== 'four_from_last_relations');
         const citySelect = document.getElementById('set_city');
         if (citySelect) citySelect.value = s.cityId || '';
         const sunsetHint = document.getElementById('sunset_hint');
@@ -638,7 +672,7 @@ const UI = {
             
             let badgeHtml = '';
             if (st.type !== 'regular') {
-                const colorMap = { 'nidda': 'b-nidda', 'hefsek': 'b-hefsek', 'naki': 'b-naki', 'tevila': 'b-tevila', 'tevila-done': 'b-naki', 'pending-tevila': 'b-pending', 'onah': 'b-onah' };
+                const colorMap = { 'nidda': 'b-nidda', 'hefsek': 'b-hefsek', 'naki': 'b-naki', 'tevila': 'b-tevila', 'tevila-done': 'b-naki', 'pending-tevila': 'b-pending', 'needs-review': 'b-pending', 'onah': 'b-onah' };
                 badgeHtml = `<div class="day-badge ${colorMap[st.type]}">${st.text}</div>`;
             } else if (fert.isOvulation) {
                 badgeHtml = `<div class="day-badge b-fertile">ביוץ משוער</div>`;
@@ -825,11 +859,35 @@ const UI = {
             const eventTime = document.getElementById('report_time')?.value || null;
             const cityId = state.settings.cityId || null;
             const fallbackSunset = document.getElementById('chk_sunset_report').checked;
-            const relationInput = { date: d, eventTime, cityId, isSunset: fallbackSunset ? true : undefined };
-            const relation = CalendarServices ? CalendarServices.resolveEventRelation(relationInput, cityId) : (fallbackSunset ? 'after' : 'unknown');
+            const relationInput = { date: d, eventTime, cityId, isSunset: fallbackSunset };
+            const relation = CalendarServices ? CalendarServices.resolveEventRelation(relationInput, cityId) : (fallbackSunset ? 'after' : 'before');
             const effectiveDate = relation === 'after' && CalendarServices
                 ? CalendarServices.addCivilDays(d, 1)
                 : d;
+            const isSpotting = document.getElementById('chk_spotting_report').checked;
+            const minimumWaitMode = state.settings.minimumWaitMode || 'five_from_onset';
+            let lastRelations = null;
+            if (!isSpotting && minimumWaitMode === 'four_from_last_relations') {
+                const lastRelationsDate = document.getElementById('last_relations_date')?.value || '';
+                const lastRelationsTime = document.getElementById('last_relations_time')?.value || '';
+                if (!lastRelationsDate || !lastRelationsTime || !cityId) {
+                    this.toast('לשיטת ארבעת הימים יש להזין תאריך, שעה ויישוב של יחסי האישות האחרונים', true);
+                    return;
+                }
+                const relationRecord = { date: lastRelationsDate, eventTime: lastRelationsTime, cityId };
+                const relationInfo = CalendarServices ? CalendarServices.getEventDateInfo(relationRecord, null) : null;
+                if (!relationInfo || relationInfo.relation === 'unknown' || relationInfo.effectiveDate > effectiveDate) {
+                    this.toast('נתוני יחסי האישות האחרונים אינם תקינים ביחס לתחילת הווסת', true);
+                    return;
+                }
+                lastRelations = {
+                    date: lastRelationsDate,
+                    eventTime: lastRelationsTime,
+                    cityId,
+                    sunsetRelation: relationInfo.relation,
+                    isSunset: relationInfo.relation === 'after'
+                };
+            }
             State.update(state => {
                 state.periods.push({
                     id: Date.now().toString(36),
@@ -838,7 +896,8 @@ const UI = {
                     cityId,
                     sunsetRelation: relation,
                     isSunset: relation === 'after' ? true : (relation === 'before' ? false : null),
-                    type: document.getElementById('chk_spotting_report').checked ? 'spotting' : 'veset'
+                    lastRelations,
+                    type: isSpotting ? 'spotting' : 'veset'
                 });
                 const cutoff = Utils.newDate(effectiveDate); 
                 Object.keys(state.hefseks).forEach(k => {
@@ -1035,8 +1094,14 @@ const UI = {
             }); 
         },
         saveSettings() {
-            State.update(s => { s.settings.minhag = document.getElementById('set_minhag').value; s.settings.cycle = document.getElementById('set_cycle_len').value; s.settings.cityId = document.getElementById('set_city')?.value || null; }); 
-            this.toast('הגדרות נשמרו'); 
+            State.update(s => {
+                s.settings.minhag = document.getElementById('set_minhag').value;
+                s.settings.cycle = document.getElementById('set_cycle_len').value;
+                s.settings.cityId = document.getElementById('set_city')?.value || null;
+                s.settings.minimumWaitMode = document.getElementById('set_minimum_wait_mode')?.value || 'five_from_onset';
+                s.settings.onahBeinonitMode = document.getElementById('set_onah_beinonit_mode')?.value || 'day30_onah';
+            });
+            this.toast('ההגדרות נשמרו');
         },
         async setNewPin() { 
             const p = document.getElementById('set_new_pin').value; 
