@@ -76,7 +76,7 @@ The current PR adds optional civil event time, city ID, and sunset relation. The
 
 ### Fertility and ovulation
 - Nishmat, [Trying to conceive and ovulation timing](https://www.yoatzot.org/faq/trying-to-conceive-for-a-year/).
-- PUAH, [Fertility medication and halachic veset calculations](https://puah.org.il/%D7%98%D7%99%D7%A4%D7%95%D7%9C-%D7%AA%D7%A8%D7%95%D7%A4%D7%AA%D7%99-%D7%9C%D7%90%D7%99%D7%A4%D7%95%D7%A8%D7%99%D7%95%D7%AA/).
+- PUAH, [Fertility medication and halachic veset calculations](https://puah.org.il/%D7%98%D7%99%D7%A4%D7%95%D7%9C-%D7%AA%D7%A8%D7%95%D7%A4%D7%AA%D7%99-%D7%9C%D7%90-%D7%A4%D7%95%D7%A8%D7%99%D7%95%D7%AA/).
 - PUAH, [Vesatot in fertility treatment](https://puah.org.il/Article/203065/).
 
 ## Implementation gate
