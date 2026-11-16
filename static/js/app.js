@@ -1129,7 +1129,7 @@ const UI = {
                         : (!fixedStatus.active
                             ? 'הווסת הקבוע נעקר לאחר שלוש החמצות'
                             : (fixedStatus.deviated
-                                ? `ווסת קבוע פעיל עם חריגות (${fixedStatus.missedCount}/3)`
+                                ? `ווסת קבוע פעיל עם חריגה; הוחמצו ${fixedStatus.missedCount}/3 מועדים קבועים`
                                 : 'ווסת קבוע פעיל'));
                     const evidence = candidate.evidenceDates.map(value => Utils.prettyDate(Utils.newDate(value))).join(' · ');
                     row.textContent = `${title}. ${statusLabel}. נקבע לפי הנתונים עד ${Utils.prettyDate(Utils.newDate(candidate.establishedAt))}. נתונים: ${evidence}.`;
