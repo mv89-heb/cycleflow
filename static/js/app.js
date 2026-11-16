@@ -697,7 +697,7 @@ HalachaLogic.getStatus = function(date) {
     const ruleContext = captureRuleContext(state.settings);
     const sourceEventRuleContext = lastPeriod && lastPeriod.ruleContext ? lastPeriod.ruleContext : null;
     const sourceEventProfileMatchesCurrent = sourceEventRuleContext
-        ? ['rulesetId', 'rulesetVersion', 'community', 'minimumWaitMode', 'onahBeinonitMode']
+        ? ['rulesetId', 'rulesetVersion', 'community', 'minimumWaitMode', 'onahBeinonitMode', 'cityId', 'timeZone', 'solarTimeMethod']
             .every(key => sourceEventRuleContext[key] === ruleContext[key])
         : null;
     const summarizeRuleContext = context => context ? {
