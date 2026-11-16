@@ -39,8 +39,8 @@ assert(window.localStorage.getItem(RECOVERY_KEY) === original,
   'blocked writes must not replace the preserved recovery copy');
 
 const backup = fs.readFileSync(path.join(__dirname, '..', 'static', 'js', 'backup-integrity.js'), 'utf8');
-assert(backup.includes("localStorage.removeItem('cycleflow_recovery_v1')"),
-  'a validated backup import must be able to clear the recovery block');
+assert(backup.includes('window.__cycleflowRestoreValidatedState(serialized)'),
+  'a validated backup import must use the verified recovery restore path');
 
 const validCalendarDom = new JSDOM('', { runScripts: 'outside-only', url: 'https://cycleflow-calendar.test/' });
 const validCalendarWindow = validCalendarDom.window;
