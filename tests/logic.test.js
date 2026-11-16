@@ -255,14 +255,14 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
         hefseks: {}, daily: {}, settings: { ...baseSettings, minhag: 'sepharad' }
     };
     const { HalachaLogic, Utils } = loadApp(state);
-    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-05')).canHefsek, true, 'day 5 can hefsek (sepharad)');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-05')).canHefsek, true, 'day 5 can hefsek under the five-day baseline regardless of the broad Sephardi label');
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-04')).canHefsek, false, 'day 4 cannot hefsek (sepharad)');
 })();
 
 (function testMinimumWaitProfilesRequireTheirCorrectStartReference() {
     const fourDayState = {
         periods: [{
-            date: '2026-06-01', type: 'veset', isSunset: false, id: 'four-day',
+            date: '2026-06-01', type: 'veset', isSunset: false, eventTime: '10:00', cityId: 'beit-shemesh', id: 'four-day',
             lastRelations: { date: '2026-05-30', eventTime: '15:00', cityId: 'beit-shemesh' }
         }],
         hefseks: {}, hefsekMeta: {}, daily: {},
@@ -310,6 +310,20 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const fullDayApi = loadApp(fullDayState);
     assert(fullDayApi.HalachaLogic.getStatus(fullDayApi.Utils.newDate('2026-06-30')).text.includes('כל היממה'),
        'the 24-hour custom is displayed only when explicitly selected');
+})();
+
+(function testPrematureHefsekDoesNotStartCleanDays() {
+    const state = {
+        periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'five-day' }],
+        hefseks: { '2026-06-04': true }, daily: {}, settings: { ...baseSettings }
+    };
+    const { HalachaLogic, Utils } = loadApp(state);
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-04')).type, 'nidda',
+       'a hefsek entered before the fifth halachic day is not accepted');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-05')).type, 'nidda',
+       'an early hefsek does not start the seven clean days on the next date');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-05')).canHefsek, true,
+       'the user can perform a valid hefsek on the fifth halachic day');
 })();
 
 (function testCleanDays() {
