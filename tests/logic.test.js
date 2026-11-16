@@ -647,6 +647,72 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'the standard day-interval fixed-haflagah detector is not used for Chabad');
 })();
 
+(function testFixedHaflagahStateMachineAndDeviations() {
+    const dates = ['2026-06-01', '2026-06-30', '2026-07-28', '2026-08-25'];
+    const periods = dates.map((date, index) => ({
+        date, type: 'veset', eventTime: index === 0 ? '20:30' : '10:00',
+        cityId: 'beit-shemesh', isSunset: false, id: `interval-${index}`
+    }));
+    const initialHefsek = '2026-08-30';
+    const base = loadApp({
+        periods, hefseks: { [initialHefsek]: true },
+        hefsekMeta: { [initialHefsek]: { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const fixed = base.HalachaLogic.getFixedHaflagahStatus('2026-09-22');
+    assert(fixed && fixed.active && fixed.intervalDays === 28 && fixed.expectedDate === '2026-09-22',
+       'a standard fixed haflagah activates for the next equal interval');
+    const targetStatus = base.HalachaLogic.getStatus(base.Utils.newDate('2026-09-22'));
+    assert(targetStatus.text.includes('וסת קבוע – וסת הפלגה (28)'),
+       'the expected fixed haflagah onah is displayed explicitly');
+    const beinonitStatus = base.HalachaLogic.getStatus(base.Utils.newDate('2026-09-23'));
+    assert(!beinonitStatus.text.includes('עונה בינונית'),
+       'onah beinonit is suppressed while a fixed haflagah is active');
+
+    const deviatedPeriods = [...periods, {
+        date: '2026-09-20', type: 'veset', eventTime: '10:00',
+        cityId: 'beit-shemesh', isSunset: false, id: 'deviation-one'
+    }];
+    const deviated = loadApp({
+        periods: deviatedPeriods,
+        hefseks: { '2026-09-25': true },
+        hefsekMeta: { '2026-09-25': { eventTime: '15:00', cityId: 'beit-shemesh', sunsetRelation: 'before' } },
+        daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const deviationStatus = deviated.HalachaLogic.getFixedHaflagahStatus('2026-09-23');
+    assert(deviationStatus && deviationStatus.active && deviationStatus.deviated && deviationStatus.missedCount === 1,
+       'one deviation retains the fixed haflagah and records the missed fixed occurrence');
+    const suppressedBeinonit = deviated.HalachaLogic.getStatus(deviated.Utils.newDate('2026-10-19'));
+    assert(!suppressedBeinonit.text.includes('עונה בינונית'),
+       'onah beinonit remains suppressed after one fixed-haflagah deviation');
+    const fixedAfterDeviation = deviated.HalachaLogic.getStatus(deviated.Utils.newDate('2026-10-20'));
+    assert(fixedAfterDeviation.text.includes('וסת קבוע – וסת הפלגה (28)'),
+       'the original fixed haflagah remains scheduled after a single deviation');
+})();
+
+(function testFixedHaflagahUprootingAndReinstatement() {
+    const dates = ['2026-06-01', '2026-06-30', '2026-07-28', '2026-08-25'];
+    const periods = dates.map((date, index) => ({
+        date, type: 'veset', eventTime: index === 0 ? '20:30' : '10:00',
+        cityId: 'beit-shemesh', isSunset: false, id: `interval-${index}`
+    }));
+    const base = loadApp({ periods, hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' } });
+    const uprooted = base.HalachaLogic.getFixedHaflagahStatus('2026-11-18');
+    assert(uprooted && !uprooted.active && uprooted.missedCount === 3,
+       'three consecutive missed fixed haflagah onot uproot the fixed pattern');
+
+    const reinstatedApi = loadApp({
+        periods: [...periods, {
+            date: '2026-11-17', type: 'veset', eventTime: '10:00',
+            cityId: 'beit-shemesh', isSunset: false, id: 'reinstated'
+        }],
+        hefseks: {}, daily: {}, settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const reinstated = reinstatedApi.HalachaLogic.getFixedHaflagahStatus('2026-11-17');
+    assert(reinstated && reinstated.active && reinstated.missedCount === 0,
+       'one later matching onset reinstates the prior fixed haflagah if no newer fixed pattern replaced it');
+})();
+
 (function testFixedVesetRequiresKnownOnah() {
     const base = loadApp({ periods: [], hefseks: {}, daily: {}, settings: { ...baseSettings } });
     const calendar = base.window.CycleFlowCalendar;
