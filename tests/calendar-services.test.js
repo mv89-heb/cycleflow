@@ -15,7 +15,7 @@ assert.equal(calendar.addCivilDays('2024-02-28', 1), '2024-02-29', 'leap day ari
 assert.equal(calendar.addCivilDays('2024-02-29', 1), '2024-03-01', 'leap day rollover');
 
 const sunset = calendar.getSunset('2026-11-16', 'beit-shemesh');
-assert(sunset && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(sunset.time), 'sunset estimate is a local HH:mm time');
+assert(sunset && /^([01]\d|2[0-3]):[0-5]\d$/.test(sunset.time), 'sunset estimate is a local HH:mm time');
 const before = sunset.time === '00:00' ? '00:01' : '00:00';
 const after = sunset.time === '23:59' ? '23:58' : '23:59';
 assert.equal(calendar.resolveEventRelation({ date: '2026-11-16', eventTime: before, cityId: 'beit-shemesh' }), 'before');
