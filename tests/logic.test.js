@@ -1187,7 +1187,7 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     UI.actions.navMonth.call(UI, { dataset: { dir: '-1' } });
     eq(Utils.fmt(UI.navDate), '2026-02-01',
        'navigating backward from the 31st must open February instead of overflowing into March');
-    eq(document.getElementById('cal_month_title').textContent, 'פברואר',
+    eq(document.getElementById('cal_month_title').innerText, 'פברואר',
        'calendar title must match the month selected after backward navigation');
 
     UI.navDate = Utils.newDate('2026-01-31');
