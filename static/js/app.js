@@ -166,11 +166,12 @@ class StateManager {
 const State = new StateManager();
 
 const HalachaLogic = {
-    getFixedVesetCandidates() {
+    getFixedVesetCandidates(asOfDate = null) {
         const state = State.get();
         const cityId = state.settings.cityId;
         const periods = Utils.chronologicalVesets(state.periods)
             .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+            .filter(period => !asOfDate || Utils.halachicDate(period, cityId) <= asOfDate)
             .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)))
             .map(period => {
                 const date = Utils.halachicDate(period, cityId);
@@ -220,6 +221,45 @@ const HalachaLogic = {
         if (!candidates.length) return [];
         const latestIndex = Math.max(...candidates.map(candidate => candidate.establishedIndex));
         return candidates.filter(candidate => candidate.establishedIndex === latestIndex);
+    },
+    getFixedHachodeshStatus(asOfDate) {
+        const candidates = this.getFixedVesetCandidates(asOfDate);
+        if (candidates.length !== 1 || candidates[0].type !== 'hachodesh') return null;
+        const candidate = candidates[0];
+        let expectedDate = CalendarServices.getNextYomHachodeshDate(candidate.establishedAt, candidate.day);
+        if (!expectedDate) return null;
+        const state = State.get();
+        const cityId = state.settings.cityId;
+        const periods = Utils.chronologicalVesets(state.periods)
+            .filter(period => Utils.hasKnownHalachicDate(period, cityId))
+            .filter(period => Utils.halachicDate(period, cityId) <= asOfDate)
+            .sort((a, b) => Utils.halachicDate(a, cityId).localeCompare(Utils.halachicDate(b, cityId)));
+        let missedCount = 0;
+        let guard = 0;
+        while (expectedDate && expectedDate <= asOfDate && guard < 600) {
+            const matchingPeriod = periods.some(period => {
+                const periodDate = Utils.halachicDate(period, cityId);
+                if (periodDate !== expectedDate) return false;
+                const info = CalendarServices.getEventDateInfo(period, cityId);
+                return Boolean(info && info.estimatedOnah === candidate.onah);
+            });
+            if (matchingPeriod) {
+                missedCount = 0;
+            } else if (expectedDate < asOfDate) {
+                missedCount += 1;
+            } else {
+                break;
+            }
+            const nextDate = CalendarServices.getNextYomHachodeshDate(expectedDate, candidate.day);
+            if (!nextDate || nextDate <= expectedDate) return null;
+            expectedDate = nextDate;
+            guard += 1;
+        }
+        return {
+            type: 'hachodesh', day: candidate.day, onah: candidate.onah,
+            establishedAt: candidate.establishedAt, expectedDate,
+            missedCount, active: missedCount < 3
+        };
     },
     getSuccessfulHefsekDates(state = State.get()) {
         if (!CalendarServices || !CalendarServices.getEventDateInfo) return [];
