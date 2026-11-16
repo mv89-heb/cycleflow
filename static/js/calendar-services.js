@@ -130,10 +130,18 @@
     return { hebrewDate, relation, sunsetTime: sunset ? sunset.time : null, approximate: Boolean(sunset) };
   }
 
+  function getIsraelCivilDate(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  }
+
   function getCurrentHebrewDate(now = new Date(), cityId = null) {
-    const date = [
-      now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')
-    ].join('-');
+    const date = getIsraelCivilDate(now);
+    if (!date) return '';
     const sunset = getSunset(date, cityId);
     const time = formatTimeInZone(now);
     return formatHebrewDate(date, { afterSunset: Boolean(sunset && time >= sunset.time) });
@@ -141,6 +149,6 @@
 
   globalThis.CycleFlowCalendar = Object.freeze({
     CITIES, cityById, getSunset, formatHebrewDate, formatHebrewMonth, getEventDateInfo,
-    resolveEventRelation, getCurrentHebrewDate, addCivilDays, TIME_ZONE
+    resolveEventRelation, getCurrentHebrewDate, getIsraelCivilDate, addCivilDays, TIME_ZONE
   });
 })();
