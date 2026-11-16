@@ -94,6 +94,7 @@
             if (!['veset', 'spotting'].includes(p.type)) throw new Error('סוג רשומה לא תקין');
         }
         if (state.hefseks !== undefined && (typeof state.hefseks !== 'object' || Array.isArray(state.hefseks))) throw new Error('נתוני הפסק לא תקינים');
+        if (state.tevilot !== undefined && (state.tevilot === null || typeof state.tevilot !== 'object' || Array.isArray(state.tevilot) || Object.entries(state.tevilot).some(([date, enabled]) => !/^\d{4}-\d{2}-\d{2}$/.test(date) || enabled !== true))) throw new Error('נתוני טבילה לא תקינים');
         if (state.daily !== undefined && (typeof state.daily !== 'object' || Array.isArray(state.daily))) throw new Error('נתוני דיווח יומי לא תקינים');
         if (state.settings !== undefined && (typeof state.settings !== 'object' || Array.isArray(state.settings))) throw new Error('הגדרות לא תקינות');
         return state;

@@ -56,6 +56,7 @@
                 <div class="sub-text">ימים למחזור הנוכחי</div>
                 <div id="clean_days_container" class="clean-days-wrapper hidden"></div>
             </div>
+<div class="text-muted" style="font-size:0.78rem; text-align:center; margin:-8px 0 16px; line-height:1.5">מעקב אישי בלבד – הנתונים אינם פסיקה הלכתית או ייעוץ רפואי.</div>
             <div class="action-grid">
                 <button class="card glass text-center interactive-card" data-action="switchTab" data-tab="calendar"><i class="fas fa-calendar-alt text-primary"></i><div class="font-bold">דיווח וסת</div></button>
                 <button class="card glass text-center interactive-card" data-action="doHefsekDirect"><i class="fas fa-sun text-warning"></i><div class="font-bold">הפסק טהרה</div></button>
@@ -103,7 +104,7 @@
     <div id="day_panel">
         <div class="flex-between mb-20"><h2 id="panel_date" class="m-0 text-lg"></h2><button data-action="closePanel" class="close-btn" aria-label="סגירה">&times;</button></div>
         <div id="panel_status_banner" class="status-banner"></div>
-        <div class="action-grid mb-20"><button id="btn_hefsek_panel" class="btn btn-primary" data-action="doHefsekPanel">בצעי הפסק</button><button id="btn_undo_panel" class="btn btn-outline hidden" data-action="undoHefsekPanel">ביטול הפסק</button></div>
+        <div class="action-grid mb-20"><button id="btn_hefsek_panel" class="btn btn-primary" data-action="doHefsekPanel">בצעי הפסק</button><button id="btn_undo_panel" class="btn btn-outline hidden" data-action="undoHefsekPanel">ביטול הפסק</button><button id="btn_tevila_panel" class="btn btn-outline hidden" data-action="toggleTevilaPanel">סמני טבילה בוצעה</button></div>
         <div class="card glass p-15"><h4 class="mt-0">בדיקות הלכתיות</h4><div class="flex-between mb-10"><span>בדיקת שחרית</span><input type="checkbox" id="chk_morning" data-action="saveDaily" class="lg-checkbox"></div><div class="flex-between mb-10"><span>מוך דחוק</span><input type="checkbox" id="chk_moch" data-action="saveDaily" class="lg-checkbox"></div><div class="flex-between"><span>בדיקת שקיעה</span><input type="checkbox" id="chk_sunset" data-action="saveDaily" class="lg-checkbox"></div></div>
         <textarea id="daily_note" placeholder="הערות יומיות..." rows="3" data-action="saveDaily"></textarea>
     </div>

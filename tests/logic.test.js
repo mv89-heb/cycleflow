@@ -155,6 +155,35 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-07')).cleanCount, 1, 'clean day 1 count');
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-13')).cleanCount, 7, 'clean day 7 count');
     eq(HalachaLogic.getStatus(Utils.newDate('2026-06-14')).type, 'tevila', 'tevila night on day 8');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-15')).type, 'pending-tevila',
+       'app must not assume immersion occurred after the estimated immersion night');
+})();
+
+(function testExplicitImmersionReport() {
+    const state = {
+        periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],
+        hefseks: { '2026-06-06': true },
+        tevilot: { '2026-06-14': true },
+        daily: {}, settings: baseSettings
+    };
+    const { HalachaLogic, Utils } = loadApp(state);
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-14')).type, 'tevila-done',
+       'immersion night is marked only after explicit user report');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-15')).text, 'לאחר טבילה מדווחת',
+       'later status must be based on the explicit immersion report');
+})();
+
+(function testTevilaPanelCanToggleTheReport() {
+    const { UI, State, Utils, HalachaLogic } = loadApp({
+        periods: [{ date: '2026-06-01', type: 'veset', isSunset: false, id: 'p1' }],
+        hefseks: { '2026-06-06': true }, tevilot: {}, daily: {}, settings: baseSettings
+    });
+    UI.selectedDate = Utils.newDate('2026-06-15');
+    UI.actions.toggleTevilaPanel.call(UI);
+    assert(State.get().tevilot['2026-06-15'] === true,
+       'day panel action records the actual reported immersion date');
+    eq(HalachaLogic.getStatus(Utils.newDate('2026-06-15')).text, 'לאחר טבילה מדווחת',
+       'status changes only after the actual immersion date is recorded');
 })();
 
 (function testFertility() {
