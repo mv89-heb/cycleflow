@@ -36,6 +36,15 @@ const { TextEncoder, TextDecoder } = require('util');
     mikvehChecklist: { '2026-06-22': ['hair', 'nails'] },
     ovulationObservations: [{ id: 'o1', date: '2026-06-23', time: '08:00', type: 'opk_positive', immersionDate: '2026-06-26', note: '' }],
     tevilot: { '2026-06-15': true },
+    calculationSnapshots: [{
+      schemaVersion: 1,
+      snapshotId: 'cf-calc-v1:2026-11-16:0123456789abcdef',
+      evaluatedDate: '2026-11-16',
+      capturedAt: '2026-11-16T12:00:00.000Z',
+      inputFingerprint: '0123456789abcdef',
+      result: { type: 'nidda', text: 'נידה', canHefsek: false, cleanCount: null, expectedTevilaDate: null, reportedTevilaDate: null },
+      provenance: { rulesetId: 'cycleflow-yoatzot-standard', rulesetVersion: '1.0.0', isPersonalPsak: false }
+    }],
     daily: {},
     settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: 'beit-shemesh',
       minimumWaitMode: 'four_from_last_relations', onahBeinonitMode: 'day30_plus31_onah' }
@@ -65,6 +74,8 @@ const { TextEncoder, TextDecoder } = require('util');
   assert.throws(() => api.validateState({ ...state, periods: [{ ...state.periods[0], lastRelations: { date: '2026-05-30', eventTime: '25:99', cityId: 'beit-shemesh' } }] }), /נתוני יחסי אישות אחרונים לא תקינים/);
   assert.throws(() => api.validateState({ ...state, settings: { ...state.settings, minimumWaitMode: 'four-days-from-onset' } }), /שיטת מינימום המתנה לא תקינה/);
   assert.throws(() => api.validateState({ ...state, settings: { ...state.settings, onahBeinonitMode: 'day32' } }), /שיטת עונה בינונית לא תקינה/);
+  assert.throws(() => api.validateState({ ...state, calculationSnapshots: [{ ...state.calculationSnapshots[0], provenance: { isPersonalPsak: true } }] }), /רשומת היסטוריית חישוב אינה תקינה/);
+  assert.throws(() => api.validateState({ ...state, calculationSnapshots: [state.calculationSnapshots[0], state.calculationSnapshots[0]] }), /רשומת היסטוריית חישוב אינה תקינה/);
   assert.throws(() => api.validateState({ ...state, manualReminders: [{ ...state.manualReminders[0], time: '29:99' }] }), /שעת תזכורת לא תקינה/);
   assert.throws(() => api.validateState({ ...state, manualReminders: [{ ...state.manualReminders[0], date: '2026-02-30' }] }), /תזכורת לא תקינה/);
   assert.throws(() => api.validateState({ ...state, stainReports: [{ ...state.stainReports[0], color: 'invalid' }] }), /צבע כתם לא תקין/);
