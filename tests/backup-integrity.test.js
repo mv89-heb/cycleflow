@@ -81,7 +81,9 @@ const { TextEncoder, TextDecoder } = require('util');
   assert.throws(() => api.validateState({ ...state, manualReminders: [{ ...state.manualReminders[0], date: '2026-02-30' }] }), /תזכורת לא תקינה/);
   assert.throws(() => api.validateState({ ...state, stainReports: [{ ...state.stainReports[0], color: 'invalid' }] }), /צבע כתם לא תקין/);
   assert.throws(() => api.validateState({ ...state, mikvehChecklist: { '2026-06-22': ['not-a-check'] } }), /סימון הכנה למקווה אינו תקין/);
-  assert.throws(() => api.validateState({ ...state, symptomObservations: [{ ...state.symptomObservations[0], endDate: '2026-06-18' }] }), /תאריך סיום תסמין לא תקין/);\n  assert.throws(() => api.validateState({ ...state, symptomObservations: [{ ...state.symptomObservations[0], occursOutsideFlow: 'maybe' }] }), /תיעוד תסמין לא תקין/);\n  assert.throws(() => api.validateState({ ...state, ovulationObservations: [{ ...state.ovulationObservations[0], type: 'diagnosis' }] }), /תיעוד ביוץ לא תקין/);
+  assert.throws(() => api.validateState({ ...state, symptomObservations: [{ ...state.symptomObservations[0], endDate: '2026-06-18' }] }), /תאריך סיום תסמין לא תקין/);
+  assert.throws(() => api.validateState({ ...state, symptomObservations: [{ ...state.symptomObservations[0], occursOutsideFlow: 'maybe' }] }), /תיעוד תסמין לא תקין/);
+  assert.throws(() => api.validateState({ ...state, ovulationObservations: [{ ...state.ovulationObservations[0], type: 'diagnosis' }] }), /תיעוד ביוץ לא תקין/);
 
   assert.throws(() => api.validateState({ ...state, tevilot: { 'not-a-date': true } }),
     /נתוני טבילה לא תקינים/);
