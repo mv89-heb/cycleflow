@@ -71,6 +71,13 @@ try {
   }));
 } catch (_) { invalidToolDataBlocked = true; }
 assert(invalidToolDataBlocked, 'invalid local reminder data must be rejected by storage hardening');
+let invalidCivilDateBlocked = false;
+try {
+  validCalendarWindow.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...calendarState, manualReminders: [{ id: 'bad-date', date: '2026-02-30', title: 'bad' }]
+  }));
+} catch (_) { invalidCivilDateBlocked = true; }
+assert(invalidCivilDateBlocked, 'impossible civil dates must be rejected in Israel timezone');
 
 
 const noSpaceDom = new JSDOM('', { runScripts: 'outside-only', url: 'https://cycleflow-no-space.test/' });
