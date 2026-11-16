@@ -282,6 +282,10 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'rule context records when the user entered the event');
     eq(State.get().periods[0]?.ruleContext?.rulesetId, 'cycleflow-yoatzot-standard',
        'the period keeps its original source profile after entry');
+    const sameProfileApi = loadApp(State.get());
+    const sameProfileStatus = sameProfileApi.HalachaLogic.getStatus(sameProfileApi.Utils.newDate('2026-06-07'));
+    eq(sameProfileStatus.provenance?.sourceEventProfileMatchesCurrent, true,
+       'provenance confirms when current calculation settings match the event-entry snapshot');
     State.update(current => { current.settings.onahBeinonitMode = 'day30_onah'; });
     const recalculated = loadApp({
         ...State.get(), settings: State.get().settings
@@ -790,6 +794,19 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
     const reinstated = reinstatedApi.HalachaLogic.getFixedHaflagahStatus('2026-11-17');
     assert(reinstated && reinstated.active && reinstated.missedCount === 0,
        'one later matching onset reinstates the prior fixed haflagah if no newer fixed pattern replaced it');
+})();
+
+(function testUnknownEventProducesNeedsReviewProvenance() {
+    const api = loadApp({
+        periods: [{ date: '2026-11-16', type: 'veset', id: 'unknown-onset' }],
+        hefseks: {}, hefsekMeta: {}, daily: {},
+        settings: { ...baseSettings, cityId: 'beit-shemesh' }
+    });
+    const status = api.HalachaLogic.getStatus(api.Utils.newDate('2026-11-17'));
+    eq(status.provenance?.reviewState, 'needs-review',
+       'an event without a known time or sunset relation remains in the needs-review provenance state');
+    eq(status.provenance?.assumptions?.onsetEstimatedOnah, 'unknown',
+       'provenance does not guess an onah for an event with missing time');
 })();
 
 (function testFixedVesetRequiresKnownOnah() {
