@@ -35,4 +35,19 @@ const minutes = value => Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 
 const dstShift = minutes(dstAfter.time) - minutes(dstBefore.time);
 assert(dstShift >= 45 && dstShift <= 75, 'Israel DST transition is reflected in local sunset time');
 
+
+const israelFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Jerusalem', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+});
+const israelParts = date => Object.fromEntries(israelFormatter.formatToParts(date).map(part => [part.type, part.value]));
+const currentInstant = new Date('2026-11-16T22:30:00.000Z');
+const currentParts = israelParts(currentInstant);
+const expectedIsraelDate = `${currentParts.year}-${currentParts.month}-${currentParts.day}`;
+assert.equal(calendar.getIsraelCivilDate(currentInstant), expectedIsraelDate,
+  'current Hebrew date must derive its civil date from Israel time, not the device timezone');
+assert.equal(calendar.getIsraelCivilDate(new Date('invalid')), '', 'invalid current instant returns an empty date');
+assert.match(calendar.getCurrentHebrewDate(currentInstant, 'beit-shemesh'), /.+/,
+  'current Hebrew date remains available for an instant near the Israel civil-day boundary');
+
 console.log('Local Hebrew calendar and sunset regression tests passed.');
