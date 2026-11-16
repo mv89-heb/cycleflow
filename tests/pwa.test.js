@@ -21,3 +21,7 @@ for (const remote of ['fonts.googleapis.com', 'cdnjs.cloudflare.com', 'cdn.jsdel
 assert(!html.includes('chart.js'), 'chart rendering must not require a remote Chart.js script');
 
 console.log('PWA offline asset regression tests passed.');
+
+assert(sw.includes("'/static/js/local-tools.js'"), 'service worker must precache local tools');
+assert(html.includes('/static/js/local-tools.js'), 'HTML must load local tools');
+assert(html.includes('id="view_tools"'), 'personal tools view must exist');
