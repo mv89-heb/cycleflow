@@ -1,0 +1,134 @@
+/* Local-only Hebrew calendar and approximate sunset utilities.
+ * No GPS, cookies, analytics, CDN, or remote requests.
+ * Sunset is an astronomical estimate; local horizon/elevation may differ.
+ */
+(() => {
+  'use strict';
+
+  const TIME_ZONE = 'Asia/Jerusalem';
+  const CITIES = Object.freeze([
+    { id: 'beit-shemesh', name: 'בית שמש', lat: 31.745, lon: 34.988 },
+    { id: 'jerusalem', name: 'ירושלים', lat: 31.7683, lon: 35.2137 },
+    { id: 'bnei-brak', name: 'בני ברק', lat: 32.0809, lon: 34.8338 },
+    { id: 'tel-aviv', name: 'תל אביב–יפו', lat: 32.0853, lon: 34.7818 },
+    { id: 'haifa', name: 'חיפה', lat: 32.794, lon: 34.9896 },
+    { id: 'ashdod', name: 'אשדוד', lat: 31.8044, lon: 34.6553 },
+    { id: 'ashkelon', name: 'אשקלון', lat: 31.6688, lon: 34.5743 },
+    { id: 'netanya', name: 'נתניה', lat: 32.3215, lon: 34.8532 },
+    { id: 'petah-tikva', name: 'פתח תקווה', lat: 32.084, lon: 34.8878 },
+    { id: 'modiin', name: 'מודיעין', lat: 31.8969, lon: 35.0104 },
+    { id: 'other', name: 'יישוב אחר – ללא חישוב שקיעה', lat: null, lon: null }
+  ]);
+
+  const cityById = id => CITIES.find(city => city.id === id) || null;
+  const validDate = value => {
+    if (value instanceof Date) return !Number.isNaN(value.getTime());
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const d = new Date(value + 'T12:00:00Z');
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+  };
+  const dateParts = value => {
+    if (value instanceof Date) return { year: value.getFullYear(), month: value.getMonth() + 1, day: value.getDate() };
+    const [year, month, day] = value.split('-').map(Number);
+    return { year, month, day };
+  };
+  const normalizeDegrees = value => ((value % 360) + 360) % 360;
+  const toRadians = value => value * Math.PI / 180;
+  const toDegrees = value => value * 180 / Math.PI;
+
+  function sunsetUtc(date, city) {
+    if (!validDate(date) || !city || !Number.isFinite(city.lat) || !Number.isFinite(city.lon)) return null;
+    const { year, month, day } = dateParts(date);
+    const n = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 0)) / 86400000);
+    const longitudeHour = city.lon / 15;
+    const t = n + ((18 - longitudeHour) / 24);
+    const meanAnomaly = 0.9856 * t - 3.289;
+    const trueLongitude = normalizeDegrees(meanAnomaly + 1.916 * Math.sin(toRadians(meanAnomaly)) +
+      0.020 * Math.sin(2 * toRadians(meanAnomaly)) + 282.634);
+    let rightAscension = normalizeDegrees(toDegrees(Math.atan(0.91764 * Math.tan(toRadians(trueLongitude)))));
+    rightAscension += Math.floor(trueLongitude / 90) * 90 - Math.floor(rightAscension / 90) * 90;
+    rightAscension /= 15;
+    const sinDeclination = 0.39782 * Math.sin(toRadians(trueLongitude));
+    const cosDeclination = Math.cos(Math.asin(sinDeclination));
+    const cosHourAngle = (Math.cos(toRadians(90.833)) - sinDeclination * Math.sin(toRadians(city.lat))) /
+      (cosDeclination * Math.cos(toRadians(city.lat)));
+    if (cosHourAngle < -1 || cosHourAngle > 1) return null;
+    const hourAngle = toDegrees(Math.acos(cosHourAngle)) / 15;
+    const localMeanTime = hourAngle + rightAscension - 0.06571 * t - 6.622;
+    const utcHour = ((localMeanTime - longitudeHour) % 24 + 24) % 24;
+    const utcMinutes = Math.round(utcHour * 60);
+    return new Date(Date.UTC(year, month - 1, day, 0, utcMinutes));
+  }
+
+  function formatTimeInZone(date, timeZone = TIME_ZONE) {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).format(date);
+  }
+
+  function getSunset(date, cityId) {
+    const city = cityById(cityId);
+    const instant = sunsetUtc(date, city);
+    if (!instant) return null;
+    return { time: formatTimeInZone(instant), timeZone: TIME_ZONE, approximate: true, cityId };
+  }
+
+  function addCivilDays(value, amount) {
+    const { year, month, day } = dateParts(value);
+    const date = new Date(Date.UTC(year, month - 1, day + amount, 12));
+    return date.toISOString().slice(0, 10);
+  }
+
+  function formatHebrewDate(value, options = {}) {
+    if (!validDate(value)) return '';
+    const civil = typeof value === 'string' ? value : [
+      value.getFullYear(), String(value.getMonth() + 1).padStart(2, '0'), String(value.getDate()).padStart(2, '0')
+    ].join('-');
+    const effectiveDate = options.afterSunset ? addCivilDays(civil, 1) : civil;
+    const { year, month, day } = dateParts(effectiveDate);
+    const instant = new Date(Date.UTC(year, month - 1, day, 12));
+    try {
+      return new Intl.DateTimeFormat('he-u-ca-hebrew', {
+        timeZone: TIME_ZONE, day: 'numeric', month: 'long', year: 'numeric'
+      }).format(instant);
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function resolveEventRelation(record, fallbackCityId) {
+    if (!record || !validDate(record.date)) return 'unknown';
+    const cityId = record.cityId || fallbackCityId || null;
+    if (typeof record.eventTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(record.eventTime)) {
+      const sunset = getSunset(record.date, cityId);
+      if (!sunset) return 'unknown';
+      return record.eventTime >= sunset.time ? 'after' : 'before';
+    }
+    if (record.sunsetRelation === 'before' || record.sunsetRelation === 'after') return record.sunsetRelation;
+    if (record.isSunset === true) return 'after';
+    if (record.isSunset === false) return 'before';
+    return 'unknown';
+  }
+
+  function getEventDateInfo(record, fallbackCityId) {
+    const relation = resolveEventRelation(record, fallbackCityId);
+    const cityId = record && (record.cityId || fallbackCityId);
+    const hebrewDate = formatHebrewDate(record.date, { afterSunset: relation === 'after' });
+    const sunset = getSunset(record.date, cityId);
+    return { hebrewDate, relation, sunsetTime: sunset ? sunset.time : null, approximate: Boolean(sunset) };
+  }
+
+  function getCurrentHebrewDate(now = new Date(), cityId = null) {
+    const date = [
+      now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')
+    ].join('-');
+    const sunset = getSunset(date, cityId);
+    const time = formatTimeInZone(now);
+    return formatHebrewDate(date, { afterSunset: Boolean(sunset && time >= sunset.time) });
+  }
+
+  globalThis.CycleFlowCalendar = Object.freeze({
+    CITIES, cityById, getSunset, formatHebrewDate, getEventDateInfo,
+    resolveEventRelation, getCurrentHebrewDate, addCivilDays, TIME_ZONE
+  });
+})();
