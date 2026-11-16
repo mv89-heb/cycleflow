@@ -249,6 +249,18 @@ const baseSettings = { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dar
        'after-sunset onset shifts to the next Hebrew date and uses the estimated night onah');
 })();
 
+(function testUnknownOnsetRelationBlocksAutomaticOnot() {
+    const state = {
+        periods: [{ date: '2026-06-01', type: 'veset', id: 'unknown-onset' }],
+        hefseks: {}, daily: {}, settings: { ...baseSettings }
+    };
+    const api = loadApp(state);
+    eq(api.HalachaLogic.getStatus(api.Utils.newDate('2026-06-30')).type, 'needs-review',
+       'unknown before/after-sunset relation blocks automatic halachic-date calculations');
+    eq(api.FertilityLogic.getEstimate(), null,
+       'fertility estimates do not silently use an uncertain event date');
+})();
+
 (function testYomHachodeshAndStandardHaflagah() {
     const state = {
         periods: [
