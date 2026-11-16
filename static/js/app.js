@@ -716,9 +716,18 @@ HalachaLogic.getStatus = function(date) {
     };
     [previousPeriod, lastPeriod].forEach(period => {
         if (!period) return;
+        const eventInfo = CalendarServices && CalendarServices.getEventDateInfo
+            ? CalendarServices.getEventDateInfo(period, cityId)
+            : null;
         addSourceEvent({
             type: 'period', id: period.id || null, date: period.date,
             effectiveDate: Utils.halachicDate(period, cityId),
+            dateConfidence: eventInfo ? eventInfo.dateConfidence : 'unknown',
+            relationSource: eventInfo ? eventInfo.relationSource : 'unknown',
+            relation: eventInfo ? eventInfo.relation : 'unknown',
+            sunsetTimeEstimate: eventInfo ? eventInfo.relationSunsetTime : null,
+            estimatedOnah: eventInfo ? eventInfo.estimatedOnah : 'unknown',
+            onahConfidence: eventInfo ? eventInfo.onahConfidence : 'unknown',
             recordedRuleContext: summarizeRuleContext(period.ruleContext)
         });
     });
@@ -732,9 +741,18 @@ HalachaLogic.getStatus = function(date) {
         : null;
     const evidenceDates = new Set(fixedCandidates.flatMap(candidate => candidate.evidenceDates || []));
     periods.filter(period => evidenceDates.has(Utils.halachicDate(period, cityId))).forEach(period => {
+        const eventInfo = CalendarServices && CalendarServices.getEventDateInfo
+            ? CalendarServices.getEventDateInfo(period, cityId)
+            : null;
         addSourceEvent({
             type: 'fixed-pattern-evidence', id: period.id || null, date: period.date,
             effectiveDate: Utils.halachicDate(period, cityId),
+            dateConfidence: eventInfo ? eventInfo.dateConfidence : 'unknown',
+            relationSource: eventInfo ? eventInfo.relationSource : 'unknown',
+            relation: eventInfo ? eventInfo.relation : 'unknown',
+            sunsetTimeEstimate: eventInfo ? eventInfo.relationSunsetTime : null,
+            estimatedOnah: eventInfo ? eventInfo.estimatedOnah : 'unknown',
+            onahConfidence: eventInfo ? eventInfo.onahConfidence : 'unknown',
             recordedRuleContext: summarizeRuleContext(period.ruleContext)
         });
     });
@@ -805,7 +823,11 @@ HalachaLogic.getStatus = function(date) {
                 onsetEffectiveDate: lastInfo ? lastInfo.effectiveDate : null,
                 onsetEventTime: lastPeriod ? lastPeriod.eventTime || null : null,
                 onsetSunsetRelation: lastInfo ? lastInfo.relation : 'unknown',
+                onsetDateConfidence: lastInfo ? lastInfo.dateConfidence : 'unknown',
+                onsetRelationSource: lastInfo ? lastInfo.relationSource : 'unknown',
+                onsetSunsetTimeEstimate: lastInfo ? lastInfo.relationSunsetTime : null,
                 onsetEstimatedOnah: lastInfo ? lastInfo.estimatedOnah : 'unknown',
+                onsetOnahConfidence: lastInfo ? lastInfo.onahConfidence : 'unknown',
                 fixedPattern: fixedPatternStatus ? {
                     type: fixedPatternStatus.type,
                     active: fixedPatternStatus.active,
@@ -1213,6 +1235,8 @@ const UI = {
                         `עונה בינונית: ${onahLabels[values.onahBeinonitMode] || 'לא ידועה'}`,
                         `יישוב: ${city && (city.name || city.label) || values.cityId || 'לא ידוע'}`,
                         `עונת תחילת הווסת: ${onahLabel}`,
+                        `אמינות תאריך תחילת הווסת: ${values.onsetDateConfidence === 'recorded' ? 'נרשם במפורש' : (values.onsetDateConfidence === 'astronomical-estimate' ? 'הוסק משעה מול שקיעה אסטרונומית משוערת' : 'לא ידועה')}`,
+                        `שעת שקיעה ששימשה לאומדן: ${values.onsetSunsetTimeEstimate || 'לא חושבה'}`,
                         `תאריך הפסק אחרון: ${values.hefsekDate || 'לא נרשם'}`,
                         'זמן טבילה: לאחר צאת הכוכבים לפי זמן המקווה המקומי; המערכת אינה מחשבת צאת הכוכבים'
                     ].join(' · ');
