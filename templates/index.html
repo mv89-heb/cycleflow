@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#f7f4ef">
+    <meta name="theme-color" content="#f7f4ef">\n    <meta name="description" content="CycleFlow — מעקב אישי, דיסקרטי ומקומי למחזור, טהרה ופוריות.">\n    <link rel="icon" type="image/svg+xml" href="/static/icons/favicon.svg">\n    <link rel="apple-touch-icon" href="/static/icons/cycleflow-mark.svg">
     <meta name="referrer" content="no-referrer">
     <meta name="robots" content="noindex,nofollow,noarchive">
     <link rel="manifest" href="/static/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MyCycle">
-    <title>CycleFlow Pro</title>
+    <meta name="apple-mobile-web-app-title" content="CycleFlow">
+    <title>CycleFlow | מעקב אישי</title>
 
     <link rel="stylesheet" href="/static/css/local-icons.css?v={{ asset_version('css/local-icons.css') }}">
     <link rel="stylesheet" href="/static/css/main.css?v={{ asset_version('css/main.css') }}">
@@ -21,7 +21,7 @@
 
     <div id="lock_screen" class="hidden" aria-modal="true" role="dialog">
         <i class="fas fa-lock lock-icon" aria-hidden="true"></i>
-        <h2>MyCycle Secure</h2>
+        <h2>CycleFlow Secure</h2>
         <input type="password" id="pin_input" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="••••" data-action="pinInput" aria-label="קוד PIN">
         <button data-action="forgotPin" class="btn-outline">שכחתי קוד</button>
     </div>
@@ -39,7 +39,7 @@
     </div>
 
     <header class="blur-target">
-        <div class="brand"><i class="fas fa-moon"></i> MyCycle Pro</div>
+        <div class="brand" aria-label="CycleFlow">\n            <img src="/static/icons/cycleflow-mark.svg" alt="" width="42" height="42" decoding="async">\n            <span class="brand-name">CycleFlow</span>\n            <span class="brand-caption">מעקב אישי</span>\n        </div>
         <div class="header-actions">
             <button data-action="toggleTheme" id="theme_toggle_btn" aria-label="החלפת ערכת נושא"><i class="fas fa-sun"></i></button>
             <button data-action="toggleDiscreet" aria-label="מצב דיסקרטי"><i class="fas fa-eye-slash"></i></button>
@@ -184,7 +184,13 @@
         </section>
     </main>
 
-    <nav class="bottom-nav blur-target" id="bottom_nav"><button class="nav-item active" data-action="switchTab" data-tab="dashboard"><i class="fas fa-home"></i><span>ראשי</span></button><button class="nav-item" data-action="switchTab" data-tab="calendar"><i class="fas fa-calendar-day"></i><span>לוח</span></button><button class="nav-item" data-action="switchTab" data-tab="history"><i class="fas fa-chart-pie"></i><span>היסטוריה</span></button><button class="nav-item" data-action="switchTab" data-tab="tools"><i class="fas fa-tools"></i><span>כלים</span></button><button class="nav-item" data-action="switchTab" data-tab="settings"><i class="fas fa-cog"></i><span>הגדרות</span></button></nav>
+    <nav class="bottom-nav blur-target" id="bottom_nav" aria-label="ניווט ראשי">
+        <button class="nav-item active" data-action="switchTab" data-tab="dashboard" aria-label="מסך ראשי"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>ראשי</span></button>
+        <button class="nav-item" data-action="switchTab" data-tab="calendar" aria-label="לוח שנה"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 17h2"/></svg><span>לוח שנה</span></button>
+        <button class="nav-item" data-action="switchTab" data-tab="history" aria-label="היסטוריה וסטטיסטיקה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h17M8 15l3-4 3 2 5-7"/></svg><span>היסטוריה</span></button>
+        <button class="nav-item" data-action="switchTab" data-tab="tools" aria-label="כלים אישיים"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="5"/></svg><span>כלים</span></button>
+        <button class="nav-item" data-action="switchTab" data-tab="settings" aria-label="הגדרות"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/><path d="m19.4 15 .1.1 1.1.9-1.2 2.1-1.4-.5a8 8 0 0 1-1.5.9l-.2 1.5h-2.4l-.2-1.5a8 8 0 0 1-1.5-.9l-1.4.5-1.2-2.1 1.1-.9a8 8 0 0 1 0-1.8l-1.1-.9 1.2-2.1 1.4.5a8 8 0 0 1 1.5-.9l.2-1.5h2.4l.2 1.5a8 8 0 0 1 1.5.9l1.4-.5 1.2 2.1-1.1.9a8 8 0 0 1-.1 1.8Z"/></svg><span>הגדרות</span></button>
+    </nav>
 
     <div id="day_panel_overlay" data-action="closePanel"></div>
     <div id="day_panel">
