@@ -252,7 +252,7 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 /* =========================================
    Forms & Buttons
    ========================================= */
-input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea { 
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]), select, textarea { 
     width: 100%; background-color: var(--bg-input); 
     border: 1px solid var(--border-light); padding: 14px; 
     border-radius: var(--radius-md); color: var(--text-main); 
@@ -1697,7 +1697,7 @@ main {
     font-weight: 650;
     line-height: 1.45;
 }
-.app-view input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.app-view input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
 .app-view select,
 .app-view textarea {
     display: block;
@@ -1717,7 +1717,7 @@ main {
     transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
     color-scheme: light;
 }
-body.dark-theme .app-view input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+body.dark-theme .app-view input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
 body.dark-theme .app-view select,
 body.dark-theme .app-view textarea {
     color-scheme: dark;
@@ -1726,7 +1726,7 @@ body.dark-theme .app-view textarea {
     min-height: 88px;
     resize: vertical;
 }
-.app-view input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.app-view input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):focus,
 .app-view select:focus,
 .app-view textarea:focus {
     border-color: var(--primary);
@@ -1734,7 +1734,7 @@ body.dark-theme .app-view textarea {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
     outline: none;
 }
-.app-view input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):disabled,
+.app-view input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):disabled,
 .app-view select:disabled,
 .app-view textarea:disabled {
     opacity: .58;
