@@ -686,3 +686,24 @@ body.dark-theme .b-onah, body.dark-theme .b-fertile-day { background: rgba(197,1
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+body.light-theme {
+    color-scheme: light;
+    --bg-body: #f7f4ef;
+    --bg-card: #fffdfa;
+    --bg-input: #f3efe9;
+    --border-light: #e7dfd6;
+    --primary: #70465f;
+    --primary-hover: #5d384e;
+    --accent: #a87991;
+    --success: #527a67;
+    --danger: #a84d5b;
+    --warning: #98703c;
+    --text-main: #302a2e;
+    --text-muted: #766d72;
+    --st-nidda: #a84d5b;
+    --st-hefsek: #98703c;
+    --st-naki: #527a67;
+    --st-tevila: #527a83;
+    --st-onah: #765c8e;
+}
