@@ -24,6 +24,6 @@ assert.match(app, /const visibleDuration = reducedMotion \? 180 : 1450/, 'intro 
 assert.match(app, /startIntroScreen\(\);/, 'intro begins only after app initialization');
 assert.match(app, /intro\.remove\(\)/, 'intro is removed after its fade');
 assert.match(app, /document\.getElementById\('intro_screen'\)\?\.remove\(\)/, 'intro cannot block the recovery error screen');
-assert.match(sw, /cycleflow-v9-animated-intro/, 'updated intro assets are fetched with a fresh offline cache');
+assert.match(sw, /cycleflow-v10-premium-polish/, 'updated intro assets are fetched with a fresh offline cache');
 
 console.log('CycleFlow animated intro tests passed.');
