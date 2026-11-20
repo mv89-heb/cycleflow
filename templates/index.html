@@ -68,6 +68,7 @@
 
     <main id="main_content" class="blur-target" tabindex="-1">
         <section id="view_dashboard" class="app-view">
+            <div class="view-heading"><span class="view-eyebrow">CYCLEFLOW · המרחב האישי</span><h1>המחזוריות שלך, במבט אחד</h1><p>תמונת מצב אישית ומסודרת, בקצב שלך.</p></div>
             <div class="card glass status-hero" id="status_card">
                 <div id="status_badge" class="status-badge">טוען נתונים...</div>
                 <div id="main_counter" class="main-count">--</div>
@@ -95,6 +96,7 @@
         </section>
 
         <section id="view_calendar" class="app-view hidden">
+            <div class="view-heading"><span class="view-eyebrow">המעקב האישי שלך</span><h1>לוח השנה</h1><p>אירועים, תאריכים ותיעוד — במקום אחד.</p></div>
             <div class="card glass">
                 <div class="cal-nav"><button data-action="navMonth" data-dir="-1"><i class="fas fa-chevron-right"></i></button><div class="text-center"><div id="cal_month_title" class="cal-title"></div><div id="cal_year_subtitle" class="cal-subtitle"></div></div><button data-action="navMonth" data-dir="1"><i class="fas fa-chevron-left"></i></button></div>
                 <div class="cal-grid mb-10"><div class="day-name">א</div><div class="day-name">ב</div><div class="day-name">ג</div><div class="day-name">ד</div><div class="day-name">ה</div><div class="day-name">ו</div><div class="day-name">ש</div></div>
@@ -118,6 +120,7 @@
         </section>
 
         <section id="view_history" class="app-view hidden">
+            <div class="view-heading"><span class="view-eyebrow">מבט לאורך זמן</span><h1>היסטוריה ומגמות</h1><p>הרישומים והנתונים שלך, בצורה ברורה ונגישה.</p></div>
             <div class="card glass">
                 <h3><i class="fas fa-chart-line"></i> סטטיסטיקה</h3>
                 <div class="chart-container"><canvas id="cycleChart"></canvas></div>
@@ -127,6 +130,7 @@
         </section>
 
         <section id="view_tools" class="app-view hidden">
+            <div class="view-heading"><span class="view-eyebrow">מרחב אישי</span><h1>כלים ותיעוד</h1><p>תזכורות, רישומים והכנה לשיחות מקצועיות.</p></div>
             <div class="card glass">
                 <h3><i class="fas fa-bell"></i> תזכורות אישיות ליומן</h3>
                 <p class="text-muted small-note">התזכורות נוצרות רק לפי תאריך ושעה שתבחרי. אין כאן חישוב אוטומטי של מועדים הלכתיים.</p>
@@ -190,13 +194,14 @@
         </section>
 
         <section id="view_settings" class="app-view hidden">
-            <div class="card glass"><h3>הגדרות הלכתיות</h3><label>מנהג (משפיע על חישובים מסוימים; אינו תחליף לפסיקה אישית)</label><select id="set_minhag" data-action="saveSettings"><option value="ashkenaz">אשכנז</option><option value="sepharad">ספרד</option><option value="chabad">חב"ד</option></select>
+            <div class="view-heading"><span class="view-eyebrow">שליטה והעדפות</span><h1>הגדרות ופרטיות</h1><p>התאמת החוויה וניהול המידע שנשמר במכשיר.</p></div>
+            <div class="card glass"><h3>הגדרות הלכתיות</h3><label for="set_minhag">מנהג (משפיע על חישובים מסוימים; אינו תחליף לפסיקה אישית)</label><select id="set_minhag" data-action="saveSettings"><option value="ashkenaz">אשכנז</option><option value="sepharad">ספרד</option><option value="chabad">חב"ד</option></select>
 <p class="text-muted small-note">במנהג חב"ד חישוב ההפלגה נספר לפי מספר העונות מהלילה הראשון שלאחר הפסק טהרה מוצלח, כולל עונת תחילת הווסת. המערכת מחשבת זאת רק כאשר ההפסק נרשם לפני שקיעה עם שעה ויישוב; פטור מחזורים ארוכים אינו מופעל בפרופיל זה אוטומטית. זיהוי אוטומטי של וסת קבוע והתרתו לאחר שלוש החמצות עדיין בפיתוח; עד אז לא נבטל אוטומטית את שלושת הווסתות.</p>
-<label>שיטת מינימום המתנה</label><select id="set_minimum_wait_mode" data-action="saveSettings"><option value="five_from_onset">5 ימים מהיום שבו התחילה הנידה (ברירת מחדל)</option><option value="four_from_last_relations">4 ימים מהיום ההלכתי של יחסי האישות האחרונים (למנהגים מסוימים)</option></select>
+<label for="set_minimum_wait_mode">שיטת מינימום המתנה</label><select id="set_minimum_wait_mode" data-action="saveSettings"><option value="five_from_onset">5 ימים מהיום שבו התחילה הנידה (ברירת מחדל)</option><option value="four_from_last_relations">4 ימים מהיום ההלכתי של יחסי האישות האחרונים (למנהגים מסוימים)</option></select>
 <p class="text-muted small-note">בחירת "ספרד" לבדה אינה קובעת ארבעה ימים: יש קהילות ספרדיות שנוהגות חמישה ימים. במסלול ארבעת הימים נדרשים תאריך ושעת יחסי האישות האחרונים וגם שעת תחילת הנידה, כדי לקבוע את היום ההלכתי.</p>
-<label>שיטת עונה בינונית</label><select id="set_onah_beinonit_mode" data-action="saveSettings"><option value="day30_onah">יום 30 – אותה עונה של תחילת הווסת (ברירת מחדל)</option><option value="day30_full_day">יום 30 – כל היממה</option><option value="day30_plus31_onah">ימים 30 ו־31 – אותה עונה</option><option value="day30_full_day_plus31_onah">יום 30 מלא + יום 31 באותה עונה</option></select>
+<label for="set_onah_beinonit_mode">שיטת עונה בינונית</label><select id="set_onah_beinonit_mode" data-action="saveSettings"><option value="day30_onah">יום 30 – אותה עונה של תחילת הווסת (ברירת מחדל)</option><option value="day30_full_day">יום 30 – כל היממה</option><option value="day30_plus31_onah">ימים 30 ו־31 – אותה עונה</option><option value="day30_full_day_plus31_onah">יום 30 מלא + יום 31 באותה עונה</option></select>
 <p class="text-muted small-note">יום 31 ושמירת 24 שעות הם מנהגים/חומרות שאינם ברירת מחדל אחידה. בחרי רק לפי המנהג שעליו את מסתמכת. לפי פרופיל המקור שנבחר, שלושה מחזורים רצופים של 32 ימים ומעלה משנים את חישוב עונה בינונית ווסת החודש.</p>
-<label>יישוב לחישוב שקיעה משוערת (בחירה ידנית, ללא GPS)</label><select id="set_city" data-action="saveSettings"><option value="">יש לבחור יישוב</option><option value="beit-shemesh">בית שמש</option><option value="jerusalem">ירושלים</option><option value="bnei-brak">בני ברק</option><option value="tel-aviv">תל אביב–יפו</option><option value="haifa">חיפה</option><option value="ashdod">אשדוד</option><option value="ashkelon">אשקלון</option><option value="netanya">נתניה</option><option value="petah-tikva">פתח תקווה</option><option value="modiin">מודיעין</option><option value="other">יישוב אחר – ללא חישוב שקיעה</option></select><p id="sunset_hint" class="text-muted small-note">בחרי יישוב כדי להציג שעת שקיעה משוערת. אין שימוש במיקום GPS.</p><p class="text-muted small-note">חישובי הזריחה והשקיעה הם אומדנים אסטרונומיים בלבד ואינם זמני הלכה מוסמכים. הם מציגים עונת יום/לילה משוערת בלבד; אין כאן חישוב צאת הכוכבים או זמני הלכה.</p><p class="text-muted small-note">כללי הבסיס מבוססים על מקורות נשמת–יועצות הלכה; חישוב ההפלגה בחב״ד משתמש במקורות הייעודיים שלו. המערכת מחשבת את הדפוסים הנפוצים בלבד. כתמים, דפוסים חריגים או משולבים, טיפולים הורמונליים ונסיבות אישיות דורשים בירור הלכתי. אין כאן פסק אישי.</p><label>הגדרת פרישה (וסת קבוע)</label><select id="set_cycle_len" data-action="saveSettings"><option value="28">ממוצע אוטומטי (ברירת מחדל)</option><option value="30">30 יום קבוע</option></select></div>
+<label for="set_city">יישוב לחישוב שקיעה משוערת (בחירה ידנית, ללא GPS)</label><select id="set_city" data-action="saveSettings"><option value="">יש לבחור יישוב</option><option value="beit-shemesh">בית שמש</option><option value="jerusalem">ירושלים</option><option value="bnei-brak">בני ברק</option><option value="tel-aviv">תל אביב–יפו</option><option value="haifa">חיפה</option><option value="ashdod">אשדוד</option><option value="ashkelon">אשקלון</option><option value="netanya">נתניה</option><option value="petah-tikva">פתח תקווה</option><option value="modiin">מודיעין</option><option value="other">יישוב אחר – ללא חישוב שקיעה</option></select><p id="sunset_hint" class="text-muted small-note">בחרי יישוב כדי להציג שעת שקיעה משוערת. אין שימוש במיקום GPS.</p><p class="text-muted small-note">חישובי הזריחה והשקיעה הם אומדנים אסטרונומיים בלבד ואינם זמני הלכה מוסמכים. הם מציגים עונת יום/לילה משוערת בלבד; אין כאן חישוב צאת הכוכבים או זמני הלכה.</p><p class="text-muted small-note">כללי הבסיס מבוססים על מקורות נשמת–יועצות הלכה; חישוב ההפלגה בחב״ד משתמש במקורות הייעודיים שלו. המערכת מחשבת את הדפוסים הנפוצים בלבד. כתמים, דפוסים חריגים או משולבים, טיפולים הורמונליים ונסיבות אישיות דורשים בירור הלכתי. אין כאן פסק אישי.</p><label for="set_cycle_len">הגדרת פרישה (וסת קבוע)</label><select id="set_cycle_len" data-action="saveSettings"><option value="28">ממוצע אוטומטי (ברירת מחדל)</option><option value="30">30 יום קבוע</option></select></div>
             <div class="card glass"><h3>ניהול נתונים</h3><button class="btn btn-outline mb-10" data-action="exportBackup"><i class="fas fa-lock"></i> גיבוי מוצפן</button><button class="btn btn-outline mb-10" data-action="triggerImport"><i class="fas fa-file-upload"></i> שחזור מגיבוי</button><input type="file" id="import_file" class="hidden" data-action="importBackup" accept=".enc,.cfbk,application/json"><hr class="divider"><button class="btn btn-outline btn-danger-outline" data-action="resetAll"><i class="fas fa-trash"></i> מחיקת נתונים</button></div>
             <div class="card glass"><h3>אבטחה</h3><input type="password" id="set_new_pin" placeholder="הגדר קוד PIN חדש (4 ספרות)" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password"><button class="btn btn-primary" data-action="setNewPin">הפעלת נעילה</button></div>
             <div class="card glass"><h3>פרטיות</h3><p class="text-muted" style="line-height:1.6">המידע האישי נשמר בדפדפן בלבד. גיבוי מוצפן נשמר אצלך בלבד. חישובי הפוריות הם הערכה סטטיסטית ואינם תחליף לייעוץ רפואי או הלכתי.</p></div>

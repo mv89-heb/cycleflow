@@ -18,6 +18,6 @@ assert.match(css, /@media\s*\(max-width:\s*360px\)/, 'the finishing layer preser
 assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.app-view:not\(\.hidden\)\s*\{\s*animation:\s*none/s, 'view transitions respect reduced motion');
 assert.match(html, /dir="rtl"/, 'the complete interface remains Hebrew RTL');
 assert.equal((html.match(/class="nav-item/g) || []).length, 5, 'the five existing navigation destinations are preserved');
-assert.match(sw, /cycleflow-v10-premium-polish/, 'the visual refresh invalidates the previous offline cache');
+assert.match(sw, /cycleflow-v11-screen-hierarchy/, 'the visual refresh invalidates the previous offline cache');
 
 console.log('CycleFlow premium visual polish tests passed.');

@@ -1,5 +1,5 @@
 /* CycleFlow Service Worker - versioned offline-first cache */
-const CACHE_NAME = 'cycleflow-v10-premium-polish';
+const CACHE_NAME = 'cycleflow-v11-screen-hierarchy';
 const CORE_ASSETS = [
     '/',
     '/static/css/main.css',
