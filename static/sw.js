@@ -1,5 +1,5 @@
 /* CycleFlow Service Worker - versioned offline-first cache */
-const CACHE_NAME = 'cycleflow-v7-theme-colors';
+const CACHE_NAME = 'cycleflow-v8-brand-refresh';
 const CORE_ASSETS = [
     '/',
     '/static/css/main.css',
@@ -10,7 +10,9 @@ const CORE_ASSETS = [
     '/static/css/local-icons.css',
     '/static/js/app.js',
     '/static/js/backup-integrity.js',
-    '/static/manifest.json'
+    '/static/manifest.json',
+    '/static/icons/cycleflow-mark.svg',
+    '/static/icons/favicon.svg'
 ];
 
 self.addEventListener('install', (event) => {
