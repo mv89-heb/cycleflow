@@ -1279,3 +1279,360 @@ body.dark-theme .intro-progress { background: rgba(234,217,230,.18); }
     }
     .intro-screen { transition: none !important; }
 }
+
+
+/* =========================================================
+   CycleFlow Premium Wellness — cross-screen finishing layer
+   Visual-only refinement: no application state or logic changes.
+   ========================================================= */
+:root {
+    --surface-highlight: color-mix(in srgb, var(--primary) 6%, var(--bg-card));
+    --surface-hover: color-mix(in srgb, var(--primary) 8%, var(--bg-card));
+    --outline-soft: color-mix(in srgb, var(--primary) 24%, var(--border-light));
+    --shadow-card-hover: 0 14px 34px rgba(54, 37, 49, .09);
+}
+body.dark-theme {
+    --surface-highlight: color-mix(in srgb, var(--primary) 10%, var(--bg-card));
+    --surface-hover: color-mix(in srgb, var(--primary) 14%, var(--bg-card));
+    --outline-soft: color-mix(in srgb, var(--primary) 32%, var(--border-light));
+    --shadow-card-hover: 0 16px 38px rgba(0, 0, 0, .24);
+}
+::selection {
+    color: var(--text-main);
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+header {
+    isolation: isolate;
+    transition: background-color .2s ease, border-color .2s ease;
+}
+.brand img {
+    object-fit: cover;
+    flex: 0 0 auto;
+}
+.brand-name { line-height: 1.15; }
+.header-actions button {
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+}
+main {
+    padding-top: clamp(22px, 4vw, 38px);
+}
+.app-view:not(.hidden) {
+    animation: cycleflow-view-enter .24s ease-out both;
+}
+@keyframes cycleflow-view-enter {
+    from { opacity: .72; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.card {
+    position: relative;
+    overflow: clip;
+    transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+.card h3 {
+    line-height: 1.35;
+}
+.card h3 > i {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 2rem;
+    border-radius: 11px;
+    color: var(--primary);
+    background: var(--surface-highlight);
+    font-size: .92rem;
+}
+.status-hero {
+    isolation: isolate;
+}
+.status-hero > * {
+    position: relative;
+    z-index: 1;
+}
+.status-badge {
+    min-height: 34px;
+    background: color-mix(in srgb, var(--bg-card) 76%, transparent);
+}
+.main-count {
+    line-height: .98;
+}
+.action-grid .interactive-card {
+    border: 1px solid var(--border-light);
+    background: linear-gradient(155deg, var(--bg-card), var(--surface-highlight));
+    color: var(--text-main);
+}
+.action-grid .interactive-card:focus-visible,
+.action-grid .interactive-card:hover {
+    border-color: var(--outline-soft);
+    box-shadow: var(--shadow-card-hover);
+}
+.cal-nav {
+    gap: 12px;
+}
+.cal-nav button,
+.header-actions button,
+.close-btn {
+    border: 1px solid var(--border-light);
+    background: var(--bg-card);
+    color: var(--text-muted);
+}
+.cal-nav button:active,
+.header-actions button:active,
+.close-btn:active {
+    transform: scale(.96);
+}
+.cal-day {
+    overflow: hidden;
+    border-color: color-mix(in srgb, var(--border-light) 88%, transparent);
+    transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.cal-day:focus-visible {
+    z-index: 2;
+    outline: 3px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    outline-offset: 1px;
+}
+.cal-day.today {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+.cal-day.fertile-day {
+    background: color-mix(in srgb, #d99ab7 7%, var(--bg-card));
+}
+.day-name {
+    font-weight: 750;
+    letter-spacing: .01em;
+}
+.day-badge {
+    border-radius: 6px;
+    padding: 3px 4px;
+    font-weight: 700;
+    line-height: 1.15;
+}
+.stats-grid {
+    align-items: stretch;
+}
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    border: 1px solid var(--border-light);
+    background: linear-gradient(155deg, var(--bg-card), var(--surface-highlight));
+    box-shadow: var(--shadow-sm);
+}
+.stat-val {
+    color: var(--primary);
+    font-weight: 800;
+    letter-spacing: -.025em;
+}
+.chart-container {
+    min-width: 0;
+    padding: 12px 8px;
+    border: 1px solid var(--border-light);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--bg-card) 82%, var(--bg-input));
+}
+#view_history .card,
+#view_tools .card,
+#view_settings .card,
+#view_calendar > .card {
+    box-shadow: var(--shadow-sm);
+}
+#view_history .card h3,
+#view_tools .card h3,
+#view_settings .card h3 {
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-light);
+}
+#view_settings .card h3 {
+    margin-bottom: 18px;
+}
+.tool-form-grid {
+    align-items: start;
+}
+.tool-list {
+    gap: 9px;
+}
+.tool-list-row {
+    min-height: 52px;
+    border-radius: 14px;
+    background: var(--bg-card);
+    transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+}
+.tool-list-row:focus-within {
+    border-color: var(--outline-soft);
+    background: var(--surface-highlight);
+}
+.tool-checklist label,
+.checkbox-label {
+    min-height: 48px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-card);
+    transition: border-color .16s ease, background-color .16s ease;
+}
+.tool-checklist label:focus-within,
+.checkbox-label:focus-within {
+    border-color: var(--outline-soft);
+    background: var(--surface-highlight);
+}
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--primary);
+}
+input::placeholder,
+textarea::placeholder {
+    color: color-mix(in srgb, var(--text-muted) 78%, transparent);
+    opacity: 1;
+}
+input:disabled,
+select:disabled,
+textarea:disabled {
+    opacity: .62;
+    cursor: not-allowed;
+}
+.status-banner {
+    border: 1px solid var(--border-light);
+    background: var(--surface-highlight);
+    color: var(--text-main);
+    line-height: 1.55;
+}
+#status_provenance_details,
+#calculation_history_details {
+    transition: border-color .18s ease, background-color .18s ease;
+}
+#status_provenance_details[open],
+#calculation_history_details[open] {
+    background: var(--bg-card);
+    border-color: var(--outline-soft);
+}
+#status_provenance_details summary,
+#calculation_history_details summary {
+    padding: 2px 0;
+}
+#day_panel {
+    border-top-left-radius: 26px;
+    border-top-right-radius: 26px;
+    overscroll-behavior: contain;
+}
+#day_panel .card {
+    background: var(--surface-highlight);
+}
+.close-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+}
+#toast {
+    backdrop-filter: blur(18px);
+}
+.btn,
+button {
+    -webkit-appearance: none;
+}
+.btn:active:not(:disabled) {
+    transform: translateY(1px) scale(.99);
+}
+.btn-primary:focus-visible,
+.btn-outline:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--primary) 28%, transparent);
+    outline-offset: 2px;
+}
+a {
+    text-decoration-thickness: 1px;
+    transition: color .16s ease;
+}
+a:hover {
+    color: var(--primary-hover);
+}
+hr.divider {
+    margin-block: 22px;
+}
+@media (hover: hover) and (pointer: fine) {
+    .card:hover {
+        border-color: color-mix(in srgb, var(--border-light) 72%, var(--primary) 28%);
+    }
+    .tool-list-row:hover {
+        border-color: var(--outline-soft);
+        background: var(--surface-highlight);
+    }
+    .tool-checklist label:hover,
+    .checkbox-label:hover {
+        border-color: var(--outline-soft);
+        background: var(--surface-highlight);
+    }
+    .cal-day:hover {
+        transform: translateY(-1px);
+        border-color: var(--outline-soft);
+        box-shadow: var(--shadow-sm);
+    }
+}
+@media (max-width: 600px) {
+    main {
+        padding-top: 18px;
+        padding-inline: 13px;
+    }
+    .card {
+        border-radius: 20px;
+    }
+    .card h3 {
+        gap: 9px;
+        font-size: 1rem;
+    }
+    .status-hero {
+        min-height: 218px;
+    }
+    .stats-grid {
+        gap: 8px;
+    }
+    .stat-box {
+        padding: 13px 7px;
+        border-radius: 13px;
+    }
+    .stat-val {
+        font-size: 1.18rem;
+    }
+    .chart-container {
+        padding: 8px 4px;
+        border-radius: 15px;
+    }
+    .bottom-nav {
+        border-color: color-mix(in srgb, var(--border-light) 82%, var(--primary) 18%);
+        box-shadow: 0 12px 34px rgba(42, 29, 39, .14);
+    }
+    .nav-item {
+        border-radius: 14px;
+        transition: color .16s ease, background-color .16s ease;
+    }
+    .nav-item.active {
+        background: color-mix(in srgb, var(--primary) 12%, var(--bg-card));
+    }
+    #day_panel {
+        padding-top: 22px;
+    }
+}
+@media (max-width: 360px) {
+    main {
+        padding-inline: 9px;
+    }
+    .card {
+        padding: 15px 13px;
+    }
+    .card h3 > i {
+        width: 1.8rem;
+        height: 1.8rem;
+        flex-basis: 1.8rem;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .app-view:not(.hidden) {
+        animation: none !important;
+    }
+    .card,
+    .cal-day,
+    .tool-list-row,
+    .btn,
+    .nav-item {
+        transition: none !important;
+    }
+}
