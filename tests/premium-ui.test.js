@@ -15,6 +15,14 @@ assert.match(css, /prefers-reduced-motion:\s*reduce/, 'reduced-motion preference
 assert.match(app, /theme:\s*'light'/, 'new installations default to the light premium theme');
 assert.match(app, /classList\.toggle\('dark-theme',\s*theme === 'dark'\)/, 'existing dark-theme preference is preserved');
 assert.match(html, /dir="rtl"/, 'Hebrew RTL document direction is preserved');
+assert.match(html, /<meta name="theme-color" content="#f7f4ef">/, 'browser chrome matches the light default theme');
+assert.ok(app.includes("document.querySelector('meta[name=\"theme-color\"]')"), 'theme changes update browser chrome');
+assert.ok(app.includes("theme === 'light' ? '#f7f4ef' : '#211d23'"), 'browser chrome follows both theme palettes');
 assert.match(html, /id="bottom_nav"/, 'the existing functional navigation remains in place');
+const sw = fs.readFileSync(path.join(__dirname, '..', 'static', 'sw.js'), 'utf8');
+assert.match(sw, /cycleflow-v7-theme-colors/, 'theme metadata changes activate a fresh offline cache');
+const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'static', 'manifest.json'), 'utf8'));
+assert.equal(manifest.theme_color, '#f7f4ef', 'installed PWA chrome matches the light theme');
+assert.equal(manifest.background_color, '#f7f4ef', 'installed PWA launch background matches the light theme');
 
 console.log('Premium UI theme and responsive layout tests passed.');

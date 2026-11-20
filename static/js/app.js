@@ -1052,6 +1052,8 @@ const UI = {
         document.body.classList.toggle('dark-theme', theme === 'dark');
         const icon = document.querySelector('#theme_toggle_btn i');
         if (icon) icon.className = theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+        const themeColor = document.querySelector('meta[name="theme-color"]');
+        if (themeColor) themeColor.setAttribute('content', theme === 'light' ? '#f7f4ef' : '#211d23');
     },
     
     showRecoveryNotice() {
