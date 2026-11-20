@@ -1689,7 +1689,7 @@ main {
     to { opacity: 1; transform: translateY(0); }
 }
 /* Field labels are captions; only explicit checkbox labels get a filled surface. */
-.app-view label:not(.checkbox-label):not(.tool-checklist label) {
+.app-view label[for]:not(.checkbox-label) {
     display: block;
     margin: 0 0 7px;
     color: var(--text-muted);
