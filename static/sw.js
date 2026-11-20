@@ -1,5 +1,5 @@
 /* CycleFlow Service Worker - versioned offline-first cache */
-const CACHE_NAME = 'cycleflow-v5-calculation-history';
+const CACHE_NAME = 'cycleflow-v6-premium-ui';
 const CORE_ASSETS = [
     '/',
     '/static/css/main.css',

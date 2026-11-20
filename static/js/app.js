@@ -180,7 +180,7 @@ const StorageService = {
     clear() { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem('cycleflow_recovery_v1'); }
 };
 
-const defaultState = { periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {}, manualReminders: [], stainReports: [], symptomObservations: [], mikvehChecklist: {}, ovulationObservations: [], settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'dark', cityId: null, minimumWaitMode: 'five_from_onset', onahBeinonitMode: 'day30_onah' } };
+const defaultState = { periods: [], hefseks: {}, hefsekMeta: {}, tevilot: {}, daily: {}, manualReminders: [], stainReports: [], symptomObservations: [], mikvehChecklist: {}, ovulationObservations: [], settings: { minhag: 'ashkenaz', cycle: 28, pinHash: null, theme: 'light', cityId: null, minimumWaitMode: 'five_from_onset', onahBeinonitMode: 'day30_onah' } };
 
 class StateManager {
     constructor() { this.state = StorageService.load() || defaultState; this.listeners = []; }
@@ -1049,6 +1049,7 @@ const UI = {
 
     applyTheme(theme) {
         document.body.classList.toggle('light-theme', theme === 'light');
+        document.body.classList.toggle('dark-theme', theme === 'dark');
         const icon = document.querySelector('#theme_toggle_btn i');
         if (icon) icon.className = theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
     },
