@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node tests/branding-ui.test.js && node tests/calculation-history.test.js && node tests/calendar-services.test.js && node tests/israel-timezone.test.js && node tests/device-timezone.test.js && node tests/mobile-layout.test.js && node tests/local-tools.test.js && node tests/local-tools-ui.test.js && node tests/logic.test.js && node tests/data-integrity.test.js && node tests/pwa.test.js && node tests/accessibility.test.js && node tests/state-recovery.test.js && node tests/backup-integrity.test.js && node tests/premium-ui.test.js"
+    "test": "node tests/intro-screen.test.js && node tests/branding-ui.test.js && node tests/calculation-history.test.js && node tests/calendar-services.test.js && node tests/israel-timezone.test.js && node tests/device-timezone.test.js && node tests/mobile-layout.test.js && node tests/local-tools.test.js && node tests/local-tools-ui.test.js && node tests/logic.test.js && node tests/data-integrity.test.js && node tests/pwa.test.js && node tests/accessibility.test.js && node tests/state-recovery.test.js && node tests/backup-integrity.test.js && node tests/premium-ui.test.js"
   },
   "devDependencies": {
     "jsdom": "^24.1.3"

@@ -1,5 +1,5 @@
 /* CycleFlow Service Worker - versioned offline-first cache */
-const CACHE_NAME = 'cycleflow-v8-brand-refresh';
+const CACHE_NAME = 'cycleflow-v9-animated-intro';
 const CORE_ASSETS = [
     '/',
     '/static/css/main.css',

@@ -2053,6 +2053,19 @@ const UI = {
     }
 };
 
+
+function startIntroScreen() {
+    const intro = document.getElementById('intro_screen');
+    if (!intro) return;
+    const reducedMotion = Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const visibleDuration = reducedMotion ? 180 : 1450;
+    const fadeDuration = reducedMotion ? 0 : 460;
+    window.setTimeout(() => {
+        intro.classList.add('is-leaving');
+        window.setTimeout(() => intro.remove(), fadeDuration);
+    }, visibleDuration);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('error', (e) => {
         console.error('Global error:', e.error || e.message);
@@ -2063,7 +2076,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         UI.init();
         if (State.captureCurrentCalculation()) State.notify();
+        startIntroScreen();
     } catch (err) {
+        document.getElementById('intro_screen')?.remove();
         console.error('Init failed:', err);
         document.body.insertAdjacentHTML('afterbegin',
             '<div style="background:#ef4444;color:#fff;padding:16px;text-align:center;font-family:sans-serif">אירעה שגיאה בטעינת האפליקציה. נסי לרענן את הדף.</div>');

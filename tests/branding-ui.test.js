@@ -29,7 +29,7 @@ assert.equal(manifest.short_name, 'CycleFlow', 'PWA short name uses CycleFlow');
 assert.equal(manifest.theme_color, '#f5f1ec', 'PWA chrome matches the new brand palette');
 assert.equal(manifest.background_color, '#f5f1ec', 'PWA launch background matches the new brand palette');
 assert.ok(manifest.icons.some(icon => icon.src === '/static/icons/cycleflow-mark.svg'), 'PWA manifest includes the branded icon');
-assert.match(sw, /cycleflow-v8-brand-refresh/, 'brand assets receive a fresh offline cache');
+assert.match(sw, /cycleflow-v9-animated-intro/, 'brand assets receive a fresh offline cache');
 assert.match(sw, /\/static\/icons\/cycleflow-mark\.svg/, 'service worker precaches the brand mark');
 assert.match(sw, /\/static\/icons\/favicon\.svg/, 'service worker precaches the favicon');
 assert.match(css, /--primary:\s*#68465f/, 'the new visual system uses the branded plum');
