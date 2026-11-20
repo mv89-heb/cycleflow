@@ -20,7 +20,7 @@ assert.ok(app.includes("document.querySelector('meta[name=\"theme-color\"]')"), 
 assert.ok(app.includes("theme === 'light' ? '#f5f1ec' : '#201b22'"), 'browser chrome follows both theme palettes');
 assert.match(html, /id="bottom_nav"/, 'the existing functional navigation remains in place');
 const sw = fs.readFileSync(path.join(__dirname, '..', 'static', 'sw.js'), 'utf8');
-assert.match(sw, /cycleflow-v8-brand-refresh/, 'theme metadata changes activate a fresh offline cache');
+assert.match(sw, /cycleflow-v9-animated-intro/, 'theme metadata changes activate a fresh offline cache');
 const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'static', 'manifest.json'), 'utf8'));
 assert.equal(manifest.theme_color, '#f5f1ec', 'installed PWA chrome matches the light theme');
 assert.equal(manifest.background_color, '#f5f1ec', 'installed PWA launch background matches the light theme');
