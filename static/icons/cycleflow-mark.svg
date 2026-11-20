@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
 <title id="title">CycleFlow</title><desc id="desc">סמל מעגלי המייצג מחזוריות, איזון וזרימה</desc>
 <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#79536f"/><stop offset="1" stop-color="#4e354c"/></linearGradient><linearGradient id="flow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8eee7"/><stop offset="1" stop-color="#d9b9c9"/></linearGradient></defs>
-<rect width="512" height="512" rx="124" fill="url(#bg)"/>
+<rect width="512" height="512" fill="url(#bg)"/>
 <circle cx="256" cy="256" r="168" fill="none" stroke="#ffffff" stroke-opacity=".10" stroke-width="2"/>
 <path d="M346 168c-24-27-59-43-97-43-72 0-131 59-131 131s59 131 131 131c48 0 90-26 113-64" fill="none" stroke="url(#flow)" stroke-width="34" stroke-linecap="round"/>
 <path d="M166 344c24 27 59 43 97 43 72 0 131-59 131-131s-59-131-131-131c-48 0-90 26-113 64" fill="none" stroke="#a9c4b0" stroke-width="34" stroke-linecap="round"/>
