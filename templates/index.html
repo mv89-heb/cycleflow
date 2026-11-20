@@ -68,6 +68,7 @@
 
     <main id="main_content" class="blur-target" tabindex="-1">
         <section id="view_dashboard" class="app-view">
+            <div class="view-heading"><span class="view-eyebrow">CYCLEFLOW · המרחב האישי</span><h1>המחזוריות שלך, במבט אחד</h1><p>תמונת מצב אישית ומסודרת, בקצב שלך.</p></div>
             <div class="card glass status-hero" id="status_card">
                 <div id="status_badge" class="status-badge">טוען נתונים...</div>
                 <div id="main_counter" class="main-count">--</div>
@@ -95,6 +96,7 @@
         </section>
 
         <section id="view_calendar" class="app-view hidden">
+            <div class="view-heading"><span class="view-eyebrow">המעקב האישי שלך</span><h1>לוח השנה</h1><p>אירועים, תאריכים ותיעוד — במקום אחד.</p></div>
             <div class="card glass">
                 <div class="cal-nav"><button data-action="navMonth" data-dir="-1"><i class="fas fa-chevron-right"></i></button><div class="text-center"><div id="cal_month_title" class="cal-title"></div><div id="cal_year_subtitle" class="cal-subtitle"></div></div><button data-action="navMonth" data-dir="1"><i class="fas fa-chevron-left"></i></button></div>
                 <div class="cal-grid mb-10"><div class="day-name">א</div><div class="day-name">ב</div><div class="day-name">ג</div><div class="day-name">ד</div><div class="day-name">ה</div><div class="day-name">ו</div><div class="day-name">ש</div></div>
@@ -118,6 +120,7 @@
         </section>
 
         <section id="view_history" class="app-view hidden">
+            <div class="view-heading"><span class="view-eyebrow">מבט לאורך זמן</span><h1>היסטוריה ומגמות</h1><p>הרישומים והנתונים שלך, בצורה ברורה ונגישה.</p></div>
             <div class="card glass">
                 <h3><i class="fas fa-chart-line"></i> סטטיסטיקה</h3>
                 <div class="chart-container"><canvas id="cycleChart"></canvas></div>
@@ -127,6 +130,7 @@
         </section>
 
         <section id="view_tools" class="app-view hidden">
+            <div class="view-heading"><span class="view-eyebrow">מרחב אישי</span><h1>כלים ותיעוד</h1><p>תזכורות, רישומים והכנה לשיחות מקצועיות.</p></div>
             <div class="card glass">
                 <h3><i class="fas fa-bell"></i> תזכורות אישיות ליומן</h3>
                 <p class="text-muted small-note">התזכורות נוצרות רק לפי תאריך ושעה שתבחרי. אין כאן חישוב אוטומטי של מועדים הלכתיים.</p>
@@ -190,6 +194,7 @@
         </section>
 
         <section id="view_settings" class="app-view hidden">
+            <div class="view-heading"><span class="view-eyebrow">שליטה והעדפות</span><h1>הגדרות ופרטיות</h1><p>התאמת החוויה וניהול המידע שנשמר במכשיר.</p></div>
             <div class="card glass"><h3>הגדרות הלכתיות</h3><label>מנהג (משפיע על חישובים מסוימים; אינו תחליף לפסיקה אישית)</label><select id="set_minhag" data-action="saveSettings"><option value="ashkenaz">אשכנז</option><option value="sepharad">ספרד</option><option value="chabad">חב"ד</option></select>
 <p class="text-muted small-note">במנהג חב"ד חישוב ההפלגה נספר לפי מספר העונות מהלילה הראשון שלאחר הפסק טהרה מוצלח, כולל עונת תחילת הווסת. המערכת מחשבת זאת רק כאשר ההפסק נרשם לפני שקיעה עם שעה ויישוב; פטור מחזורים ארוכים אינו מופעל בפרופיל זה אוטומטית. זיהוי אוטומטי של וסת קבוע והתרתו לאחר שלוש החמצות עדיין בפיתוח; עד אז לא נבטל אוטומטית את שלושת הווסתות.</p>
 <label>שיטת מינימום המתנה</label><select id="set_minimum_wait_mode" data-action="saveSettings"><option value="five_from_onset">5 ימים מהיום שבו התחילה הנידה (ברירת מחדל)</option><option value="four_from_last_relations">4 ימים מהיום ההלכתי של יחסי האישות האחרונים (למנהגים מסוימים)</option></select>
