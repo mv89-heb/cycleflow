@@ -16,8 +16,8 @@ assert.match(app, /theme:\s*'light'/, 'new installations default to the light pr
 assert.match(app, /classList\.toggle\('dark-theme',\s*theme === 'dark'\)/, 'existing dark-theme preference is preserved');
 assert.match(html, /dir="rtl"/, 'Hebrew RTL document direction is preserved');
 assert.match(html, /<meta name="theme-color" content="#f7f4ef">/, 'browser chrome matches the light default theme');
-assert.match(app, /meta\\[name="theme-color"\\]/, 'theme changes update browser chrome');
-assert.match(app, /theme === 'light' \\? '#f7f4ef' : '#211d23'/, 'browser chrome follows both theme palettes');
+assert.ok(app.includes("document.querySelector('meta[name=\"theme-color\"]')"), 'theme changes update browser chrome');
+assert.ok(app.includes("theme === 'light' ? '#f7f4ef' : '#211d23'"), 'browser chrome follows both theme palettes');
 assert.match(html, /id="bottom_nav"/, 'the existing functional navigation remains in place');
 const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'static', 'manifest.json'), 'utf8'));
 assert.equal(manifest.theme_color, '#f7f4ef', 'installed PWA chrome matches the light theme');
