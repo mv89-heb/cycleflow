@@ -20,7 +20,7 @@ assert.equal((html.match(/class="nav-item/g) || []).length, 5, 'all five navigat
 const ids = [...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
 assert.equal(ids.length, new Set(ids).size, 'page IDs remain unique');
 assert.ok(css.includes('input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"])'), 'visible text, date, time, and password fields share a full-width control style');
-assert.ok(css.includes('input[type="checkbox"], input[type="radio"]'), 'checkbox and radio dimensions remain independent from text fields');
+assert.ok(css.includes('.checkbox-label input[type="checkbox"], .checkbox-label input[type="radio"]'), 'checkbox and radio dimensions remain independent from text fields');
 assert.ok(css.includes('.checkbox-label {'), 'only explicit checkbox labels receive a filled surface');
 assert.ok(html.includes('<label for="set_minhag">') && html.includes('<label for="set_cycle_len">'), 'settings controls have programmatically associated labels');
 assert.ok(css.includes('#view_tools,\n    #view_settings'), 'tools and settings receive desktop grid layouts');
