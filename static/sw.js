@@ -10,7 +10,9 @@ const CORE_ASSETS = [
     '/static/css/local-icons.css',
     '/static/js/app.js',
     '/static/js/backup-integrity.js',
-    '/static/manifest.json',\n    '/static/icons/cycleflow-mark.svg',\n    '/static/icons/favicon.svg'
+    '/static/manifest.json',
+    '/static/icons/cycleflow-mark.svg',
+    '/static/icons/favicon.svg'
 ];
 
 self.addEventListener('install', (event) => {
