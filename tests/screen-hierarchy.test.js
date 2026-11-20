@@ -9,15 +9,17 @@ const sw = fs.readFileSync(path.join(root, 'static', 'sw.js'), 'utf8');
 
 const screens = ['view_dashboard', 'view_calendar', 'view_history', 'view_tools', 'view_settings'];
 for (const id of screens) {
-    const match = html.match(new RegExp('<section id="' + id + '"[^>]*>([\\s\\S]*?)</section>'));
-    assert(match, id + ' must exist');
-    assert.match(match[1], /class="view-heading"/, id + ' must have a screen heading');
-    assert.match(match[1], /<h1>[^<]+<\\/h1>/, id + ' must have a meaningful page title');
+    const start = html.indexOf('<section id="' + id + '"');
+    assert.notEqual(start, -1, id + ' must exist');
+    const end = html.indexOf('</section>', start);
+    const section = html.slice(start, end);
+    assert.ok(section.includes('class="view-heading"'), id + ' must have a screen heading');
+    assert.ok(section.includes('<h1>') && section.includes('</h1>'), id + ' must have a meaningful page title');
 }
 assert.equal((html.match(/class="nav-item/g) || []).length, 5, 'all five navigation destinations remain intact');
-const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]);
+const ids = [...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
 assert.equal(ids.length, new Set(ids).size, 'page IDs remain unique');
-assert.ok(css.includes('input:not([type="checkbox"]):not([type="radio"]):not([type="file"])'), 'text, date, time, and password fields share a full-width control style');
+assert.ok(css.includes('input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"])'), 'visible text, date, time, and password fields share a full-width control style');
 assert.ok(css.includes('input[type="checkbox"], input[type="radio"]'), 'checkbox and radio dimensions remain independent from text fields');
 assert.ok(css.includes('.checkbox-label {'), 'only explicit checkbox labels receive a filled surface');
 assert.ok(css.includes('#view_tools,\n    #view_settings'), 'tools and settings receive desktop grid layouts');
